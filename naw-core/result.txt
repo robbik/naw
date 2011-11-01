@@ -1,0 +1,74 @@
+[INFO] Scanning for projects...
+[INFO]                                                                         
+[INFO] ------------------------------------------------------------------------
+[INFO] Building N Advanced Workflow :: Core 1.0-SNAPSHOT
+[INFO] ------------------------------------------------------------------------
+[INFO] 
+[INFO] >>> exec-maven-plugin:1.2:java (default-cli) @ naw-core >>>
+[INFO] 
+[INFO] <<< exec-maven-plugin:1.2:java (default-cli) @ naw-core <<<
+[INFO] 
+[INFO] --- exec-maven-plugin:1.2:java (default-cli) @ naw-core ---
+send: 0, receive: 0, elapsed: 1.3191049E9 sec, throughput: 0.0 tps       
+send: 21622311, receive: 21622304, elapsed: 600.0 sec, throughput: 36037.176 tps       
+send: 43484471, receive: 43484470, elapsed: 1200.001 sec, throughput: 36237.027 tps       
+send: 64639990, receive: 64639983, elapsed: 1800.001 sec, throughput: 35911.082 tps       
+send: 86447029, receive: 86447026, elapsed: 2400.002 sec, throughput: 36019.562 tps       
+send: 102997093, receive: 102997090, elapsed: 3000.003 sec, throughput: 34332.33 tps       
+send: 122579938, receive: 122579931, elapsed: 3600.004 sec, throughput: 34049.94 tps       
+send: 142286069, receive: 142286068, elapsed: 4200.004 sec, throughput: 33877.6 tps       
+send: 154504113, receive: 154504111, elapsed: 4800.017 sec, throughput: 32188.244 tps       
+send: 175469740, receive: 175469737, elapsed: 5400.047 sec, throughput: 32494.113 tps       
+send: 197103337, receive: 197103332, elapsed: 6000.047 sec, throughput: 32850.297 tps       
+send: 218152697, receive: 218152694, elapsed: 6600.048 sec, throughput: 33053.195 tps       
+send: 239684856, receive: 239684853, elapsed: 7200.048 sec, throughput: 33289.34 tps       
+send: 261828777, receive: 261828776, elapsed: 7800.049 sec, throughput: 33567.582 tps       
+send: 283918346, receive: 283918341, elapsed: 8400.049 sec, throughput: 33799.605 tps       
+send: 306243380, receive: 306243376, elapsed: 9000.05 sec, throughput: 34026.855 tps       
+send: 328294481, receive: 328294476, elapsed: 9600.05 sec, throughput: 34197.16 tps       
+send: 350687029, receive: 350687026, elapsed: 10200.05 sec, throughput: 34380.914 tps       
+send: 372997951, receive: 372997943, elapsed: 10800.051 sec, throughput: 34536.684 tps       
+send: 395194600, receive: 395194596, elapsed: 11400.052 sec, throughput: 34666.035 tps       
+send: 417458907, receive: 417458906, elapsed: 12000.052 sec, throughput: 34788.094 tps       
+send: 440076243, receive: 440076240, elapsed: 12600.052 sec, throughput: 34926.543 tps       
+send: 462353459, receive: 462353455, elapsed: 13200.053 sec, throughput: 35026.633 tps       
+send: 484556809, receive: 484556804, elapsed: 13800.053 sec, throughput: 35112.676 tps       
+send: 507205459, receive: 507205458, elapsed: 14400.054 sec, throughput: 35222.473 tps       
+send: 529547495, receive: 529547492, elapsed: 15000.054 sec, throughput: 35303.04 tps       
+send: 551945025, receive: 551945012, elapsed: 15600.055 sec, throughput: 35380.97 tps       
+send: 574019537, receive: 574019530, elapsed: 16200.055 sec, throughput: 35433.184 tps       
+send: 596202217, receive: 596202215, elapsed: 16800.057 sec, throughput: 35488.11 tps       
+send: 618550372, receive: 618550369, elapsed: 17400.057 sec, throughput: 35548.758 tps       
+send: 640842902, receive: 640842896, elapsed: 18000.057 sec, throughput: 35602.27 tps       
+send: 663066965, receive: 663066963, elapsed: 18600.057 sec, throughput: 35648.656 tps       
+send: 685371703, receive: 685371700, elapsed: 19200.057 sec, throughput: 35696.34 tps       
+send: 707775834, receive: 707775830, elapsed: 19800.059 sec, throughput: 35746.15 tps       
+send: 730021845, receive: 730021841, elapsed: 20400.059 sec, throughput: 35785.28 tps       
+send: 752353843, receive: 752353840, elapsed: 21000.06 sec, throughput: 35826.273 tps       
+send: 774960763, receive: 774960759, elapsed: 21600.06 sec, throughput: 35877.715 tps       
+send: 797215889, receive: 797215884, elapsed: 22200.06 sec, throughput: 35910.527 tps       
+send: 819567413, receive: 819567408, elapsed: 22800.064 sec, throughput: 35945.836 tps       
+send: 841890066, receive: 841890066, elapsed: 23400.08 sec, throughput: 35978.086 tps       
+send: 864167613, receive: 864167606, elapsed: 24000.08 sec, throughput: 36006.863 tps       
+send: 886487567, receive: 886487565, elapsed: 24600.08 sec, throughput: 36035.965 tps       
+send: 908668957, receive: 908668955, elapsed: 25200.08 sec, throughput: 36058.176 tps       
+send: 930930657, receive: 930930656, elapsed: 25800.082 sec, throughput: 36082.47 tps       
+send: 953260951, receive: 953260944, elapsed: 26400.082 sec, throughput: 36108.254 tps       
+send: 975241551, receive: 975241546, elapsed: 27000.084 sec, throughput: 36119.945 tps       
+send: 997319278, receive: 997319273, elapsed: 27600.084 sec, throughput: 36134.65 tps       
+
+
+SUMMARY
+===========================
+[x] Number of Data Samples  = sent 1000000000, received 1000000000
+[x] Times Elapsed           = 27673.652 sec
+[x] Throughput              = 36135.453 tps
+
+halted!
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time: 7:41:20.081s
+[INFO] Finished at: Fri Oct 21 00:44:02 WIT 2011
+[INFO] Final Memory: 5M/127M
+[INFO] ------------------------------------------------------------------------
