@@ -3,9 +3,10 @@ package org.naw.core.activity;
 import org.naw.core.Process;
 import org.naw.core.partnerLink.PartnerLink;
 
-public class Reply implements Activity {
-
-	private final String name;
+/**
+ * REPLY
+ */
+public class Reply extends AbstractActivity {
 
 	private String partnerLink;
 
@@ -15,16 +16,10 @@ public class Reply implements Activity {
 
 	private String attrName;
 
-	private ActivityContext ctx;
-
 	private PartnerLink link;
 
 	public Reply(String name) {
-		this.name = name;
-	}
-
-	public String getName() {
-		return name;
+		super(name);
 	}
 
 	public void setPartnerLink(String partnerLink) {
@@ -40,11 +35,11 @@ public class Reply implements Activity {
 	}
 
 	public void init(ActivityContext ctx) throws Exception {
-		this.ctx = ctx;
+		super.init(ctx);
 
 		attrName = "EXCHANGE$" + operation;
 
-		link = ctx.getProcessContext().findPartnerLink(partnerLink);
+		link = procctx.findPartnerLink(partnerLink);
 		if (link == null) {
 			throw new IllegalArgumentException("partner link " + partnerLink
 					+ " cannot be found");
@@ -62,7 +57,8 @@ public class Reply implements Activity {
 	}
 
 	public void destroy() {
+		super.destroy();
+
 		link = null;
-		ctx = null;
 	}
 }

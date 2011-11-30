@@ -18,7 +18,7 @@ public enum ProcessState implements Externalizable {
 
     ONGOING_ACTIVITY(4);
 
-    private int code;
+    private transient int code;
 
     private ProcessState(int code) {
         this.code = code;

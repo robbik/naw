@@ -7,7 +7,11 @@ import org.naw.core.ProcessState;
 import org.naw.core.partnerLink.MessageEvent;
 import org.naw.core.partnerLink.PartnerLink;
 import org.naw.core.partnerLink.PartnerLinkListener;
+import org.naw.core.util.Selectors;
 
+/**
+ * INVOKE
+ */
 public class Invoke extends AbstractActivity implements PartnerLinkListener {
 
 	private String partnerLink;
@@ -53,7 +57,7 @@ public class Invoke extends AbstractActivity implements PartnerLinkListener {
 	public void init(ActivityContext ctx) throws Exception {
 		super.init(ctx);
 
-		link = ctx.getProcessContext().findPartnerLink(partnerLink);
+		link = procctx.findPartnerLink(partnerLink);
 		if (link == null) {
 			throw new IllegalArgumentException("partner link " + partnerLink
 					+ " cannot be found");
@@ -67,11 +71,10 @@ public class Invoke extends AbstractActivity implements PartnerLinkListener {
 			return;
 		}
 
-		Process process = ctx.getProcessContext().findProcess(
-				e.getDestination());
+		Process process = procctx.findProcess(e.getDestination());
 
 		if (process != null) {
-			process.getContext().fireProcessEndWait(process, this);
+			Selectors.fireProcessEndWait(procctx, process, this);
 
 			if (process.compareAndUpdate(ProcessState.BEFORE_ACTIVITY, this,
 					ProcessState.AFTER_ACTIVITY, this)) {
@@ -84,7 +87,7 @@ public class Invoke extends AbstractActivity implements PartnerLinkListener {
 
 	public void execute(Process process) throws Exception {
 		if (!oneWay) {
-			process.getContext().fireProcessBeginWait(process, this);
+			Selectors.fireProcessBeginWait(procctx, process, this);
 		}
 
 		link.publish(process.getId(), operation,

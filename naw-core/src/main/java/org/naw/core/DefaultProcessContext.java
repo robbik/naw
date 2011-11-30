@@ -1,23 +1,21 @@
 package org.naw.core;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import org.naw.core.activity.Activity;
+import org.naw.core.exchange.DefaultMessage;
 import org.naw.core.exchange.Message;
 import org.naw.core.partnerLink.PartnerLink;
 import org.naw.core.pipeline.DefaultPipeline;
 import org.naw.core.pipeline.Pipeline;
 import org.naw.core.pipeline.Sink;
 import org.naw.core.storage.Storage;
+import org.naw.core.util.Selector;
+import org.naw.core.util.SynchronizedHashMap;
 import org.naw.core.util.Timer;
 import org.naw.core.util.internal.ObjectUtils;
 
@@ -41,15 +39,13 @@ public class DefaultProcessContext implements ProcessContext, Sink {
 
 	private DefaultPipeline pipeline;
 
+	private ProcessFactory processFactory;
+
 	private final Map<String, Process> instances;
 
 	private final AtomicBoolean destroyed;
 
-	private final List<ProcessLifeCycleListener> lcls;
-
-	private final Lock lclslock;
-
-	private final Lock lclxlock;
+	private final Selector<ProcessLifeCycleListener> selector;
 
 	/**
 	 * create new instance of {@link DefaultProcessContext}
@@ -66,16 +62,13 @@ public class DefaultProcessContext implements ProcessContext, Sink {
 		storage = null;
 		timer = null;
 		pipeline = null;
+		processFactory = DefaultProcessFactory.INSTANCE;
 
-		instances = Collections.synchronizedMap(new HashMap<String, Process>());
+		instances = new SynchronizedHashMap<String, Process>();
 
 		destroyed = new AtomicBoolean(false);
 
-		lcls = new ArrayList<ProcessLifeCycleListener>();
-
-		ReentrantReadWriteLock lock = new ReentrantReadWriteLock(true);
-		lclslock = lock.readLock();
-		lclxlock = lock.writeLock();
+		selector = new Selector<ProcessLifeCycleListener>();
 	}
 
 	/*
@@ -117,6 +110,18 @@ public class DefaultProcessContext implements ProcessContext, Sink {
 	 */
 	public Timer getTimer() {
 		return timer;
+	}
+
+	public Pipeline getPipeline() {
+		return pipeline;
+	}
+
+	public void setProcessFactory(ProcessFactory processFactory) {
+		this.processFactory = processFactory;
+	}
+
+	public Selector<ProcessLifeCycleListener> getSelector() {
+		return selector;
 	}
 
 	public void addPartnerLink(String name, PartnerLink link) {
@@ -189,7 +194,7 @@ public class DefaultProcessContext implements ProcessContext, Sink {
 			throw new IllegalStateException("context already destroyed");
 		}
 
-		DefaultProcess process = new DefaultProcess(this);
+		Process process = processFactory.newProcess(this, new DefaultMessage());
 
 		instances.put(process.getId(), process);
 		return process;
@@ -205,7 +210,7 @@ public class DefaultProcessContext implements ProcessContext, Sink {
 			throw new IllegalStateException("context already destroyed");
 		}
 
-		DefaultProcess process = new DefaultProcess(this, message);
+		Process process = processFactory.newProcess(this, message);
 
 		instances.put(process.getId(), process);
 		return process;
@@ -364,63 +369,13 @@ public class DefaultProcessContext implements ProcessContext, Sink {
 
 		// destroy pipeline
 		pipeline.destroy();
-		pipeline = null;
 
 		// unlink partner links
 		links.clear();
 
-		// unlink dehydration storage
+		// gc works
+		pipeline = null;
 		storage = null;
-
-		// unlink timer
 		timer = null;
-	}
-
-	public void addLifeCycleListener(ProcessLifeCycleListener listener) {
-		lclxlock.lock();
-		lcls.add(listener);
-		lclxlock.unlock();
-	}
-
-	public void removeLifeCycleListener(ProcessLifeCycleListener listener) {
-		lclxlock.lock();
-		lcls.remove(listener);
-		lclxlock.unlock();
-	}
-
-	public void fireProcessStateChange(Process process, ProcessState newState,
-			Activity newActivity) {
-
-		lclslock.lock();
-		try {
-			for (int i = 0, len = lcls.size(); i < len; ++i) {
-				lcls.get(i).processStateChange(this, process, newState,
-						newActivity);
-			}
-		} finally {
-			lclslock.unlock();
-		}
-	}
-
-	public void fireProcessBeginWait(Process process, Activity activity) {
-		lclslock.lock();
-		try {
-			for (int i = 0, len = lcls.size(); i < len; ++i) {
-				lcls.get(i).processBeginWait(this, process, activity);
-			}
-		} finally {
-			lclslock.unlock();
-		}
-	}
-
-	public void fireProcessEndWait(Process process, Activity activity) {
-		lclslock.lock();
-		try {
-			for (int i = 0, len = lcls.size(); i < len; ++i) {
-				lcls.get(i).processEndWait(this, process, activity);
-			}
-		} finally {
-			lclslock.unlock();
-		}
 	}
 }

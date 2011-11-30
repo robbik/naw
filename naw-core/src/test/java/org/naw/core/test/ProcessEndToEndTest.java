@@ -1,4 +1,4 @@
-package org.naw.core.test.process;
+package org.naw.core.test;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;

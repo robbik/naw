@@ -3,7 +3,8 @@ package org.naw.core.exchange;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
+
+import org.naw.core.util.SynchronizedHashMap;
 
 /**
  * Default implementation of {@link Message}
@@ -12,18 +13,23 @@ public class DefaultMessage implements Message {
 
 	private static final long serialVersionUID = 5747231707387987057L;
 
-	private ConcurrentHashMap<String, Map<String, Object>> var;
+	private final Map<String, Map<String, Object>> var;
 
 	public DefaultMessage() {
-		var = new ConcurrentHashMap<String, Map<String, Object>>();
+		var = new SynchronizedHashMap<String, Map<String, Object>>();
 	}
 
 	/*
 	 * (non-Javadoc)
+	 * 
 	 * @see org.naw.exchange.Message#declare(java.lang.String)
 	 */
 	public void declare(String variable) {
-		var.putIfAbsent(variable, new HashMap<String, Object>());
+		synchronized (var) {
+			if (!var.containsKey(variable)) {
+				var.put(variable, new HashMap<String, Object>());
+			}
+		}
 	}
 
 	/*

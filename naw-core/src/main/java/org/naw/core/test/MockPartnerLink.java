@@ -99,25 +99,26 @@ public class MockPartnerLink implements PartnerLink {
 				operation, message);
 
 		slock.lock();
+		List<PartnerLinkListener> list = listeners.get(operation);
 
-		try {
-			if (listeners.containsKey(operation)) {
-				List<PartnerLinkListener> list = listeners.get(operation);
-
-				int len = list.size();
-
-				for (int i = 0; i < len; ++i) {
-					fireMessageReceived(list.get(i), e);
+		if (list != null) {
+			if (executorService == null) {
+				for (int i = 0, len = list.size(); i < len; ++i) {
+					try {
+						list.get(i).messageReceived(e);
+					} catch (Throwable t) {
+						log.error(
+								"unable to invoke messageReceived method on listener "
+										+ list.get(i) + ".", t);
+					}
+				}
+			} else {
+				for (int i = 0, len = list.size(); i < len; ++i) {
+					executorService.submit(new Task(list.get(i), e));
 				}
 			}
-		} finally {
-			slock.unlock();
 		}
-	}
-
-	private void fireMessageReceived(PartnerLinkListener listener,
-			MessageEvent e) {
-		executorService.submit(new Task(listener, e));
+		slock.unlock();
 	}
 
 	private static final class Task implements Runnable {

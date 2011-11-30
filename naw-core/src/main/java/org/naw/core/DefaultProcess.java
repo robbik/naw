@@ -2,19 +2,17 @@ package org.naw.core;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import org.naw.core.activity.Activity;
 import org.naw.core.exchange.DefaultMessage;
 import org.naw.core.exchange.Message;
+import org.naw.core.util.Selectors;
+import org.naw.core.util.SynchronizedHashMap;
 import org.naw.core.util.Timeout;
 import org.naw.core.util.Timer;
 import org.naw.core.util.TimerTask;
@@ -22,7 +20,7 @@ import org.naw.core.util.internal.ObjectUtils;
 
 public class DefaultProcess implements Process {
 
-	private static final String prefixId = UUID.randomUUID().toString()
+	private static final String prefix = UUID.randomUUID().toString()
 			.replace("-", "")
 			+ ".";
 
@@ -32,19 +30,17 @@ public class DefaultProcess implements Process {
 
 	private final DefaultProcessContext ctx;
 
-	private final ConcurrentHashMap<String, Object> attributes;
+	private final Map<String, Object> attributes;
 
 	private final Map<String, List<Timeout>> alarms;
 
 	private final Message message;
 
-	private volatile ProcessState state;
+	private ProcessState state;
 
-	private volatile Activity activity;
+	private Activity activity;
 
-	private final Lock slock;
-
-	private final Lock xlock;
+	private final Object monitor;
 
 	private final AtomicBoolean activated;
 
@@ -55,7 +51,8 @@ public class DefaultProcess implements Process {
 	}
 
 	public DefaultProcess(DefaultProcessContext ctx, Message message) {
-		this(ctx, prefixId + counter.incrementAndGet(), message);
+		this(ctx, prefix.concat(String.valueOf(counter.incrementAndGet())),
+				message);
 	}
 
 	public DefaultProcess(DefaultProcessContext ctx, String pid) {
@@ -66,10 +63,8 @@ public class DefaultProcess implements Process {
 		this.id = id;
 		this.ctx = ctx;
 
-		attributes = new ConcurrentHashMap<String, Object>(10);
-
-		alarms = Collections
-				.synchronizedMap(new HashMap<String, List<Timeout>>());
+		attributes = new SynchronizedHashMap<String, Object>();
+		alarms = new SynchronizedHashMap<String, List<Timeout>>();
 
 		if (message == null) {
 			this.message = new DefaultMessage();
@@ -80,77 +75,44 @@ public class DefaultProcess implements Process {
 		state = ProcessState.INIT;
 		activity = null;
 
-		ReentrantReadWriteLock lock = new ReentrantReadWriteLock(true);
-		slock = lock.readLock();
-		xlock = lock.writeLock();
+		monitor = new Object();
 
 		activated = new AtomicBoolean(false);
 		destroyed = new AtomicBoolean(false);
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see org.naw.process.Process#getId()
-	 */
 	public String getId() {
 		return id;
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see org.naw.process.Process#getContext()
-	 */
 	public ProcessContext getContext() {
 		return ctx;
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see org.naw.process.Process#setAttribute(java.lang.String,
-	 * java.lang.Object)
-	 */
 	public void setAttribute(String name, Object value) {
 		attributes.put(name, value);
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see org.naw.process.Process#getAttribute(java.lang.String,
-	 * java.lang.Class)
-	 */
+	@SuppressWarnings("unchecked")
 	public <T> T getAttribute(String name, Class<T> type) {
 		Object v = attributes.get(name);
 		if (v == null) {
 			return null;
 		}
 
-		return type.cast(v);
+		return (T) v;
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see org.naw.process.Process#removeAttribute(java.lang.String,
-	 * java.lang.Class)
-	 */
+	@SuppressWarnings("unchecked")
 	public <T> T removeAttribute(String name, Class<T> type) {
 		Object v = attributes.remove(name);
 		if (v == null) {
 			return null;
 		}
 
-		return type.cast(v);
+		return (T) v;
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see org.naw.process.Process#getMessage()
-	 */
 	public Message getMessage() {
 		return message;
 	}
@@ -221,38 +183,12 @@ public class DefaultProcess implements Process {
 			throw new IllegalStateException("process already destroyed");
 		}
 
-		xlock.lock();
-
-		this.state = state;
-		this.activity = activity;
-
-		xlock.unlock();
-
-		ctx.fireProcessStateChange(this, state, activity);
-	}
-
-	public ProcessState getState() {
-		if (destroyed.get()) {
-			throw new IllegalStateException("process already destroyed");
+		synchronized (monitor) {
+			this.state = state;
+			this.activity = activity;
 		}
 
-		slock.lock();
-		final ProcessState state = this.state;
-		slock.unlock();
-
-		return state;
-	}
-
-	public Activity getActivity() {
-		if (destroyed.get()) {
-			throw new IllegalStateException("process already destroyed");
-		}
-
-		slock.lock();
-		final Activity activity = this.activity;
-		slock.unlock();
-
-		return activity;
+		Selectors.fireProcessStateChange(ctx, this, state, activity);
 	}
 
 	public boolean compareAndUpdate(ProcessState expectedState,
@@ -264,21 +200,39 @@ public class DefaultProcess implements Process {
 
 		boolean isEqual = false;
 
-		xlock.lock();
+		synchronized (monitor) {
+			isEqual = ObjectUtils.equals(this.state, expectedState);
+			isEqual = isEqual
+					&& ObjectUtils.equals(this.activity, expectedActivity);
 
-		isEqual = ObjectUtils.equals(this.state, expectedState);
-		isEqual = isEqual
-				&& ObjectUtils.equals(this.activity, expectedActivity);
-
-		if (isEqual) {
-			this.state = newState;
-			this.activity = newActivity;
+			if (isEqual) {
+				this.state = newState;
+				this.activity = newActivity;
+			}
 		}
 
-		xlock.unlock();
-
-		ctx.fireProcessStateChange(this, state, activity);
+		Selectors.fireProcessStateChange(ctx, this, state, activity);
 		return isEqual;
+	}
+
+	public ProcessState getState() {
+		if (destroyed.get()) {
+			throw new IllegalStateException("process already destroyed");
+		}
+
+		synchronized (monitor) {
+			return state;
+		}
+	}
+
+	public Activity getActivity() {
+		if (destroyed.get()) {
+			throw new IllegalStateException("process already destroyed");
+		}
+
+		synchronized (monitor) {
+			return activity;
+		}
 	}
 
 	public void activate(ProcessContext ctx) throws Exception {

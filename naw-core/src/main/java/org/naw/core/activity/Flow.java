@@ -5,14 +5,14 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.naw.core.Process;
-import org.naw.core.ProcessContext;
 import org.naw.core.pipeline.DefaultPipeline;
 import org.naw.core.pipeline.Pipeline;
 import org.naw.core.pipeline.Sink;
 
-public class Flow implements Activity, Sink {
-
-    private final String name;
+/**
+ * FLOW
+ */
+public class Flow extends AbstractActivity implements Sink {
 
     private final String attributeName;
 
@@ -29,15 +29,11 @@ public class Flow implements Activity, Sink {
     private int npipelines;
 
     public Flow(String name) {
-        this.name = name;
+        super(name);
 
         attributeName = "FLOW$" + name + "#counter";
 
         destroyed = new AtomicBoolean(false);
-    }
-
-    public String getName() {
-        return name;
     }
 
     public void setExecutorService(ExecutorService executorService) {
@@ -49,13 +45,12 @@ public class Flow implements Activity, Sink {
     }
 
     public void init(ActivityContext ctx) throws Exception {
-        this.ctx = ctx;
+        super.init(ctx);
 
         if (activities == null) {
             pipelines = null;
         } else {
             Pipeline parent = ctx.getPipeline();
-            ProcessContext procctx = ctx.getProcessContext();
 
             npipelines = activities.length;
             pipelines = new DefaultPipeline[npipelines];
@@ -92,6 +87,8 @@ public class Flow implements Activity, Sink {
     }
 
     public void destroy() {
+    	super.destroy();
+    	
         if (!destroyed.compareAndSet(false, true)) {
             return;
         }
@@ -104,7 +101,6 @@ public class Flow implements Activity, Sink {
         }
 
         // gc works
-        ctx = null;
         activities = null;
         pipelines = null;
     }

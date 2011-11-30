@@ -6,7 +6,7 @@ import org.naw.core.Process;
 import org.naw.core.exchange.Message;
 
 /**
- * ASSIGN
+ * MERGE
  */
 public class Merge extends AbstractActivity {
 

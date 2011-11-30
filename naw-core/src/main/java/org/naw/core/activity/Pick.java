@@ -4,10 +4,15 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.naw.core.Process;
+import org.naw.core.ProcessContext;
+import org.naw.core.util.Selectors;
 
-public class Pick implements Activity {
+/**
+ * PICK
+ */
+public class Pick extends AbstractActivity {
 
-	private final String name;
+	private ProcessContext procctx;
 
 	private boolean createInstance;
 
@@ -15,10 +20,10 @@ public class Pick implements Activity {
 
 	private List<PickOnMessage> onMessages;
 
-	private AtomicBoolean destroyed;
+	private final AtomicBoolean destroyed;
 
 	public Pick(String name) {
-		this.name = name;
+		super(name);
 
 		destroyed = new AtomicBoolean(false);
 	}
@@ -44,6 +49,10 @@ public class Pick implements Activity {
 	}
 
 	public void init(ActivityContext ctx) throws Exception {
+		super.init(ctx);
+
+		procctx = ctx.getProcessContext();
+
 		if (onMessages != null) {
 			for (int i = onMessages.size() - 1; i >= 0; --i) {
 				onMessages.get(i).init(ctx);
@@ -59,7 +68,7 @@ public class Pick implements Activity {
 
 	public void execute(Process process) throws Exception {
 		if (!createInstance) {
-			process.getContext().fireProcessBeginWait(process, this);
+			Selectors.fireProcessBeginWait(procctx, process, this);
 		}
 
 		if (onAlarms != null) {
@@ -81,10 +90,12 @@ public class Pick implements Activity {
 			}
 		}
 
-		process.getContext().fireProcessEndWait(process, this);
+		Selectors.fireProcessEndWait(procctx, process, this);
 	}
 
 	public void destroy() {
+		super.destroy();
+		
 		if (!destroyed.compareAndSet(false, true)) {
 			return;
 		}

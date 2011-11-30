@@ -5,7 +5,9 @@ import java.util.Collection;
 import org.naw.core.activity.Activity;
 import org.naw.core.exchange.Message;
 import org.naw.core.partnerLink.PartnerLink;
+import org.naw.core.pipeline.Pipeline;
 import org.naw.core.storage.Storage;
+import org.naw.core.util.Selector;
 import org.naw.core.util.Timer;
 
 /**
@@ -36,6 +38,15 @@ public interface ProcessContext {
 	 * @return the timer
 	 */
 	Timer getTimer();
+
+	/**
+	 * get pipeline used to execute this workflow
+	 * 
+	 * @return
+	 */
+	Pipeline getPipeline();
+
+	Selector<ProcessLifeCycleListener> getSelector();
 
 	/**
 	 * initialize this workflow (this method MUST be invoked before creating new
@@ -142,15 +153,4 @@ public interface ProcessContext {
 	 * destroy this workflow
 	 */
 	void destroy();
-
-	void addLifeCycleListener(ProcessLifeCycleListener listener);
-
-	void removeLifeCycleListener(ProcessLifeCycleListener listener);
-
-	void fireProcessStateChange(Process process, ProcessState newState,
-			Activity newActivity);
-
-	void fireProcessBeginWait(Process process, Activity activity);
-
-	void fireProcessEndWait(Process process, Activity activity);
 }

@@ -8,14 +8,15 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.naw.core.DefaultProcessContext;
-import org.naw.core.activity.Invoke;
+import org.naw.core.Process;
 import org.naw.core.activity.Receive;
-import org.naw.core.activity.Reply;
+import org.naw.core.activity.Script;
+import org.naw.core.activity.Script.Handler;
 import org.naw.core.partnerLink.MessageEvent;
 import org.naw.core.partnerLink.PartnerLinkListener;
 import org.naw.core.test.MockPartnerLink;
 
-public class PerformanceTest {
+public class PerformanceTest3 {
 
 	private MockPartnerLink partnerLink;
 
@@ -43,31 +44,46 @@ public class PerformanceTest {
 		return act;
 	}
 
-	private static Invoke createInvoke() {
-		Invoke act = new Invoke("invoke");
-		act.setOperation("3rd_party");
-		act.setPartnerLink("mock");
-		act.setRequestVariable("request-1");
-		act.setResponseVariable("response-1");
+	private static Script createScript() {
+		Script act = new Script("script");
+		act.setHandler(new Handler() {
+
+			public void handle(Process process) throws Exception {
+				Map<String, Object> msg = new HashMap<String, Object>();
+				msg.put("responseCode", "00");
+
+				process.getMessage().set("response-1", msg);
+			}
+		});
 
 		return act;
 	}
 
-	private static Invoke createInvoke2() {
-		Invoke act = new Invoke("invoke2");
-		act.setOperation("3rd_party2");
-		act.setPartnerLink("mock");
-		act.setRequestVariable("request-2");
-		act.setResponseVariable("response-2");
+	private static Script createScript2() {
+		Script act = new Script("script2");
+		act.setHandler(new Handler() {
+
+			public void handle(Process process) throws Exception {
+				Map<String, Object> msg = new HashMap<String, Object>();
+				msg.put("responseCode", "99");
+
+				process.getMessage().set("response-2", msg);
+			}
+		});
 
 		return act;
 	}
 
-	private static Reply createReply() {
-		Reply act = new Reply("reply");
-		act.setOperation("process");
-		act.setPartnerLink("mock");
-		act.setVariable("data");
+	private static Script createScript3(final AtomicInteger receiveCount,
+			final CountDownLatch latch) {
+		Script act = new Script("script3");
+		act.setHandler(new Handler() {
+
+			public void handle(Process process) throws Exception {
+				receiveCount.incrementAndGet();
+				latch.countDown();
+			}
+		});
 
 		return act;
 	}
@@ -128,58 +144,35 @@ public class PerformanceTest {
 				msg.put("/data/endTransactionTime/text()",
 						Long.valueOf(System.currentTimeMillis()));
 
-				receiveCount.incrementAndGet();
-				latch.countDown();
-			}
-		});
-
-		partnerLink.subscribe("3rd_party", new PartnerLinkListener() {
-			public void messageReceived(MessageEvent e) {
-				Map<String, Object> msg = new HashMap<String, Object>();
-				msg.put("responseCode", "00");
-
-				partnerLink.send("3rd_party", e.getSource(),
-						"3rd_party_callback", msg);
-			}
-		});
-
-		partnerLink.subscribe("3rd_party2", new PartnerLinkListener() {
-			public void messageReceived(MessageEvent e) {
-				Map<String, Object> msg = new HashMap<String, Object>();
-				msg.put("responseCode", "99");
-
-				partnerLink.send("3rd_party2", e.getSource(),
-						"3rd_party2_callback", msg);
 			}
 		});
 	}
 
 	public void after() throws Exception {
-		executor.shutdown();
+		if (executor != null) {
+			executor.shutdown();
+		}
 	}
 
-	public void receiveInvokeInvoke2ReplyTest(final int n) throws Exception {
+	public void receiveScriptScript2Script3Test(final int n) throws Exception {
+		latch = new CountDownLatch(n);
+
 		DefaultProcessContext processctx = new DefaultProcessContext("test3");
 		processctx.addPartnerLink("mock", partnerLink);
-		processctx.setActivities(createFirstReceive(false), createInvoke(),
-				createInvoke2(), createReply());
+
+		processctx.setActivities(createFirstReceive(true), createScript(),
+				createScript2(), createScript3(receiveCount, latch));
 
 		processctx.init();
-
-		latch = new CountDownLatch(n);
 
 		progressMonitorBegin.countDown();
 
 		globalBegin = System.currentTimeMillis();
+		
+		Map<String, Object> sharedMsg = new HashMap<String, Object>();
 
 		for (int i = 0; i < n; ++i) {
-			Map<String, Object> msg = new HashMap<String, Object>();
-			msg.put("/data/number/text()", Integer.valueOf(i));
-			msg.put("/data/beginTransactionTime/text()",
-					Long.valueOf(System.currentTimeMillis()));
-
-			partnerLink.publish("requestResponseSimpleTest()", "process", msg);
-
+			partnerLink.publish("requestResponseSimpleTest()", "process", sharedMsg);
 			sendCount.incrementAndGet();
 		}
 
@@ -203,10 +196,11 @@ public class PerformanceTest {
 	}
 
 	public static void main(String[] args) throws Exception {
-		PerformanceTest pt = new PerformanceTest();
+		PerformanceTest3 pt = new PerformanceTest3();
 		pt.before();
 
-		pt.receiveInvokeInvoke2ReplyTest(args.length == 0 ? 1000 : Integer.parseInt(args[0]));
+		pt.receiveScriptScript2Script3Test(args.length == 0 ? 1000 : Integer
+				.parseInt(args[0]));
 
 		pt.after();
 

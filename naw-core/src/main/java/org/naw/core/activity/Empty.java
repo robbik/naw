@@ -3,7 +3,7 @@ package org.naw.core.activity;
 import org.naw.core.Process;
 
 /**
- * NOOP
+ * EMPTY
  */
 public class Empty extends AbstractActivity {
 

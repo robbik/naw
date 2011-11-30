@@ -9,9 +9,10 @@ import org.naw.core.partnerLink.MessageEvent;
 import org.naw.core.partnerLink.PartnerLink;
 import org.naw.core.partnerLink.PartnerLinkListener;
 
-public class Receive implements Activity, PartnerLinkListener {
-
-	private final String name;
+/**
+ * RECEIVE
+ */
+public class Receive extends AbstractActivity implements PartnerLinkListener {
 
 	private String partnerLink;
 
@@ -29,18 +30,12 @@ public class Receive implements Activity, PartnerLinkListener {
 
 	private PartnerLink link;
 
-	private ActivityContext ctx;
-
 	private final AtomicBoolean destroyed;
 
 	public Receive(String name) {
-		this.name = name;
+		super(name);
 
 		destroyed = new AtomicBoolean(false);
-	}
-
-	public String getName() {
-		return name;
 	}
 
 	public void setPartnerLink(String partnerLink) {
@@ -68,11 +63,11 @@ public class Receive implements Activity, PartnerLinkListener {
 	}
 
 	public void init(ActivityContext ctx) throws Exception {
-		this.ctx = ctx;
+		super.init(ctx);
 
 		attrName = "EXCHANGE$" + operation;
 
-		link = ctx.getProcessContext().findPartnerLink(partnerLink);
+		link = procctx.findPartnerLink(partnerLink);
 		if (link == null) {
 			throw new IllegalArgumentException("partner link " + partnerLink
 					+ " cannot be found");
@@ -87,10 +82,10 @@ public class Receive implements Activity, PartnerLinkListener {
 		Process process = null;
 
 		if (createInstance) {
-			process = ctx.getProcessContext().newProcess();
+			process = procctx.newProcess();
 		} else {
-			process = ctx.getProcessContext().findProcess(
-					(String) message.get(correlationAttribute));
+			process = procctx.findProcess((String) message
+					.get(correlationAttribute));
 		}
 
 		if (process == null) {
@@ -115,6 +110,8 @@ public class Receive implements Activity, PartnerLinkListener {
 	}
 
 	public void destroy() {
+		super.destroy();
+
 		if (!destroyed.compareAndSet(false, true)) {
 			return;
 		}
