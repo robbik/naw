@@ -14,48 +14,39 @@
     <name>N Advanced Workflow :: Core</name>
     <version>1.0-SNAPSHOT</version>
 
+    <description>N Advanced Workflow</description>
+    <url>http://github.com/robbik/naw/</url>
+
     <properties>
-        <spring.version>3.0.5.RELEASE</spring.version>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <slf4j.version>1.6.1</slf4j.version>
     </properties>
 
-    <dependencies>
-        <!-- Logging Framework -->
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-api</artifactId>
-            <version>${slf4j.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-log4j12</artifactId>
-            <version>${slf4j.version}</version>
-        </dependency>
+    <licenses>
+       <license>
+           <name>The Apache Software License, Version 2.0</name>
+           <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+           <distribution>repo</distribution>
+       </license>
+    </licenses>
 
-        <!-- IoC Container
-        <dependency>
-            <groupId>org.springframework</groupId>
-            <artifactId>spring-context</artifactId>
-            <version>${spring.version}</version>
-        </dependency>
-        -->
+    <issueManagement>
+        <url>http://github.com/robbik/naw/issues</url>
+    </issueManagement>
 
-        <!-- test scoped dependencies
-        <dependency>
-            <groupId>org.springframework</groupId>
-            <artifactId>spring-test</artifactId>
-            <version>${spring.version}</version>
-            <scope>test</scope>
-        </dependency>
-        -->
+    <scm>
+        <url>git@github.com:robbik/naw.git</url>
+        <connection>scm:git:git@github.com:robbik/naw.git</connection>
+        <developerConnection>scm:git:git@github.com:robbik/naw.git</developerConnection>
+    </scm>
 
-        <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
-            <version>4.8.2</version>
-            <scope>test</scope>
-        </dependency>
-    </dependencies>
+    <developers>
+        <developer>
+            <id>robbi.kurniawan</id>
+            <name>Robbi Kurniawan</name>
+            <email>robbi.kurniawan@gmail.com</email>
+        </developer>
+    </developers>
     
     <build>
         <plugins>
@@ -64,8 +55,8 @@
                 <version>2.3.2</version>
                 <configuration>
                     <encoding>UTF-8</encoding>
-                    <source>1.6</source>
-                    <target>1.6</target>
+                    <source>1.5</source>
+                    <target>1.5</target>
                 </configuration>
             </plugin>
 
@@ -76,14 +67,122 @@
                 <extensions>true</extensions>
                 <configuration>
                     <instructions>
-                        <Export-Package></Export-Package>
-                        <Import-Package>*</Import-Package>
-                        <DynamicImport-Package>*</DynamicImport-Package>
-                        <Bundle-SymbolicName>${project.artifactId}</Bundle-SymbolicName>
+                        <Bundle-DocURL>${project.url}</Bundle-DocURL>
+                        <Import-Package>
+                            org.slf4j;resolution:=optional,
+                            org.apache.commons.logging;resolution:=optional,
+                            java.util.logging;resolution:=optional,
+                            java.sql;resolution:=optional,
+                            javax.sql;resolution:=optional,
+                            *
+                        </Import-Package>
+                        <Export-Package>
+                            org.naw.core;version=${project.version},
+                            org.naw.core.activity;version=${project.version},
+                            org.naw.core.compensation;version=${project.version},
+                            org.naw.core.exchange;version=${project.version},
+                            org.naw.core.partnerLink;version=${project.version},
+                            org.naw.core.pipeline;version=${project.version},
+                            org.naw.core.storage;version=${project.version},
+                            org.naw.core.test;version=${project.version},
+                            org.naw.core.util;version=${project.version}
+                        </Export-Package>
+                        <Private-Package>
+                            org.naw.core.logging,
+                            org.naw.core.profiling,
+                            org.naw.core.util.internal
+                        </Private-Package>
                     </instructions>
                 </configuration>
             </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>2.7.1</version>
+            </plugin>
         </plugins>
     </build>
+
+    <profiles>
+        <profile>
+            <id>snapshots</id>
+
+            <distributionManagement>
+                <repository>
+                    <id>oss-sonatype-snapshots</id>
+                    <url>https://oss.sonatype.org/content/repositories/snapshots/</url>
+                </repository>
+            </distributionManagement>
+        </profile>
+
+        <profile>
+            <id>releases</id>
+
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-gpg-plugin</artifactId>
+                        <version>1.1</version>
+                        <executions>
+                            <execution>
+                                <id>sign-artifacts</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>sign</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+
+            <distributionManagement>
+                <repository>
+                    <id>oss-sonatype-releases</id>
+                    <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+                </repository>
+            </distributionManagement>
+        </profile>
+    </profiles>
+
+    <dependencies>
+        <!-- Logging Framework -->
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <version>${slf4j.version}</version>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>commons-logging</groupId>
+            <artifactId>commons-logging</artifactId>
+            <version>1.1.1</version>
+            <optional>true</optional>
+        </dependency>
+
+        <!-- test scoped dependencies -->
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>4.8.2</version>
+            <scope>test</scope>
+        </dependency>
+        
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-log4j12</artifactId>
+            <version>${slf4j.version}</version>
+            <scope>test</scope>
+        </dependency>
+        
+        <dependency>
+            <groupId>mysql</groupId>
+            <artifactId>mysql-connector-java</artifactId>
+            <version>5.1.13</version>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
 </project>
 
