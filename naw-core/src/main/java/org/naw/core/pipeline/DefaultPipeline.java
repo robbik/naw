@@ -80,8 +80,7 @@ public class DefaultPipeline implements Pipeline {
 			DefaultActivityContext current = null;
 
 			for (int i = 0; i < activities.length; ++i) {
-				DefaultActivityContext newctx = new DefaultActivityContext(
-						this, activities[i]);
+				DefaultActivityContext newctx = new DefaultActivityContext(this, activities[i]);
 
 				if (current == null) {
 					first = newctx;
@@ -182,7 +181,7 @@ public class DefaultPipeline implements Pipeline {
 		} else {
 			Activity act = first.getActivity();
 
-			process.update(ProcessState.BEFORE_ACTIVITY, act);
+			process.update(ProcessState.BEFORE, act);
 			try {
 				act.execute(process);
 			} catch (Exception ex) {
@@ -195,7 +194,7 @@ public class DefaultPipeline implements Pipeline {
 		return this;
 	}
 
-	public Pipeline destroy() {
+	public void destroy() {
 		// destroy activities contexts
 		DefaultActivityContext current = first;
 
@@ -212,7 +211,5 @@ public class DefaultPipeline implements Pipeline {
 
 		activities = null;
 		first = null;
-
-		return this;
 	}
 }

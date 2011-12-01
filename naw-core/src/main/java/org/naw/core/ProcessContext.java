@@ -4,6 +4,7 @@ import java.util.Collection;
 
 import org.naw.core.activity.Activity;
 import org.naw.core.exchange.Message;
+import org.naw.core.listener.LifeCycleListener;
 import org.naw.core.partnerLink.PartnerLink;
 import org.naw.core.pipeline.Pipeline;
 import org.naw.core.storage.Storage;
@@ -46,7 +47,7 @@ public interface ProcessContext {
 	 */
 	Pipeline getPipeline();
 
-	Selector<ProcessLifeCycleListener> getSelector();
+	Selector<LifeCycleListener> getSelector();
 
 	/**
 	 * initialize this workflow (this method MUST be invoked before creating new
@@ -127,19 +128,6 @@ public interface ProcessContext {
 	 *             if an error occurred or the same process has been found
 	 */
 	void activate(Process process) throws Exception;
-
-	/**
-	 * de-activate process, remove from this context, and return the process.
-	 * The process is optionally destroyed
-	 * 
-	 * @param pid
-	 *            process id
-	 * @param destroyAfter
-	 *            if <code>true</code>, the process is destroyed after
-	 *            de-activated. Otherwise <code>false</code>
-	 * @return the process or <code>null</code> if not found
-	 */
-	Process deactivate(String pid, boolean destroyAfter);
 
 	/**
 	 * terminate and destroy workflow instance

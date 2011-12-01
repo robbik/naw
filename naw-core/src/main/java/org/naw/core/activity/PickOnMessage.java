@@ -1,10 +1,14 @@
 package org.naw.core.activity;
 
+import static org.naw.core.ProcessState.BEFORE;
+import static org.naw.core.ProcessState.ON;
+import static org.naw.core.ProcessState.SLEEP;
+
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.naw.core.Process;
-import org.naw.core.ProcessState;
+import org.naw.core.ProcessContext;
 import org.naw.core.partnerLink.MessageEvent;
 import org.naw.core.partnerLink.PartnerLink;
 import org.naw.core.partnerLink.PartnerLinkListener;
@@ -17,6 +21,8 @@ public class PickOnMessage implements PartnerLinkListener, Sink {
 	private final Pick parent;
 
 	private ActivityContext ctx;
+
+	private ProcessContext procctx;
 
 	private String partnerLink;
 
@@ -32,11 +38,11 @@ public class PickOnMessage implements PartnerLinkListener, Sink {
 
 	private Activity[] activities;
 
+	private DefaultPipeline pipeline;
+
 	private String attrName;
 
 	private PartnerLink link;
-
-	private DefaultPipeline pipeline;
 
 	private final AtomicBoolean destroyed;
 
@@ -72,26 +78,27 @@ public class PickOnMessage implements PartnerLinkListener, Sink {
 
 	public void init(ActivityContext ctx) throws Exception {
 		this.ctx = ctx;
+		procctx = ctx.getProcessContext();
 
-		if (activities == null) {
+		createInstance = parent.isCreateInstance();
+
+		if ((activities == null) || (activities.length == 0)) {
 			pipeline = null;
 		} else {
 			pipeline = new DefaultPipeline(ctx.getPipeline());
 			pipeline.setActivities(activities);
-			pipeline.setProcessContext(ctx.getProcessContext());
+			pipeline.setProcessContext(procctx);
 			pipeline.setSink(this);
 
 			activities = null;
+			pipeline.init();
 		}
 
 		attrName = "EXCHANGE$" + operation;
 
-		createInstance = parent.isCreateInstance();
-
-		link = ctx.getProcessContext().findPartnerLink(partnerLink);
+		link = procctx.findPartnerLink(partnerLink);
 		if (link == null) {
-			throw new IllegalArgumentException("partner link " + partnerLink
-					+ " cannot be found");
+			throw new IllegalArgumentException("partner link " + partnerLink + " cannot be found");
 		}
 
 		link.subscribe(operation, this);
@@ -100,22 +107,31 @@ public class PickOnMessage implements PartnerLinkListener, Sink {
 	public void messageReceived(MessageEvent e) {
 		Map<String, Object> message = e.getMessage();
 
-		Process process = null;
+		Process process;
 
 		if (createInstance) {
-			process = ctx.getProcessContext().newProcess();
+			process = procctx.newProcess();
 		} else {
-			process = ctx.getProcessContext().findProcess(
-					(String) message.get(correlationAttribute));
+			process = procctx.findProcess((String) message.get(correlationAttribute));
 		}
 
 		if (process == null) {
 			return;
 		}
+		
+		boolean ok = createInstance;
+		
+		if (ok) {
+			process.update(ON, parent);
+		} else {
+			ok = process.compareAndUpdate(BEFORE, parent, ON);
+			
+			if (!ok) {
+				ok = process.compareAndUpdate(SLEEP, parent, ON);
+			}
+		}
 
-		if (createInstance
-				|| process.compareAndUpdate(ProcessState.BEFORE_ACTIVITY,
-						parent, ProcessState.ONGOING_ACTIVITY, parent)) {
+		if (ok) {
 			parent.afterExecute(process);
 
 			if (!oneWay) {
@@ -150,9 +166,12 @@ public class PickOnMessage implements PartnerLinkListener, Sink {
 		}
 
 		// gc works
+		procctx = null;
 		ctx = null;
+
 		activities = null;
-		link = null;
 		pipeline = null;
+
+		link = null;
 	}
 }

@@ -22,5 +22,5 @@ public interface Pipeline {
 
 	Pipeline execute(Process process);
 
-	Pipeline destroy();
+	void destroy();
 }

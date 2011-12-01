@@ -47,7 +47,7 @@
             <email>robbi.kurniawan@gmail.com</email>
         </developer>
     </developers>
-    
+
     <build>
         <plugins>
             <plugin>
@@ -81,6 +81,7 @@
                             org.naw.core.activity;version=${project.version},
                             org.naw.core.compensation;version=${project.version},
                             org.naw.core.exchange;version=${project.version},
+                            org.naw.core.listener;version=${project.version},
                             org.naw.core.partnerLink;version=${project.version},
                             org.naw.core.pipeline;version=${project.version},
                             org.naw.core.storage;version=${project.version},
@@ -155,6 +156,7 @@
             <version>${slf4j.version}</version>
             <optional>true</optional>
         </dependency>
+
         <dependency>
             <groupId>commons-logging</groupId>
             <artifactId>commons-logging</artifactId>
@@ -162,21 +164,21 @@
             <optional>true</optional>
         </dependency>
 
-        <!-- test scoped dependencies -->
+        <!-- Test dependencies -->
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
             <version>4.8.2</version>
             <scope>test</scope>
         </dependency>
-        
+
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-log4j12</artifactId>
             <version>${slf4j.version}</version>
             <scope>test</scope>
         </dependency>
-        
+
         <dependency>
             <groupId>mysql</groupId>
             <artifactId>mysql-connector-java</artifactId>
@@ -185,4 +187,3 @@
         </dependency>
     </dependencies>
 </project>
-

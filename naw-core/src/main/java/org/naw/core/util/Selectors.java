@@ -1,62 +1,87 @@
 package org.naw.core.util;
 
+import static org.naw.core.listener.LifeCycleListener.Category.PROCESS_CONTEXT_DESTROYED;
+import static org.naw.core.listener.LifeCycleListener.Category.PROCESS_CONTEXT_INITIALIZED;
+import static org.naw.core.listener.LifeCycleListener.Category.PROCESS_CREATED;
+import static org.naw.core.listener.LifeCycleListener.Category.PROCESS_STATE_CHANGE;
+import static org.naw.core.listener.LifeCycleListener.Category.PROCESS_TERMINATED;
+
 import java.util.List;
 
 import org.naw.core.Process;
 import org.naw.core.ProcessContext;
-import org.naw.core.ProcessLifeCycleListener;
-import org.naw.core.ProcessState;
-import org.naw.core.activity.Activity;
+import org.naw.core.listener.LifeCycleListener;
 
 public abstract class Selectors {
 
 	public static void fireProcessStateChange(ProcessContext ctx,
-			Process process, ProcessState newState, Activity newActivity) {
+			Process process) {
+		Selector<LifeCycleListener> selector = ctx.getSelector();
 
-		Selector<ProcessLifeCycleListener> selector = ctx.getSelector();
-
-		List<ProcessLifeCycleListener> list = selector
-				.select(ProcessLifeCycleListener.STATE_CHANGE);
+		List<LifeCycleListener> list = selector.select(PROCESS_STATE_CHANGE);
 
 		if (list != null) {
 			synchronized (list) {
 				for (int i = 0, len = list.size(); i < len; ++i) {
-					list.get(i).processStateChange(ctx, process, newState,
-							newActivity);
+					list.get(i).processStateChange(ctx, process);
 				}
 			}
 		}
 	}
 
-	public static void fireProcessBeginWait(ProcessContext ctx,
-			Process process, Activity activity) {
+	public static void fireProcessCreated(ProcessContext ctx, Process process) {
+		Selector<LifeCycleListener> selector = ctx.getSelector();
 
-		Selector<ProcessLifeCycleListener> selector = ctx.getSelector();
-
-		List<ProcessLifeCycleListener> list = selector
-				.select(ProcessLifeCycleListener.BEGIN_WAIT);
+		List<LifeCycleListener> list = selector.select(PROCESS_CREATED);
 
 		if (list != null) {
 			synchronized (list) {
 				for (int i = 0, len = list.size(); i < len; ++i) {
-					list.get(i).processBeginWait(ctx, process, activity);
+					list.get(i).processCreated(ctx, process);
 				}
 			}
 		}
 	}
 
-	public static void fireProcessEndWait(ProcessContext ctx, Process process,
-			Activity activity) {
+	public static void fireProcessTerminated(ProcessContext ctx, Process process) {
+		Selector<LifeCycleListener> selector = ctx.getSelector();
 
-		Selector<ProcessLifeCycleListener> selector = ctx.getSelector();
-
-		List<ProcessLifeCycleListener> list = selector
-				.select(ProcessLifeCycleListener.END_WAIT);
+		List<LifeCycleListener> list = selector.select(PROCESS_TERMINATED);
 
 		if (list != null) {
 			synchronized (list) {
 				for (int i = 0, len = list.size(); i < len; ++i) {
-					list.get(i).processEndWait(ctx, process, activity);
+					list.get(i).processTerminated(ctx, process);
+				}
+			}
+		}
+	}
+
+	public static void fireProcessContextInitialized(ProcessContext ctx) {
+		Selector<LifeCycleListener> selector = ctx.getSelector();
+
+		List<LifeCycleListener> list = selector
+				.select(PROCESS_CONTEXT_INITIALIZED);
+
+		if (list != null) {
+			synchronized (list) {
+				for (int i = 0, len = list.size(); i < len; ++i) {
+					list.get(i).processContextInitialized(ctx);
+				}
+			}
+		}
+	}
+
+	public static void fireProcessContextDestroyed(ProcessContext ctx) {
+		Selector<LifeCycleListener> selector = ctx.getSelector();
+
+		List<LifeCycleListener> list = selector
+				.select(PROCESS_CONTEXT_DESTROYED);
+
+		if (list != null) {
+			synchronized (list) {
+				for (int i = 0, len = list.size(); i < len; ++i) {
+					list.get(i).processContextDestroyed(ctx);
 				}
 			}
 		}

@@ -44,24 +44,29 @@ public class Wait extends AbstractActivity implements TimerTask {
 		if (deadline > 0) {
 			to = timer.newTimeout(this, deadline, process.getId(), name);
 		} else {
-			to = timer.newTimeout(this, duration, TimeUnit.MILLISECONDS,
-					process.getId(), name);
+			to = timer.newTimeout(this, duration, TimeUnit.MILLISECONDS, process.getId(), name);
 		}
 
 		if (to != null) {
-			process.addAlarm(to);
+			process.registerTimeout(to);
 		}
+
+		process.compareAndUpdate(ProcessState.BEFORE, this, ProcessState.SLEEP);
 	}
 
 	public void run(Timeout timeout) throws Exception {
-		Process process = ctx.getProcessContext().findProcess(
-				timeout.getProcessId());
+		Process process = ctx.getProcessContext().findProcess(timeout.getProcessId());
 		if (process == null) {
 			return;
 		}
 
-		if (process.compareAndUpdate(ProcessState.BEFORE_ACTIVITY, this,
-				ProcessState.AFTER_ACTIVITY, this)) {
+		boolean updated = process.compareAndUpdate(ProcessState.BEFORE, this, ProcessState.ON);
+
+		if (!updated) {
+			updated = process.compareAndUpdate(ProcessState.SLEEP, this, ProcessState.ON);
+		}
+
+		if (updated) {
 			ctx.execute(process);
 		}
 	}

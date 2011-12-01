@@ -19,8 +19,8 @@ import org.naw.core.DefaultProcessContext;
 import org.naw.core.Process;
 import org.naw.core.ProcessContext;
 import org.naw.core.ProcessState;
+import org.naw.core.activity.AbstractActivity;
 import org.naw.core.activity.Activity;
-import org.naw.core.activity.ActivityContext;
 import org.naw.core.activity.Receive;
 import org.naw.core.compensation.CompensationHandler;
 import org.naw.core.exchange.Message;
@@ -61,17 +61,8 @@ public class ReceiveTest {
 	private static Activity newFinalActivity(final CountDownLatch latch,
 			final AtomicReference<Message> msg,
 			final AtomicReference<String> source) {
-		Activity act = new Activity() {
 
-			private ActivityContext ctx;
-
-			public String getName() {
-				return "abcd";
-			}
-
-			public void init(ActivityContext ctx) throws Exception {
-				this.ctx = ctx;
-			}
+		Activity act = new AbstractActivity("abcd") {
 
 			public void execute(Process process) throws Exception {
 				if (msg != null) {
@@ -89,32 +80,16 @@ public class ReceiveTest {
 
 				ctx.execute(process);
 			}
-
-			public void destroy() {
-				// do nothing
-			}
 		};
 
 		return act;
 	}
 
 	private static Activity newErrorActivity() {
-		Activity act = new Activity() {
-
-			public String getName() {
-				return "abcd2";
-			}
-
-			public void init(ActivityContext ctx) throws Exception {
-				// do nothing
-			}
+		Activity act = new AbstractActivity("abcd2") {
 
 			public void execute(Process process) throws Exception {
 				throw new Exception("FAILURE");
-			}
-
-			public void destroy() {
-				// do nothing
 			}
 		};
 
@@ -272,7 +247,7 @@ public class ReceiveTest {
 		proc.getMessage().declare("data2");
 		proc.getMessage().get("data2").put("initial", "312");
 
-		proc.update(ProcessState.BEFORE_ACTIVITY, act);
+		proc.update(ProcessState.BEFORE, act);
 
 		Map<String, Object> map = new ConcurrentHashMap<String, Object>();
 		map.put("response", "OK");
@@ -316,7 +291,7 @@ public class ReceiveTest {
 		proc.getMessage().declare("data2");
 		proc.getMessage().get("data2").put("initial", "312");
 
-		proc.update(ProcessState.BEFORE_ACTIVITY, act);
+		proc.update(ProcessState.BEFORE, act);
 
 		Map<String, Object> map = new ConcurrentHashMap<String, Object>();
 		map.put("response", "OK");

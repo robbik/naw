@@ -1,13 +1,15 @@
 package org.naw.core.activity;
 
+import static org.naw.core.ProcessState.BEFORE;
+import static org.naw.core.ProcessState.ON;
+import static org.naw.core.ProcessState.SLEEP;
+
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.naw.core.Process;
-import org.naw.core.ProcessState;
 import org.naw.core.partnerLink.MessageEvent;
 import org.naw.core.partnerLink.PartnerLink;
 import org.naw.core.partnerLink.PartnerLinkListener;
-import org.naw.core.util.Selectors;
 
 /**
  * INVOKE
@@ -54,50 +56,52 @@ public class Invoke extends AbstractActivity implements PartnerLinkListener {
 		this.oneWay = oneWay;
 	}
 
+	@Override
 	public void init(ActivityContext ctx) throws Exception {
 		super.init(ctx);
 
 		link = procctx.findPartnerLink(partnerLink);
 		if (link == null) {
-			throw new IllegalArgumentException("partner link " + partnerLink
-					+ " cannot be found");
+			throw new IllegalArgumentException("partner link " + partnerLink + " cannot be found");
 		}
 
 		link.subscribe(operation + "_callback", this);
 	}
 
 	public void messageReceived(MessageEvent e) {
-		if (oneWay) {
+		if (oneWay || destroyed.get()) {
 			return;
 		}
 
 		Process process = procctx.findProcess(e.getDestination());
-
-		if (process != null) {
-			Selectors.fireProcessEndWait(procctx, process, this);
-
-			if (process.compareAndUpdate(ProcessState.BEFORE_ACTIVITY, this,
-					ProcessState.AFTER_ACTIVITY, this)) {
-				process.getMessage().set(responseVar, e.getMessage());
-
-				ctx.execute(process);
-			}
+		if (process == null) {
+			return;
 		}
-	}
-
-	public void execute(Process process) throws Exception {
-		if (!oneWay) {
-			Selectors.fireProcessBeginWait(procctx, process, this);
+		
+		boolean updated = process.compareAndUpdate(BEFORE, this, ON);
+		
+		if (!updated) {
+			updated = process.compareAndUpdate(SLEEP, this, ON);
 		}
+		
+		if (updated) {
+			process.getMessage().set(responseVar, e.getMessage());
 
-		link.publish(process.getId(), operation,
-				process.getMessage().get(requestVar));
-
-		if (oneWay) {
 			ctx.execute(process);
 		}
 	}
 
+	public void execute(Process process) throws Exception {
+		link.publish(process.getId(), operation, process.getMessage().get(requestVar));
+
+		if (oneWay) {
+			ctx.execute(process);
+		} else {
+			process.compareAndUpdate(BEFORE, this, SLEEP);
+		}
+	}
+
+	@Override
 	public void destroy() {
 		super.destroy();
 

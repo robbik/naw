@@ -1,10 +1,13 @@
 package org.naw.core.activity;
 
+import static org.naw.core.ProcessState.BEFORE;
+import static org.naw.core.ProcessState.ON;
+import static org.naw.core.ProcessState.SLEEP;
+
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.naw.core.Process;
-import org.naw.core.ProcessState;
 import org.naw.core.partnerLink.MessageEvent;
 import org.naw.core.partnerLink.PartnerLink;
 import org.naw.core.partnerLink.PartnerLinkListener;
@@ -62,6 +65,7 @@ public class Receive extends AbstractActivity implements PartnerLinkListener {
 		this.oneWay = oneWay;
 	}
 
+	@Override
 	public void init(ActivityContext ctx) throws Exception {
 		super.init(ctx);
 
@@ -77,6 +81,10 @@ public class Receive extends AbstractActivity implements PartnerLinkListener {
 	}
 
 	public void messageReceived(MessageEvent e) {
+		if (destroyed.get()) {
+			return;
+		}
+
 		Map<String, Object> message = e.getMessage();
 
 		Process process = null;
@@ -84,17 +92,26 @@ public class Receive extends AbstractActivity implements PartnerLinkListener {
 		if (createInstance) {
 			process = procctx.newProcess();
 		} else {
-			process = procctx.findProcess((String) message
-					.get(correlationAttribute));
+			process = procctx.findProcess((String) message.get(correlationAttribute));
 		}
 
 		if (process == null) {
 			return;
 		}
 
-		if (createInstance
-				|| process.compareAndUpdate(ProcessState.BEFORE_ACTIVITY, this,
-						ProcessState.AFTER_ACTIVITY, this)) {
+		boolean ok = createInstance;
+
+		if (ok) {
+			process.update(ON, this);
+		} else {
+			ok = process.compareAndUpdate(BEFORE, this, ON);
+
+			if (!ok) {
+				ok = process.compareAndUpdate(SLEEP, this, ON);
+			}
+		}
+
+		if (ok) {
 			if (!oneWay) {
 				process.setAttribute(attrName, e.getSource());
 			}
@@ -106,9 +123,10 @@ public class Receive extends AbstractActivity implements PartnerLinkListener {
 	}
 
 	public void execute(Process process) throws Exception {
-		// do nothing
+		process.compareAndUpdate(BEFORE, this, SLEEP);
 	}
 
+	@Override
 	public void destroy() {
 		super.destroy();
 

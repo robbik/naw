@@ -8,15 +8,15 @@ import java.util.Set;
 
 public class Selector<T> {
 
-	private final Map<String, List<T>> map;
+	private final Map<Object, List<T>> map;
 
 	public Selector() {
-		map = new SynchronizedHashMap<String, List<T>>();
+		map = new SynchronizedHashMap<Object, List<T>>();
 	}
 
-	public void add(T o, String... selections) {
+	public void add(T o, Object... selections) {
 		for (int i = 0, len = selections.length; i < len; ++i) {
-			String selection = selections[i];
+			Object selection = selections[i];
 			List<T> list;
 
 			synchronized (map) {
@@ -36,7 +36,7 @@ public class Selector<T> {
 		}
 	}
 
-	public List<T> select(String selection) {
+	public List<T> select(Object selection) {
 		List<T> list = map.get(selection);
 
 		if ((list == null) || list.isEmpty()) {
@@ -46,14 +46,14 @@ public class Selector<T> {
 		return list;
 	}
 
-	public void remove(T o, String... selections) {
+	public void remove(T o, Object... selections) {
 		int len = selections.length;
 
 		if (len == 0) {
-			Set<String> marked = new HashSet<String>();
+			Set<Object> marked = new HashSet<Object>();
 
 			synchronized (map) {
-				for (Map.Entry<String, List<T>> e : map.entrySet()) {
+				for (Map.Entry<Object, List<T>> e : map.entrySet()) {
 					List<T> list = e.getValue();
 
 					synchronized (list) {
@@ -63,7 +63,7 @@ public class Selector<T> {
 					}
 				}
 
-				for (String e : marked) {
+				for (Object e : marked) {
 					map.remove(e);
 				}
 			}
@@ -72,7 +72,7 @@ public class Selector<T> {
 			marked = null;
 		} else {
 			for (int i = 0; i < len; ++i) {
-				String selection = selections[i];
+				Object selection = selections[i];
 
 				synchronized (map) {
 					List<T> list = map.get(selection);

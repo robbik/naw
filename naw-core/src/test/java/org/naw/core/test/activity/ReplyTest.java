@@ -20,6 +20,7 @@ import org.naw.core.activity.Reply;
 import org.naw.core.partnerLink.MessageEvent;
 import org.naw.core.partnerLink.PartnerLinkListener;
 import org.naw.core.pipeline.DefaultPipeline;
+import org.naw.core.pipeline.Pipeline;
 import org.naw.core.test.MockPartnerLink;
 
 public class ReplyTest {
@@ -159,6 +160,8 @@ public class ReplyTest {
 
 	@Test
 	public void testDoubleDestroyAfterInit() throws Exception {
-		newPipeline(newActivity(true, true)).init().destroy().destroy();
+		Pipeline p = newPipeline(newActivity(true, true)).init();
+		p.destroy();
+		p.destroy();
 	}
 }

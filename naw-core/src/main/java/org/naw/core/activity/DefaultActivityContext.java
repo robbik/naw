@@ -1,8 +1,11 @@
 package org.naw.core.activity;
 
+import static org.naw.core.ProcessState.AFTER;
+import static org.naw.core.ProcessState.BEFORE;
+import static org.naw.core.ProcessState.ERROR;
+
 import org.naw.core.Process;
 import org.naw.core.ProcessContext;
-import org.naw.core.ProcessState;
 import org.naw.core.pipeline.Pipeline;
 import org.naw.core.pipeline.Sink;
 
@@ -46,7 +49,7 @@ public class DefaultActivityContext implements ActivityContext {
     }
 
     public void execute(Process process) {
-        process.update(ProcessState.AFTER_ACTIVITY, activity);
+        process.update(AFTER, activity);
 
         if (next == null) {
             Sink sink = pipeline.getSink();
@@ -55,15 +58,19 @@ public class DefaultActivityContext implements ActivityContext {
                 sink.sunk(pipeline, process);
             }
         } else {
-            Activity act = next.activity;
+            Activity nextActivity = next.activity;
 
-            process.update(ProcessState.BEFORE_ACTIVITY, act);
+            process.update(BEFORE, nextActivity);
             try {
-                act.execute(process);
+                nextActivity.execute(process);
             } catch (Throwable t) {
-                process.update(ProcessState.ERROR, act);
+                process.update(ERROR, nextActivity);
 
+                // run compensation handlers
                 pipeline.exceptionThrown(process, t, false);
+
+                // terminate the process
+                getProcessContext().terminate(process.getId());
             }
         }
     }

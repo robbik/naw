@@ -6,17 +6,19 @@ import java.io.ObjectInput;
 import java.io.ObjectOutput;
 
 public enum ProcessState implements Externalizable {
-    INIT(-1),
+    INIT(0),
 
-    BEFORE_ACTIVITY(0),
+    BEFORE(1),
 
-    AFTER_ACTIVITY(1),
+    AFTER(2),
 
-    ERROR(2),
+    ERROR(3),
 
-    TERMINATED(3),
+    TERMINATED(4),
 
-    ONGOING_ACTIVITY(4);
+    SLEEP(5),
+
+    ON(6);
 
     private transient int code;
 
@@ -41,13 +43,17 @@ public enum ProcessState implements Externalizable {
         case -1:
             return INIT;
         case 0:
-            return BEFORE_ACTIVITY;
+            return BEFORE;
         case 1:
-            return AFTER_ACTIVITY;
+            return AFTER;
         case 2:
             return ERROR;
         case 3:
             return TERMINATED;
+        case 4:
+            return SLEEP;
+        case 5:
+            return ON;
         default:
             return null;
         }

@@ -59,7 +59,7 @@ public class ScriptTest {
 		p.execute(process);
 
 		assertEquals(act, process.getActivity());
-		assertEquals(ProcessState.AFTER_ACTIVITY, process.getState());
+		assertEquals(ProcessState.AFTER, process.getState());
 
 		assertEquals(1, process.getMessage().get("data").size());
 		assertEquals("OK", process.getMessage().get("data").get("response"));
@@ -83,6 +83,9 @@ public class ScriptTest {
 	@Test
 	public void testDoubleDestroyAfterInit() throws Exception {
 		Script act = new Script("a");
-		newPipeline(act).init().destroy().destroy();
+
+		Pipeline p = newPipeline(act).init();
+		p.destroy();
+		p.destroy();
 	}
 }

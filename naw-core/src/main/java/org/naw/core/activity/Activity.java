@@ -12,6 +12,13 @@ public interface Activity {
 	String getName();
 
 	/**
+	 * get context of this activity
+	 * 
+	 * @return activity context
+	 */
+	ActivityContext getActivityContext();
+
+	/**
 	 * initialize activity
 	 * 
 	 * @param ctx

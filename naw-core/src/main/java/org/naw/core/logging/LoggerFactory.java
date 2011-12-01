@@ -3,9 +3,9 @@ package org.naw.core.logging;
 public abstract class LoggerFactory {
 
 	private static final String[] loggers = {
-			"org.git4j.core.logging.Slf4jLogger",
-			"org.git4j.core.logging.CommonsLogger",
-			"org.git4j.core.logging.JdkLogger" };
+			"org.naw.core.logging.Slf4jLogger",
+			"org.naw.core.logging.CommonsLogger",
+			"org.naw.core.logging.JdkLogger" };
 
 	public static Logger getLogger(Class<?> clazz) {
 		for (int i = 0, length = loggers.length; i < length; ++i) {

@@ -55,7 +55,7 @@ public class EmptyTest {
         act.execute(process);
 
         assertEquals(act, process.getActivity());
-        assertEquals(ProcessState.AFTER_ACTIVITY, process.getState());
+        assertEquals(ProcessState.AFTER, process.getState());
 
         assertEquals(map, process.getMessage().get("abcde"));
         assertEquals(1, process.getMessage().getVariables().size());

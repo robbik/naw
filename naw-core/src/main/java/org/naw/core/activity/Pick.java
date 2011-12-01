@@ -1,18 +1,17 @@
 package org.naw.core.activity;
 
+import static org.naw.core.ProcessState.BEFORE;
+import static org.naw.core.ProcessState.SLEEP;
+
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.naw.core.Process;
-import org.naw.core.ProcessContext;
-import org.naw.core.util.Selectors;
 
 /**
  * PICK
  */
 public class Pick extends AbstractActivity {
-
-	private ProcessContext procctx;
 
 	private boolean createInstance;
 
@@ -26,10 +25,6 @@ public class Pick extends AbstractActivity {
 		super(name);
 
 		destroyed = new AtomicBoolean(false);
-	}
-
-	public String getName() {
-		return name;
 	}
 
 	public void setCreateInstance(boolean createInstance) {
@@ -48,10 +43,9 @@ public class Pick extends AbstractActivity {
 		this.onMessages = onMessages;
 	}
 
+	@Override
 	public void init(ActivityContext ctx) throws Exception {
 		super.init(ctx);
-
-		procctx = ctx.getProcessContext();
 
 		if (onMessages != null) {
 			for (int i = onMessages.size() - 1; i >= 0; --i) {
@@ -67,15 +61,13 @@ public class Pick extends AbstractActivity {
 	}
 
 	public void execute(Process process) throws Exception {
-		if (!createInstance) {
-			Selectors.fireProcessBeginWait(procctx, process, this);
-		}
-
 		if (onAlarms != null) {
 			for (int i = onAlarms.size() - 1; i >= 0; --i) {
 				onAlarms.get(i).execute(process);
 			}
 		}
+
+		process.compareAndUpdate(BEFORE, this, SLEEP);
 	}
 
 	public void afterExecute(Process process) {
@@ -86,13 +78,12 @@ public class Pick extends AbstractActivity {
 		// cancel all alarms associated with the process and this activity
 		if (onAlarms != null) {
 			for (int i = onAlarms.size() - 1; i >= 0; --i) {
-				process.removeAlarmForActivity(onAlarms.get(i).getName());
+				process.cancelTimeout(onAlarms.get(i).getName());
 			}
 		}
-
-		Selectors.fireProcessEndWait(procctx, process, this);
 	}
 
+	@Override
 	public void destroy() {
 		super.destroy();
 		

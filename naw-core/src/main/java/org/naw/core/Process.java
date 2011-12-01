@@ -1,5 +1,7 @@
 package org.naw.core;
 
+import java.io.Serializable;
+
 import org.naw.core.activity.Activity;
 import org.naw.core.exchange.Message;
 import org.naw.core.util.Timeout;
@@ -10,7 +12,7 @@ import org.naw.core.util.Timeout;
  * @author robbik
  * 
  */
-public interface Process {
+public interface Process extends Serializable {
 
 	/**
 	 * retrieve id of this workflow instance
@@ -39,24 +41,27 @@ public interface Process {
 	 */
 	Message getMessage();
 
-	void addAlarm(Timeout timeout);
+	void registerTimeout(Timeout timeout);
 
-	void removeAlarm(Timeout timeout);
+	void unregisterTimeout(Timeout timeout);
 
-	void removeAlarmForActivity(String activityName);
+	void cancelTimeout(String activityName);
 
 	void update(ProcessState newState, Activity newActivity);
 
+	void update(ProcessState newState);
+
 	boolean compareAndUpdate(ProcessState state, Activity activity,
 			ProcessState newState, Activity newActivity);
+
+	boolean compareAndUpdate(ProcessState state, Activity activity,
+			ProcessState newState);
 
 	ProcessState getState();
 
 	Activity getActivity();
 
-	void activate(ProcessContext ctx) throws Exception;
-
-	void deactivate();
+	void init(ProcessContext ctx);
 
 	/**
 	 * destroy this workflow instance, this method is USED INTERNALLY.

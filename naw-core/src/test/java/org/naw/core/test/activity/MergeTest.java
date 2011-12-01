@@ -60,7 +60,7 @@ public class MergeTest {
         pipeline.execute(process);
 
         assertEquals(act, process.getActivity());
-        assertEquals(ProcessState.AFTER_ACTIVITY, process.getState());
+        assertEquals(ProcessState.AFTER, process.getState());
 
         assertEquals(mapTo, process.getMessage().get("to"));
         assertEquals(1, process.getMessage().getVariables().size());
@@ -84,7 +84,7 @@ public class MergeTest {
         pipeline.execute(process);
 
         assertEquals(act, process.getActivity());
-        assertEquals(ProcessState.AFTER_ACTIVITY, process.getState());
+        assertEquals(ProcessState.AFTER, process.getState());
 
         assertEquals(mapFrom, process.getMessage().get("from"));
         assertEquals(mapFrom, process.getMessage().get("to"));
@@ -118,7 +118,7 @@ public class MergeTest {
         pipeline.execute(process);
 
         assertEquals(act, process.getActivity());
-        assertEquals(ProcessState.AFTER_ACTIVITY, process.getState());
+        assertEquals(ProcessState.AFTER, process.getState());
 
         assertEquals(mapFrom, process.getMessage().get("from"));
         assertEquals(mapr, process.getMessage().get("to"));
@@ -150,7 +150,7 @@ public class MergeTest {
         pipeline.execute(process);
 
         assertEquals(act, process.getActivity());
-        assertEquals(ProcessState.AFTER_ACTIVITY, process.getState());
+        assertEquals(ProcessState.AFTER, process.getState());
 
         assertEquals(mapFrom, process.getMessage().get("from"));
         assertEquals(mapr, process.getMessage().get("to"));
@@ -180,6 +180,8 @@ public class MergeTest {
         act.setFromVariable("from");
         act.setToVariable("to");
 
-        newPipeline(act).init().destroy().destroy();
+        Pipeline p = newPipeline(act).init();
+        p.destroy();
+        p.destroy();
     }
 }

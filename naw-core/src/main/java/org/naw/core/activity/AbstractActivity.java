@@ -19,6 +19,10 @@ public abstract class AbstractActivity implements Activity {
 		return name;
 	}
 
+	public ActivityContext getActivityContext() {
+		return ctx;
+	}
+
 	public void init(ActivityContext ctx) throws Exception {
 		this.ctx = ctx;
 		this.procctx = ctx.getProcessContext();
@@ -29,5 +33,46 @@ public abstract class AbstractActivity implements Activity {
 	public void destroy() {
 		procctx = null;
 		ctx = null;
+	}
+
+	@Override
+	public String toString() {
+		return super.toString() + " [name=" + name + "]";
+	}
+
+	@Override
+	public int hashCode() {
+		return name == null ? 0 : name.hashCode();
+	}
+
+	@Override
+	public boolean equals(Object o) {
+		if (o == null) {
+			return false;
+		}
+
+		if (o == this) {
+			return true;
+		}
+
+		String oname;
+
+		if (o instanceof Activity) {
+			oname = ((Activity) o).getName();
+		} else if (o instanceof String) {
+			oname = (String) o;
+		} else {
+			return false;
+		}
+
+		if (oname == name) {
+			return true;
+		}
+
+		if ((name == null) || (oname == null)) {
+			return false;
+		}
+
+		return name.equalsIgnoreCase(oname);
 	}
 }

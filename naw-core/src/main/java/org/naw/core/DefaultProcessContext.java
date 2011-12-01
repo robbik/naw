@@ -1,20 +1,23 @@
 package org.naw.core;
 
+import static org.naw.core.ProcessState.TERMINATED;
+
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.naw.core.activity.Activity;
-import org.naw.core.exchange.DefaultMessage;
 import org.naw.core.exchange.Message;
+import org.naw.core.listener.LifeCycleListener;
 import org.naw.core.partnerLink.PartnerLink;
 import org.naw.core.pipeline.DefaultPipeline;
 import org.naw.core.pipeline.Pipeline;
 import org.naw.core.pipeline.Sink;
 import org.naw.core.storage.Storage;
 import org.naw.core.util.Selector;
+import org.naw.core.util.Selectors;
 import org.naw.core.util.SynchronizedHashMap;
 import org.naw.core.util.Timer;
 import org.naw.core.util.internal.ObjectUtils;
@@ -29,9 +32,9 @@ public class DefaultProcessContext implements ProcessContext, Sink {
 
 	private final String name;
 
-	private final ConcurrentHashMap<String, PartnerLink> links;
+	private final Map<String, PartnerLink> links;
 
-	private final ConcurrentHashMap<String, Activity> activities;
+	private final Map<String, Activity> activities;
 
 	private Storage storage;
 
@@ -45,7 +48,7 @@ public class DefaultProcessContext implements ProcessContext, Sink {
 
 	private final AtomicBoolean destroyed;
 
-	private final Selector<ProcessLifeCycleListener> selector;
+	private final Selector<LifeCycleListener> selector;
 
 	/**
 	 * create new instance of {@link DefaultProcessContext}
@@ -56,8 +59,8 @@ public class DefaultProcessContext implements ProcessContext, Sink {
 	public DefaultProcessContext(String name) {
 		this.name = name;
 
-		links = new ConcurrentHashMap<String, PartnerLink>();
-		activities = new ConcurrentHashMap<String, Activity>();
+		links = new HashMap<String, PartnerLink>();
+		activities = new HashMap<String, Activity>();
 
 		storage = null;
 		timer = null;
@@ -68,7 +71,7 @@ public class DefaultProcessContext implements ProcessContext, Sink {
 
 		destroyed = new AtomicBoolean(false);
 
-		selector = new Selector<ProcessLifeCycleListener>();
+		selector = new Selector<LifeCycleListener>();
 	}
 
 	/*
@@ -120,7 +123,7 @@ public class DefaultProcessContext implements ProcessContext, Sink {
 		this.processFactory = processFactory;
 	}
 
-	public Selector<ProcessLifeCycleListener> getSelector() {
+	public Selector<LifeCycleListener> getSelector() {
 		return selector;
 	}
 
@@ -150,10 +153,13 @@ public class DefaultProcessContext implements ProcessContext, Sink {
 	}
 
 	public void registerActivity(Activity activity) throws Exception {
-		Activity old = activities.putIfAbsent(activity.getName(), activity);
+		String name = activity.getName();
 
-		if ((old != null)
-				&& !ObjectUtils.equals((Object) old, (Object) activity)) {
+		Activity old = activities.get(name);
+
+		if (old == null) {
+			activities.put(name, activity);
+		} else if (!ObjectUtils.equals((Object) old, (Object) activity)) {
 			throw new Exception();
 		}
 	}
@@ -182,6 +188,8 @@ public class DefaultProcessContext implements ProcessContext, Sink {
 		}
 
 		pipeline.init();
+
+		Selectors.fireProcessContextInitialized(this);
 	}
 
 	/*
@@ -194,7 +202,8 @@ public class DefaultProcessContext implements ProcessContext, Sink {
 			throw new IllegalStateException("context already destroyed");
 		}
 
-		Process process = processFactory.newProcess(this, new DefaultMessage());
+		Process process = processFactory.newProcess();
+		process.init(this);
 
 		instances.put(process.getId(), process);
 		return process;
@@ -210,7 +219,8 @@ public class DefaultProcessContext implements ProcessContext, Sink {
 			throw new IllegalStateException("context already destroyed");
 		}
 
-		Process process = processFactory.newProcess(this, message);
+		Process process = processFactory.newProcess(message);
+		process.init(this);
 
 		instances.put(process.getId(), process);
 		return process;
@@ -237,87 +247,24 @@ public class DefaultProcessContext implements ProcessContext, Sink {
 	/*
 	 * (non-Javadoc)
 	 * 
-	 * @see org.naw.process.ProcessContext#hydrateAll()
-	 */
-	public void hydrateAll() {
-		if (destroyed.get()) {
-			throw new IllegalStateException("context already destroyed");
-		}
-
-		if (storage == null) {
-			throw new IllegalStateException("no storage defined");
-		}
-
-		Process[] processes = storage.findByWorkflowName(name);
-		if (processes != null) {
-			for (int i = 0; i < processes.length; ++i) {
-				Process process = processes[i];
-
-				if (process.getState() != ProcessState.TERMINATED) {
-					instances.put(process.getId(), process);
-				}
-			}
-		}
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see org.naw.process.ProcessContext#hydrate(java.lang.String)
-	 */
-	public void hydrate(String pid) {
-		if (destroyed.get()) {
-			throw new IllegalStateException("context already destroyed");
-		}
-
-		if (storage == null) {
-			throw new IllegalStateException("no storage defined");
-		}
-
-		Process process = storage.find(pid);
-		if (process != null) {
-			instances.put(pid, process);
-		}
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * 
 	 * @see org.naw.process.ProcessContext#activate(org.naw.process.Process)
 	 */
 	public void activate(Process process) throws Exception {
+		String pid = process.getId();
+
+		if (process.getState() == TERMINATED) {
+			throw new Exception("process " + pid + " already terminated");
+		}
+
 		synchronized (instances) {
-			if (instances.containsKey(process.getId())) {
-				throw new Exception("process " + process.getId()
-						+ " already activated");
+			if (instances.containsKey(pid)) {
+				throw new Exception("process " + pid + " already activated");
 			}
 
-			process.activate(this);
+			process.init(this);
 
-			instances.put(process.getId(), process);
+			instances.put(pid, process);
 		}
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see org.naw.process.ProcessContext#deactivate(java.lang.String, boolean)
-	 */
-	public Process deactivate(String pid, boolean destroyAfter) {
-		if (destroyed.get()) {
-			throw new IllegalStateException("context already destroyed");
-		}
-
-		Process process = instances.remove(pid);
-		if (process != null) {
-			process.deactivate();
-
-			if (destroyAfter) {
-				process.destroy();
-			}
-		}
-
-		return process;
 	}
 
 	/*
@@ -377,5 +324,7 @@ public class DefaultProcessContext implements ProcessContext, Sink {
 		pipeline = null;
 		storage = null;
 		timer = null;
+
+		Selectors.fireProcessContextDestroyed(this);
 	}
 }
