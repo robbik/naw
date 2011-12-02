@@ -17,6 +17,15 @@ public interface Storage {
 	boolean persist(Process process);
 
 	/**
+	 * remove workflow instance from this storage because the process is already
+	 * terminated
+	 * 
+	 * @param pid
+	 *            workflow instance if
+	 */
+	void remove(String pid);
+
+	/**
 	 * find workflow instance by its id
 	 * 
 	 * @param pid
@@ -26,11 +35,9 @@ public interface Storage {
 	Process find(String pid);
 
 	/**
-	 * find workflow instance by its workflow name
+	 * find all workflow instance
 	 * 
-	 * @param workflowName
-	 *            workflow name
 	 * @return array of workflow instance, cannot be <code>null</code>
 	 */
-	Process[] findByWorkflowName(String workflowName);
+	Process[] findAll();
 }

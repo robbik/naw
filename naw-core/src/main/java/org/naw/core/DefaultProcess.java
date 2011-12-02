@@ -8,11 +8,10 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.util.ArrayList;
-import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.naw.core.activity.AbstractActivity;
@@ -22,7 +21,6 @@ import org.naw.core.exchange.DefaultMessage;
 import org.naw.core.exchange.Message;
 import org.naw.core.util.InactiveTimeout;
 import org.naw.core.util.Selectors;
-import org.naw.core.util.SynchronizedHashMap;
 import org.naw.core.util.Timeout;
 import org.naw.core.util.Timer;
 import org.naw.core.util.TimerTask;
@@ -41,10 +39,12 @@ public class DefaultProcess implements Process {
 	private final String id;
 
 	private transient ProcessContext ctx;
+	
+	private String ctxName;
 
 	private final Map<String, Object> attributes;
 
-	private transient final Map<String, List<Timeout>> timeoutMap;
+	private transient Map<String, List<Timeout>> timeoutMap;
 
 	private final Message message;
 
@@ -52,11 +52,9 @@ public class DefaultProcess implements Process {
 
 	private transient Activity activity;
 
-	private transient final Object monitor;
+	private transient boolean activated;
 
-	private transient final AtomicBoolean activated;
-
-	private transient final AtomicBoolean destroyed;
+	private transient boolean destroyed;
 
 	public DefaultProcess() {
 		this(new DefaultMessage());
@@ -73,8 +71,8 @@ public class DefaultProcess implements Process {
 	public DefaultProcess(String id, Message message) {
 		this.id = id;
 
-		attributes = new SynchronizedHashMap<String, Object>();
-		timeoutMap = new SynchronizedHashMap<String, List<Timeout>>();
+		attributes = new HashMap<String, Object>();
+		timeoutMap = new HashMap<String, List<Timeout>>();
 
 		if (message == null) {
 			this.message = new DefaultMessage();
@@ -85,26 +83,28 @@ public class DefaultProcess implements Process {
 		state = INIT;
 		activity = null;
 
-		monitor = new Object();
-
-		activated = new AtomicBoolean(false);
-		destroyed = new AtomicBoolean(false);
+		activated = false;
+		destroyed = false;
 	}
 
-	public String getId() {
+	public synchronized String getId() {
 		return id;
 	}
 
-	public ProcessContext getContext() {
+	public synchronized ProcessContext getContext() {
 		return ctx;
 	}
+	
+	public synchronized String getContextName() {
+		return ctxName;
+	}
 
-	public void setAttribute(String name, Object value) {
+	public synchronized void setAttribute(String name, Object value) {
 		attributes.put(name, value);
 	}
 
 	@SuppressWarnings("unchecked")
-	public <T> T getAttribute(String name, Class<T> type) {
+	public synchronized <T> T getAttribute(String name, Class<T> type) {
 		Object v = attributes.get(name);
 		if (v == null) {
 			return null;
@@ -114,7 +114,7 @@ public class DefaultProcess implements Process {
 	}
 
 	@SuppressWarnings("unchecked")
-	public <T> T removeAttribute(String name, Class<T> type) {
+	public synchronized <T> T removeAttribute(String name, Class<T> type) {
 		Object v = attributes.remove(name);
 		if (v == null) {
 			return null;
@@ -123,32 +123,28 @@ public class DefaultProcess implements Process {
 		return (T) v;
 	}
 
-	public Message getMessage() {
+	public synchronized Message getMessage() {
 		return message;
 	}
 
-	public void registerTimeout(Timeout timeout) {
+	public synchronized void registerTimeout(Timeout timeout) {
 		if (timeout == null) {
 			return;
 		}
 
 		String activityName = timeout.getActivityName();
 
-		List<Timeout> list;
+		List<Timeout> list = timeoutMap.get(activityName);
 
-		synchronized (timeoutMap) {
-			list = timeoutMap.get(activityName);
-
-			if (list == null) {
-				list = Collections.synchronizedList(new ArrayList<Timeout>());
-				timeoutMap.put(activityName, list);
-			}
+		if (list == null) {
+			list = new ArrayList<Timeout>();
+			timeoutMap.put(activityName, list);
 		}
 
 		list.add(timeout);
 	}
 
-	public void unregisterTimeout(Timeout timeout) {
+	public synchronized void unregisterTimeout(Timeout timeout) {
 		if (timeout == null) {
 			return;
 		}
@@ -160,16 +156,14 @@ public class DefaultProcess implements Process {
 			return;
 		}
 
-		synchronized (list) {
-			if (list.remove(timeout)) {
-				if (list.isEmpty()) {
-					timeoutMap.remove(timeout);
-				}
+		if (list.remove(timeout)) {
+			if (list.isEmpty()) {
+				timeoutMap.remove(timeout);
 			}
 		}
 	}
 
-	public void cancelTimeout(String activityName) {
+	public synchronized void cancelTimeout(String activityName) {
 		if (activityName == null) {
 			return;
 		}
@@ -179,212 +173,182 @@ public class DefaultProcess implements Process {
 			return;
 		}
 
-		synchronized (list) {
-			for (int i = list.size() - 1; i >= 0; --i) {
-				list.get(i).cancel();
-			}
-
-			list.clear();
+		for (int i = list.size() - 1; i >= 0; --i) {
+			list.get(i).cancel();
 		}
+
+		list.clear();
 	}
 
-	public void update(ProcessState state, Activity activity) {
-		if (destroyed.get()) {
+	public synchronized void update(ProcessState state, Activity activity) {
+		if (destroyed) {
 			throw new IllegalStateException("process already destroyed");
 		}
 
-		synchronized (monitor) {
-			this.state = state;
-			this.activity = activity;
+		this.state = state;
+		this.activity = activity;
 
-			if (state != TERMINATED) {
-				Selectors.fireProcessStateChange(ctx, this);
-			}
+		if (state != TERMINATED) {
+			Selectors.fireProcessStateChange(ctx, this);
 		}
 	}
 
-	public void update(ProcessState state) {
-		if (destroyed.get()) {
+	public synchronized void update(ProcessState state) {
+		if (destroyed) {
 			throw new IllegalStateException("process already destroyed");
 		}
 
-		synchronized (monitor) {
-			this.state = state;
+		this.state = state;
 
-			if (state != TERMINATED) {
-				Selectors.fireProcessStateChange(ctx, this);
-			}
+		if (state != TERMINATED) {
+			Selectors.fireProcessStateChange(ctx, this);
 		}
 	}
 
-	public boolean compareAndUpdate(ProcessState expectedState,
+	public synchronized boolean compareAndUpdate(ProcessState expectedState,
 			Activity expectedActivity, ProcessState newState,
 			Activity newActivity) {
-		if (destroyed.get()) {
+		if (destroyed) {
 			throw new IllegalStateException("process already destroyed");
 		}
 
-		boolean ok = false;
+		boolean ok = ObjectUtils.equals(this.state, expectedState)
+				&& ObjectUtils.equals(this.activity, expectedActivity);
 
-		synchronized (monitor) {
-			ok = ObjectUtils.equals(this.state, expectedState);
+		if (ok) {
+			this.state = newState;
+			this.activity = newActivity;
 
-			if (!ok) {
-				ok = ObjectUtils.equals(this.activity, expectedActivity);
-			}
-
-			if (ok) {
-				this.state = newState;
-				this.activity = newActivity;
-
-				if (state != TERMINATED) {
-					Selectors.fireProcessStateChange(ctx, this);
-				}
+			if (state != TERMINATED) {
+				Selectors.fireProcessStateChange(ctx, this);
 			}
 		}
 
 		return ok;
 	}
 
-	public boolean compareAndUpdate(ProcessState expectedState,
+	public synchronized boolean compareAndUpdate(ProcessState expectedState,
 			Activity expectedActivity, ProcessState newState) {
-		if (destroyed.get()) {
+		if (destroyed) {
 			throw new IllegalStateException("process already destroyed");
 		}
 
-		boolean ok;
+		boolean ok = ObjectUtils.equals(this.state, expectedState)
+				&& ObjectUtils.equals(this.activity, expectedActivity);
 
-		synchronized (monitor) {
-			ok = ObjectUtils.equals(this.state, expectedState);
+		if (ok) {
+			this.state = newState;
 
-			if (!ok) {
-				ok = ObjectUtils.equals(this.activity, expectedActivity);
-			}
-
-			if (ok) {
-				this.state = newState;
-
-				if (state != TERMINATED) {
-					Selectors.fireProcessStateChange(ctx, this);
-				}
+			if (state != TERMINATED) {
+				Selectors.fireProcessStateChange(ctx, this);
 			}
 		}
 
 		return ok;
 	}
 
-	public ProcessState getState() {
-		synchronized (monitor) {
-			return state;
-		}
+	public synchronized ProcessState getState() {
+		return state;
 	}
 
-	public Activity getActivity() {
-		synchronized (monitor) {
-			return activity;
-		}
+	public synchronized Activity getActivity() {
+		return activity;
 	}
 
-	public void init(ProcessContext ctx) {
-		if (!activated.compareAndSet(false, true)) {
+	public synchronized void init(ProcessContext ctx) {
+		if (activated) {
 			return;
 		}
 
 		this.ctx = ctx;
+		ctxName = ctx.getName();
 
 		// recover activity
-		synchronized (monitor) {
-			if (activity != null) {
-				activity = ctx.findActivity(activity.getName());
+		if (activity != null) {
+			activity = ctx.findActivity(activity.getName());
 
-				if (activity == null) {
-					throw new RuntimeException("activity " + activity.getName()
-							+ " cannot be found");
-				}
+			if (activity == null) {
+				throw new RuntimeException("activity " + activity.getName()
+						+ " cannot be found");
 			}
+		}
 
-			ActivityContext actx = activity == null ? null : activity
-					.getActivityContext();
+		ActivityContext actx = activity == null ? null : activity
+				.getActivityContext();
 
-			switch (state) {
-			case INIT:
-				break; // do nothing
-			case BEFORE:
-				// re-execute
-				try {
-					activity.execute(this);
-				} catch (Throwable t) {
-					update(ERROR, activity);
+		switch (state) {
+		case INIT:
+			break; // do nothing
+		case BEFORE:
+			// re-execute
+			try {
+				activity.execute(this);
+			} catch (Throwable t) {
+				update(ERROR, activity);
 
-					// run compensation handlers
-					actx.getPipeline().exceptionThrown(this, t, false);
+				// run compensation handlers
+				actx.getPipeline().exceptionThrown(this, t, false);
 
-					// terminate the process
-					ctx.terminate(id);
-
-					throw new RuntimeException("process " + id
-							+ " is terminated in activation process");
-				}
-
-				break;
-			case SLEEP:
-				break; // do nothing
-			case ON:
-				break; // FIXME do nothing?
-			case AFTER:
-				// re-execute next activity
-				actx.execute(this);
-
-				if (state == TERMINATED) {
-					throw new RuntimeException("process " + id
-							+ " is terminated in activation process");
-				}
-				break;
-			case ERROR:
-				// rerun compensation handler
-				actx.getPipeline()
-						.exceptionThrown(this, new Exception(), false);
-
-				// terminate this process
+				// terminate the process
 				ctx.terminate(id);
 
 				throw new RuntimeException("process " + id
 						+ " is terminated in activation process");
-			case TERMINATED:
-				throw new IllegalArgumentException("process " + id
-						+ " is already terminated");
 			}
 
-			Selectors.fireProcessCreated(ctx, this);
+			break;
+		case SLEEP:
+			break; // do nothing
+		case ON:
+			break; // FIXME do nothing?
+		case AFTER:
+			// re-execute next activity
+			actx.execute(this);
+
+			if (state == TERMINATED) {
+				throw new RuntimeException("process " + id
+						+ " is terminated in activation process");
+			}
+			break;
+		case ERROR:
+			// rerun compensation handler
+			actx.getPipeline().exceptionThrown(this, new Exception(), false);
+
+			// terminate this process
+			ctx.terminate(id);
+
+			throw new RuntimeException("process " + id
+					+ " is terminated in activation process");
+		case TERMINATED:
+			throw new IllegalArgumentException("process " + id
+					+ " is already terminated");
 		}
+
+		Selectors.fireProcessCreated(ctx, this);
 
 		// recover timeout
 		Timer timer = ctx.getTimer();
 
-		synchronized (timeoutMap) {
-			for (List<Timeout> list : timeoutMap.values()) {
-				synchronized (list) {
-					for (int i = list.size() - 1; i >= 0; --i) {
-						Timeout timeout = list.get(i);
-						if (!(timeout instanceof InactiveTimeout)) {
-							continue;
-						}
+		for (List<Timeout> list : timeoutMap.values()) {
+			for (int i = list.size() - 1; i >= 0; --i) {
+				Timeout timeout = list.get(i);
+				if (!(timeout instanceof InactiveTimeout)) {
+					continue;
+				}
 
-						Activity act = ctx.findActivity(timeout
-								.getActivityName());
+				Activity act = ctx.findActivity(timeout.getActivityName());
 
-						if (act instanceof TimerTask) {
-							timeout = timer.newTimeout((TimerTask) act,
-									timeout.getDeadline(),
-									timeout.getProcessId(),
-									timeout.getActivityName());
+				if (act instanceof TimerTask) {
+					timeout = timer.newTimeout((TimerTask) act,
+							timeout.getDeadline(), timeout.getProcessId(),
+							timeout.getActivityName());
 
-							list.set(i, timeout);
-						}
-					}
+					list.set(i, timeout);
 				}
 			}
 		}
+
+		activated = true;
 	}
 
 	/*
@@ -392,25 +356,21 @@ public class DefaultProcess implements Process {
 	 * 
 	 * @see org.naw.process.Process#destroy()
 	 */
-	public void destroy() {
-		if (!destroyed.compareAndSet(false, true)) {
+	public synchronized void destroy() {
+		if (destroyed) {
 			return;
 		}
 
 		// cancel and remove alarms
-		synchronized (timeoutMap) {
-			for (List<Timeout> list : timeoutMap.values()) {
-				synchronized (list) {
-					for (int i = list.size() - 1; i >= 0; --i) {
-						list.get(i).cancel();
-					}
-
-					list.clear();
-				}
+		for (List<Timeout> list : timeoutMap.values()) {
+			for (int i = list.size() - 1; i >= 0; --i) {
+				list.get(i).cancel();
 			}
 
-			timeoutMap.clear();
+			list.clear();
 		}
+
+		timeoutMap.clear();
 
 		// clear attributes
 		attributes.clear();
@@ -421,6 +381,8 @@ public class DefaultProcess implements Process {
 		if (state == TERMINATED) {
 			Selectors.fireProcessTerminated(ctx, this);
 		}
+
+		destroyed = true;
 	}
 
 	@Override
@@ -451,80 +413,65 @@ public class DefaultProcess implements Process {
 
 	private void readObject(ObjectInputStream in)
 			throws ClassNotFoundException, IOException {
+		in.defaultReadObject();
 
-		synchronized (monitor) {
-			synchronized (timeoutMap) {
-				synchronized (attributes) {
-					in.defaultReadObject();
+		state = ProcessState.valueOf(in.readUnsignedByte());
 
-					state = ProcessState.valueOf(in.readUnsignedByte());
+		String activityName = in.readUTF();
 
-					String activityName = in.readUTF();
+		if (activityName.length() == 0) {
+			activity = null;
+		} else {
+			activity = new AbstractActivity(activityName) {
 
-					if (activityName.length() == 0) {
-						activity = null;
-					} else {
-						activity = new AbstractActivity(activityName) {
-
-							public void execute(Process process)
-									throws Exception {
-								// do nothing
-							}
-						};
-					}
-
-					int size = in.readInt();
-					timeoutMap.clear();
-
-					for (int i = 0; i < size; ++i) {
-						String key = in.readUTF();
-						List<Timeout> value = Collections
-								.synchronizedList(new ArrayList<Timeout>());
-
-						int lsize = in.readInt();
-						for (int j = 0; j < lsize; ++j) {
-							value.add((Timeout) in.readObject());
-						}
-
-						timeoutMap.put(key, value);
-					}
+				public void execute(Process process) throws Exception {
+					// do nothing
 				}
-			}
+			};
 		}
+
+		timeoutMap = new HashMap<String, List<Timeout>>();
+
+		for (int i = 0, size = in.readInt(); i < size; ++i) {
+			String key = in.readUTF();
+			List<Timeout> value = new ArrayList<Timeout>();
+
+			for (int j = 0, len = in.readInt(); j < len; ++j) {
+				value.add((Timeout) in.readObject());
+			}
+
+			timeoutMap.put(key, value);
+		}
+
+		activated = false;
+		destroyed = false;
 	}
 
-	private void writeObject(ObjectOutputStream out) throws IOException {
-		synchronized (monitor) {
-			synchronized (timeoutMap) {
-				synchronized (attributes) {
-					out.defaultWriteObject();
+	private synchronized void writeObject(ObjectOutputStream out)
+			throws IOException {
+		out.defaultWriteObject();
 
-					out.writeByte(state.codeValue());
+		out.writeByte(state.codeValue());
 
-					if (activity == null) {
-						out.writeUTF("");
-					} else {
-						out.writeUTF(activity.getName());
-					}
+		if (activity == null) {
+			out.writeUTF("");
+		} else {
+			out.writeUTF(activity.getName());
+		}
 
-					out.writeInt(timeoutMap.size());
+		out.writeInt(timeoutMap.size());
 
-					for (Map.Entry<String, List<Timeout>> e : timeoutMap
-							.entrySet()) {
-						List<Timeout> list = e.getValue();
+		for (Map.Entry<String, List<Timeout>> e : timeoutMap.entrySet()) {
+			List<Timeout> list = e.getValue();
 
-						if (list != null) {
-							synchronized (list) {
-								out.writeUTF(e.getKey());
+			if (list != null) {
+				out.writeUTF(e.getKey());
 
-								out.writeInt(list.size());
-								for (int i = 0, len = list.size(); i < len; ++i) {
-									out.writeObject(InactiveTimeout
-											.copyFrom(list.get(i)));
-								}
-							}
-						}
-					}
+				out.writeInt(list.size());
+				for (int i = 0, len = list.size(); i < len; ++i) {
+					Timeout to = list.get(i);
+
+					out.writeObject(InactiveTimeout.copyFrom(to));
 				}
 			}
 		}

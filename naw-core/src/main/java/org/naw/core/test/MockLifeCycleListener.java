@@ -9,9 +9,14 @@ import org.naw.core.ProcessContext;
 import org.naw.core.ProcessState;
 import org.naw.core.activity.Activity;
 import org.naw.core.listener.SimpleLifeCycleListener;
+import org.naw.core.logging.Logger;
+import org.naw.core.logging.LoggerFactory;
 import org.naw.core.util.internal.ObjectUtils;
 
 public class MockLifeCycleListener extends SimpleLifeCycleListener {
+
+	private static final Logger log = LoggerFactory
+			.getLogger(MockLifeCycleListener.class);
 
 	private final Object monitor;
 
@@ -182,6 +187,10 @@ public class MockLifeCycleListener extends SimpleLifeCycleListener {
 	@Override
 	public void processCreated(ProcessContext ctx, Process process) {
 		synchronized (monitor) {
+			if (log.isTraceEnabled()) {
+				log.trace("process " + process.getId() + " created");
+			}
+
 			if (qxctx.isEmpty()) {
 				return;
 			}
@@ -198,6 +207,12 @@ public class MockLifeCycleListener extends SimpleLifeCycleListener {
 	@Override
 	public void processStateChange(ProcessContext ctx, Process process) {
 		synchronized (monitor) {
+			if (log.isTraceEnabled()) {
+				log.trace("process " + process.getId() + " state changed to "
+						+ process.getState() + "@"
+						+ process.getActivity().getName());
+			}
+
 			if (qxctx.isEmpty()) {
 				return;
 			}
@@ -214,6 +229,10 @@ public class MockLifeCycleListener extends SimpleLifeCycleListener {
 	@Override
 	public void processTerminated(ProcessContext ctx, Process process) {
 		synchronized (monitor) {
+			if (log.isTraceEnabled()) {
+				log.trace("process " + process.getId() + " terminated");
+			}
+
 			if (qxctx.isEmpty()) {
 				return;
 			}
@@ -230,6 +249,10 @@ public class MockLifeCycleListener extends SimpleLifeCycleListener {
 	@Override
 	public void processContextInitialized(ProcessContext ctx) {
 		synchronized (monitor) {
+			if (log.isTraceEnabled()) {
+				log.trace("process context " + ctx.getName() + " initialized");
+			}
+
 			if (qxctx.isEmpty()) {
 				return;
 			}
@@ -246,6 +269,10 @@ public class MockLifeCycleListener extends SimpleLifeCycleListener {
 	@Override
 	public void processContextDestroyed(ProcessContext ctx) {
 		synchronized (monitor) {
+			if (log.isTraceEnabled()) {
+				log.trace("process context " + ctx.getName() + " destroyed");
+			}
+
 			if (qxctx.isEmpty()) {
 				return;
 			}

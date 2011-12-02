@@ -28,6 +28,13 @@ public interface Process extends Serializable {
 	 */
 	ProcessContext getContext();
 
+	/**
+	 * retrieve workflow name
+	 * 
+	 * @return workflow name
+	 */
+	String getContextName();
+
 	void setAttribute(String name, Object value);
 
 	<T> T getAttribute(String name, Class<T> type);

@@ -1,5 +1,8 @@
 package org.naw.core.util;
 
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
@@ -8,6 +11,8 @@ import java.util.Set;
 public class SynchronizedHashMap<K, V> extends HashMap<K, V> {
 
 	private static final long serialVersionUID = 1561817686391007967L;
+
+	private volatile boolean useCustomSerialization = false;
 
 	public SynchronizedHashMap() {
 		super();
@@ -23,6 +28,10 @@ public class SynchronizedHashMap<K, V> extends HashMap<K, V> {
 
 	public SynchronizedHashMap(Map<? extends K, ? extends V> m) {
 		super(m);
+	}
+
+	public void useCustomSerialization(boolean useCustomSerialization) {
+		this.useCustomSerialization = useCustomSerialization;
 	}
 
 	@Override
@@ -103,5 +112,37 @@ public class SynchronizedHashMap<K, V> extends HashMap<K, V> {
 	@Override
 	public synchronized String toString() {
 		return super.toString();
+	}
+
+	@SuppressWarnings("unchecked")
+	private void readObject(ObjectInputStream in)
+			throws ClassNotFoundException, IOException {
+		in.defaultReadObject();
+
+		int size = in.readInt();
+
+		for (int i = 0; i < size; ++i) {
+			K key = (K) in.readObject();
+			V value = (V) in.readObject();
+
+			super.put(key, value);
+		}
+	}
+
+	private void writeObject(ObjectOutputStream out) throws IOException {
+		synchronized (this) {
+			out.defaultWriteObject();
+
+			if (useCustomSerialization) {
+				out.writeInt(0);
+			} else {
+				out.writeInt(super.size());
+
+				for (Map.Entry<K, V> e : super.entrySet()) {
+					out.writeObject(e.getKey());
+					out.writeObject(e.getValue());
+				}
+			}
+		}
 	}
 }

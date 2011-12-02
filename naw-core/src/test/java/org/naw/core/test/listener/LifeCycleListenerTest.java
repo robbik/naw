@@ -5,7 +5,6 @@ import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.naw.core.DefaultProcessContext;
@@ -57,32 +56,7 @@ public class LifeCycleListenerTest {
 			}
 		});
 
-		partnerLink.subscribe("3rd_party", new PartnerLinkListener() {
-			public void messageReceived(MessageEvent e) {
-				Map<String, Object> msg = new HashMap<String, Object>();
-				msg.put("responseCode", "00");
-
-				partnerLink.send("3rd_party", e.getSource(),
-						"3rd_party_callback", msg);
-			}
-		});
-
-		partnerLink.subscribe("3rd_party2", new PartnerLinkListener() {
-			public void messageReceived(MessageEvent e) {
-				Map<String, Object> msg = new HashMap<String, Object>();
-				msg.put("responseCode", "99");
-
-				partnerLink.send("3rd_party2", e.getSource(),
-						"3rd_party2_callback", msg);
-			}
-		});
-
 		mock = new MockLifeCycleListener();
-	}
-
-	@After
-	public void after() throws Exception {
-		// do nothing
 	}
 
 	@Test
@@ -158,7 +132,7 @@ public class LifeCycleListenerTest {
 		msg.put("/data/xxx/text()", "azsw");
 
 		partnerLink.publish("requestResponseSimpleTest()", "process", msg);
-		
+
 		mock.assertExpected(5, TimeUnit.SECONDS);
 
 		mock.expectProcessContextDestroyed(processctx);

@@ -40,19 +40,19 @@ public enum ProcessState implements Externalizable {
 
     public static ProcessState valueOf(int code) {
         switch (code) {
-        case -1:
-            return INIT;
         case 0:
-            return BEFORE;
+            return INIT;
         case 1:
-            return AFTER;
+            return BEFORE;
         case 2:
-            return ERROR;
+            return AFTER;
         case 3:
-            return TERMINATED;
+            return ERROR;
         case 4:
-            return SLEEP;
+            return TERMINATED;
         case 5:
+            return SLEEP;
+        case 6:
             return ON;
         default:
             return null;
