@@ -16,12 +16,12 @@ public class Sequence extends AbstractActivity implements Sink {
 
 	private Activity[] activities;
 
-	private final AtomicBoolean destroyed;
+	private final AtomicBoolean shutdown;
 
 	public Sequence(String name) {
 		super(name);
 
-		destroyed = new AtomicBoolean(false);
+		shutdown = new AtomicBoolean(false);
 	}
 
 	public void setActivities(Activity... activities) {
@@ -52,17 +52,22 @@ public class Sequence extends AbstractActivity implements Sink {
 	}
 
 	@Override
-	public void destroy() {
-		super.destroy();
+	public void hibernate() {
+		pipeline.hibernate();
+	}
 
-		if (!destroyed.compareAndSet(false, true)) {
+	@Override
+	public void shutdown() {
+		if (!shutdown.compareAndSet(false, true)) {
 			return;
 		}
 
-		// destroy pipeline
-		pipeline.destroy();
+		super.shutdown();
 
-		// gc workds
+		// shutdown inner pipeline
+		pipeline.shutdown();
+
+		// gc works
 		pipeline = null;
 		activities = null;
 	}

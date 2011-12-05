@@ -1,7 +1,7 @@
 package org.naw.core.activity;
 
+import static org.naw.core.ProcessState.AFTER;
 import static org.naw.core.ProcessState.BEFORE;
-import static org.naw.core.ProcessState.ON;
 import static org.naw.core.ProcessState.SLEEP;
 
 import java.util.concurrent.TimeUnit;
@@ -40,12 +40,12 @@ public class PickOnAlarm implements TimerTask, Sink {
 
 	private Timeout timeout;
 
-	private final AtomicBoolean destroyed;
+	private final AtomicBoolean shutdown;
 
 	public PickOnAlarm(Pick parent) {
 		this.parent = parent;
 
-		destroyed = new AtomicBoolean(false);
+		shutdown = new AtomicBoolean(false);
 	}
 
 	public void setName(String name) {
@@ -92,7 +92,8 @@ public class PickOnAlarm implements TimerTask, Sink {
 			if (deadline > 0) {
 				timeout = timer.newTimeout(this, deadline, null, name);
 			} else {
-				timeout = timer.newTimeout(this, duration, TimeUnit.MILLISECONDS, null, name);
+				timeout = timer.newTimeout(this, duration,
+						TimeUnit.MILLISECONDS, null, name);
 			}
 		}
 	}
@@ -104,7 +105,8 @@ public class PickOnAlarm implements TimerTask, Sink {
 			if (deadline > 0) {
 				to = timer.newTimeout(this, deadline, process.getId(), name);
 			} else {
-				to = timer.newTimeout(this, duration, TimeUnit.MILLISECONDS, process.getId(), name);
+				to = timer.newTimeout(this, duration, TimeUnit.MILLISECONDS,
+						process.getId(), name);
 			}
 
 			if (to != null) {
@@ -128,19 +130,24 @@ public class PickOnAlarm implements TimerTask, Sink {
 
 		boolean ok = createInstance;
 
-		if (ok) {
-			process.update(ON, parent);
-		} else {
-			ok = process.compareAndUpdate(BEFORE, parent, ON);
-
+		synchronized (process) {
 			if (!ok) {
-				ok = process.compareAndUpdate(SLEEP, parent, ON);
+				ok = process.compare(BEFORE, parent)
+						|| process.compare(SLEEP, parent);
+			}
+
+			if (ok) {
+				parent.afterExecute(process);
+
+				if (pipeline == null) {
+					process.update(AFTER, parent);
+				} else {
+					process.update(BEFORE, pipeline.getFirstActivity());
+				}
 			}
 		}
 
 		if (ok) {
-			parent.afterExecute(process);
-
 			if (pipeline == null) {
 				ctx.execute(process);
 			} else {
@@ -153,19 +160,26 @@ public class PickOnAlarm implements TimerTask, Sink {
 		ctx.execute(process);
 	}
 
-	public void destroy() {
-		if (!destroyed.compareAndSet(false, true)) {
+	public void hibernate() {
+		// hibernate pipeline
+		if (pipeline != null) {
+			pipeline.hibernate();
+		}
+	}
+
+	public void shutdown() {
+		if (!shutdown.compareAndSet(false, true)) {
 			return;
 		}
 
-		// destroy per process definition timer
+		// cancel timeout created by this sub-activity
 		if (timeout != null) {
 			timeout.cancel();
 		}
 
-		// destroy pipeline
+		// shutdown pipeline
 		if (pipeline != null) {
-			pipeline.destroy();
+			pipeline.shutdown();
 		}
 
 		// gc works

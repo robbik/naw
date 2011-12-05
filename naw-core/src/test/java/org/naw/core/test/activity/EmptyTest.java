@@ -60,27 +60,27 @@ public class EmptyTest {
         assertEquals(map, process.getMessage().get("abcde"));
         assertEquals(1, process.getMessage().getVariables().size());
 
-        p.destroy();
+        p.shutdown();
     }
 
     @Test
     public void testDestroyBeforeInit() throws Exception {
         Pipeline p = newPipeline(new Empty("a"));
-        p.destroy();
+        p.shutdown();
     }
 
     @Test
     public void testDestroyAfterInit() throws Exception {
         Pipeline p = newPipeline(new Empty("a"));
         p.init();
-        p.destroy();
+        p.shutdown();
     }
 
     @Test
     public void testDoubleDestroyAfterInit() throws Exception {
         Pipeline p = newPipeline(new Empty("a"));
         p.init();
-        p.destroy();
-        p.destroy();
+        p.shutdown();
+        p.shutdown();
     }
 }

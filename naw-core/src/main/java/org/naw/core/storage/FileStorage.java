@@ -29,7 +29,7 @@ public class FileStorage implements Storage {
 			}
 		}
 	}
-	
+
 	public FileStorage(String base) {
 		this(new File(base));
 	}
@@ -80,7 +80,7 @@ public class FileStorage implements Storage {
 					name.deleteOnExit();
 				}
 			}
-			
+
 			String[] names = subdir.list();
 			if ((names == null) || (names.length == 0)) {
 				if (!subdir.delete()) {

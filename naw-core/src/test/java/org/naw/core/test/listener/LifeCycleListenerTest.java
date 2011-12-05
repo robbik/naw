@@ -70,7 +70,7 @@ public class LifeCycleListenerTest {
 
 		processctx.getSelector().add(mock,
 				LifeCycleListener.Category.PROCESS_CONTEXT_INITIALIZED,
-				LifeCycleListener.Category.PROCESS_CONTEXT_DESTROYED,
+				LifeCycleListener.Category.PROCESS_CONTEXT_SHUTDOWN,
 				LifeCycleListener.Category.PROCESS_CREATED,
 				LifeCycleListener.Category.PROCESS_STATE_CHANGE,
 				LifeCycleListener.Category.PROCESS_TERMINATED);
@@ -82,7 +82,6 @@ public class LifeCycleListenerTest {
 		mock.assertExpected(5, TimeUnit.SECONDS);
 
 		mock.expectProcessCreated();
-		mock.expectProcessStateChanged(ProcessState.ON, receive);
 		mock.expectProcessStateChanged(ProcessState.AFTER, receive);
 		mock.expectProcessStateChanged(ProcessState.BEFORE, reply);
 		mock.expectProcessStateChanged(ProcessState.AFTER, reply);
@@ -97,7 +96,7 @@ public class LifeCycleListenerTest {
 
 		mock.expectProcessContextDestroyed(processctx);
 
-		processctx.destroy();
+		processctx.shutdown();
 
 		mock.assertExpected(5, TimeUnit.SECONDS);
 	}
@@ -112,7 +111,7 @@ public class LifeCycleListenerTest {
 
 		processctx.getSelector().add(mock,
 				LifeCycleListener.Category.PROCESS_CONTEXT_INITIALIZED,
-				LifeCycleListener.Category.PROCESS_CONTEXT_DESTROYED,
+				LifeCycleListener.Category.PROCESS_CONTEXT_SHUTDOWN,
 				LifeCycleListener.Category.PROCESS_CREATED,
 				LifeCycleListener.Category.PROCESS_STATE_CHANGE,
 				LifeCycleListener.Category.PROCESS_TERMINATED);
@@ -124,7 +123,6 @@ public class LifeCycleListenerTest {
 		mock.assertExpected(5, TimeUnit.SECONDS);
 
 		mock.expectProcessCreated();
-		mock.expectProcessStateChanged(ProcessState.ON, receive);
 		mock.expectProcessStateChanged(ProcessState.AFTER, receive);
 		mock.expectProcessTerminated();
 
@@ -137,7 +135,7 @@ public class LifeCycleListenerTest {
 
 		mock.expectProcessContextDestroyed(processctx);
 
-		processctx.destroy();
+		processctx.shutdown();
 
 		mock.assertExpected(5, TimeUnit.SECONDS);
 	}

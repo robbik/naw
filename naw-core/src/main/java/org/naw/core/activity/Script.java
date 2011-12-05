@@ -19,11 +19,12 @@ public class Script extends AbstractActivity {
 
 	public void execute(Process process) throws Exception {
 		handler.handle(process);
+
 		ctx.execute(process);
 	}
 
-	public void destroy() {
-		super.destroy();
+	public void shutdown() {
+		super.shutdown();
 
 		handler = null;
 	}

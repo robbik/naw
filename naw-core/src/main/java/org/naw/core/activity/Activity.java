@@ -2,6 +2,10 @@ package org.naw.core.activity;
 
 import org.naw.core.Process;
 
+/**
+ * Represent workflow activity, unique per process context / workflow and shared
+ * across processes in the same process context / workflow
+ */
 public interface Activity {
 
 	/**
@@ -39,7 +43,12 @@ public interface Activity {
 	void execute(Process process) throws Exception;
 
 	/**
-	 * destroy this activity
+	 * hibernate this activity
 	 */
-	void destroy();
+	void hibernate();
+
+	/**
+	 * shutdown this activity
+	 */
+	void shutdown();
 }

@@ -72,6 +72,10 @@ public class DefaultPipeline implements Pipeline {
 	public Pipeline getParent() {
 		return parent;
 	}
+	
+	public Activity getFirstActivity() {
+		return first == null ? null : first.getActivity();
+	}
 
 	public Pipeline init() throws Exception {
 		first = null;
@@ -80,7 +84,8 @@ public class DefaultPipeline implements Pipeline {
 			DefaultActivityContext current = null;
 
 			for (int i = 0; i < activities.length; ++i) {
-				DefaultActivityContext newctx = new DefaultActivityContext(this, activities[i]);
+				DefaultActivityContext newctx = new DefaultActivityContext(
+						this, activities[i]);
 
 				if (current == null) {
 					first = newctx;
@@ -148,7 +153,7 @@ public class DefaultPipeline implements Pipeline {
 
 					String className = el.getClassName();
 
-					if (!className.startsWith("org.naw.process.activity.")) {
+					if (!className.startsWith("org.naw.core.activity.")) {
 						list.add(el);
 					}
 				}
@@ -194,12 +199,23 @@ public class DefaultPipeline implements Pipeline {
 		return this;
 	}
 
-	public void destroy() {
+	public void hibernate() {
+		DefaultActivityContext current = first;
+
+		while (current != null) {
+			current.hibernate();
+			current = current.getNext();
+		}
+
+		current = null;
+	}
+
+	public void shutdown() {
 		// destroy activities contexts
 		DefaultActivityContext current = first;
 
 		while (current != null) {
-			current.getActivity().destroy();
+			current.getActivity().shutdown();
 			current = current.getNext();
 		}
 

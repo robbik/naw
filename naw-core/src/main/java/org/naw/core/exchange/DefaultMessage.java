@@ -4,8 +4,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
-import org.naw.core.util.SynchronizedHashMap;
-
 /**
  * Default implementation of {@link Message}
  */
@@ -16,7 +14,7 @@ public class DefaultMessage implements Message {
 	private final Map<String, Map<String, Object>> var;
 
 	public DefaultMessage() {
-		var = new SynchronizedHashMap<String, Map<String, Object>>();
+		var = new HashMap<String, Map<String, Object>>();
 	}
 
 	/*
@@ -24,11 +22,9 @@ public class DefaultMessage implements Message {
 	 * 
 	 * @see org.naw.exchange.Message#declare(java.lang.String)
 	 */
-	public void declare(String variable) {
-		synchronized (var) {
-			if (!var.containsKey(variable)) {
-				var.put(variable, new HashMap<String, Object>());
-			}
+	public synchronized void declare(String variable) {
+		if (!var.containsKey(variable)) {
+			var.put(variable, new HashMap<String, Object>());
 		}
 	}
 
@@ -37,7 +33,7 @@ public class DefaultMessage implements Message {
 	 * 
 	 * @see org.naw.exchange.Message#remove(java.lang.String)
 	 */
-	public Map<String, Object> remove(String variable) {
+	public synchronized Map<String, Object> remove(String variable) {
 		Map<String, Object> value = var.remove(variable);
 		if (value == null) {
 			return null;
@@ -51,7 +47,7 @@ public class DefaultMessage implements Message {
 	 * 
 	 * @see org.naw.exchange.Message#getVariables()
 	 */
-	public Set<String> getVariables() {
+	public synchronized Set<String> getVariables() {
 		return var.keySet();
 	}
 
@@ -62,7 +58,9 @@ public class DefaultMessage implements Message {
 	 */
 	public void set(String variable, Map<String, Object> value) {
 		if (value != null) {
-			var.put(variable, value);
+			synchronized (this) {
+				var.put(variable, value);
+			}
 		}
 	}
 
@@ -71,7 +69,7 @@ public class DefaultMessage implements Message {
 	 * 
 	 * @see org.naw.exchange.Message#get(java.lang.String)
 	 */
-	public Map<String, Object> get(String variable) {
+	public synchronized Map<String, Object> get(String variable) {
 		Map<String, Object> value = var.get(variable);
 		if (value == null) {
 			return null;
@@ -81,7 +79,7 @@ public class DefaultMessage implements Message {
 	}
 
 	@Override
-	public String toString() {
+	public synchronized String toString() {
 		return super.toString() + " [vars=" + var + "]";
 	}
 }

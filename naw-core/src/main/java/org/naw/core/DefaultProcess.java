@@ -9,8 +9,10 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -39,7 +41,7 @@ public class DefaultProcess implements Process {
 	private final String id;
 
 	private transient ProcessContext ctx;
-	
+
 	private String ctxName;
 
 	private final Map<String, Object> attributes;
@@ -94,9 +96,13 @@ public class DefaultProcess implements Process {
 	public synchronized ProcessContext getContext() {
 		return ctx;
 	}
-	
+
 	public synchronized String getContextName() {
 		return ctxName;
+	}
+
+	public void setContextName(String contextName) {
+		ctxName = contextName;
 	}
 
 	public synchronized void setAttribute(String name, Object value) {
@@ -121,6 +127,10 @@ public class DefaultProcess implements Process {
 		}
 
 		return (T) v;
+	}
+
+	public synchronized Map<String, Object> getAttributes() {
+		return attributes;
 	}
 
 	public synchronized Message getMessage() {
@@ -180,9 +190,50 @@ public class DefaultProcess implements Process {
 		list.clear();
 	}
 
+	public synchronized List<Timeout> getTimeouts() {
+		List<Timeout> timeouts = new ArrayList<Timeout>();
+		Set<Timeout> dupcheck = new HashSet<Timeout>();
+
+		for (List<Timeout> list : timeoutMap.values()) {
+			for (int i = 0, len = list.size(); i < len; ++i) {
+				Timeout to = list.get(i);
+
+				if (!dupcheck.contains(to)) {
+					dupcheck.add(to);
+					timeouts.add(to);
+				}
+			}
+		}
+
+		dupcheck.clear();
+		dupcheck = null;
+
+		return timeouts;
+	}
+
+	public synchronized boolean compare(ProcessState state, Activity activity) {
+		return ObjectUtils.equals(this.state, state)
+				&& ObjectUtils.equals(this.activity, activity);
+	}
+
+	public synchronized void noFireEventUpdate(ProcessState state,
+			Activity activity) {
+		if (destroyed) {
+			throw new IllegalStateException("process already destroyed");
+		}
+
+		this.state = state;
+		this.activity = activity;
+	}
+
 	public synchronized void update(ProcessState state, Activity activity) {
 		if (destroyed) {
 			throw new IllegalStateException("process already destroyed");
+		}
+
+		if ((this.state == state)
+				&& ObjectUtils.equals(this.activity, activity)) {
+			return;
 		}
 
 		this.state = state;
@@ -196,6 +247,10 @@ public class DefaultProcess implements Process {
 	public synchronized void update(ProcessState state) {
 		if (destroyed) {
 			throw new IllegalStateException("process already destroyed");
+		}
+
+		if (this.state == state) {
+			return;
 		}
 
 		this.state = state;
@@ -212,10 +267,12 @@ public class DefaultProcess implements Process {
 			throw new IllegalStateException("process already destroyed");
 		}
 
-		boolean ok = ObjectUtils.equals(this.state, expectedState)
+		boolean ok = (this.state == expectedState)
 				&& ObjectUtils.equals(this.activity, expectedActivity);
 
-		if (ok) {
+		if (ok
+				&& ((this.state != newState) || !ObjectUtils.equals(
+						this.activity, newActivity))) {
 			this.state = newState;
 			this.activity = newActivity;
 
@@ -236,7 +293,7 @@ public class DefaultProcess implements Process {
 		boolean ok = ObjectUtils.equals(this.state, expectedState)
 				&& ObjectUtils.equals(this.activity, expectedActivity);
 
-		if (ok) {
+		if (ok && (this.state != newState)) {
 			this.state = newState;
 
 			if (state != TERMINATED) {
@@ -292,23 +349,16 @@ public class DefaultProcess implements Process {
 				// terminate the process
 				ctx.terminate(id);
 
-				throw new RuntimeException("process " + id
-						+ " is terminated in activation process");
+				return;
 			}
 
 			break;
 		case SLEEP:
 			break; // do nothing
-		case ON:
-			break; // FIXME do nothing?
 		case AFTER:
+		case HIBERNATED:
 			// re-execute next activity
 			actx.execute(this);
-
-			if (state == TERMINATED) {
-				throw new RuntimeException("process " + id
-						+ " is terminated in activation process");
-			}
 			break;
 		case ERROR:
 			// rerun compensation handler
@@ -317,11 +367,14 @@ public class DefaultProcess implements Process {
 			// terminate this process
 			ctx.terminate(id);
 
-			throw new RuntimeException("process " + id
-					+ " is terminated in activation process");
+			return;
 		case TERMINATED:
 			throw new IllegalArgumentException("process " + id
 					+ " is already terminated");
+		}
+
+		if (state == TERMINATED) {
+			return;
 		}
 
 		Selectors.fireProcessCreated(ctx, this);
@@ -415,6 +468,13 @@ public class DefaultProcess implements Process {
 			throws ClassNotFoundException, IOException {
 		in.defaultReadObject();
 
+		String ctxName = in.readUTF();
+		if (ctxName.length() == 0) {
+			this.ctxName = null;
+		} else {
+			this.ctxName = ctxName;
+		}
+
 		state = ProcessState.valueOf(in.readUnsignedByte());
 
 		String activityName = in.readUTF();
@@ -433,14 +493,18 @@ public class DefaultProcess implements Process {
 		timeoutMap = new HashMap<String, List<Timeout>>();
 
 		for (int i = 0, size = in.readInt(); i < size; ++i) {
-			String key = in.readUTF();
-			List<Timeout> value = new ArrayList<Timeout>();
+			Timeout to = (Timeout) in.readObject();
+			String key = to.getActivityName();
 
-			for (int j = 0, len = in.readInt(); j < len; ++j) {
-				value.add((Timeout) in.readObject());
+			List<Timeout> value = timeoutMap.get(key);
+			if (value == null) {
+				value = new ArrayList<Timeout>();
+				timeoutMap.put(key, value);
 			}
 
-			timeoutMap.put(key, value);
+			if (!value.contains(to)) {
+				value.add(to);
+			}
 		}
 
 		activated = false;
@@ -451,6 +515,12 @@ public class DefaultProcess implements Process {
 			throws IOException {
 		out.defaultWriteObject();
 
+		if (ctxName == null) {
+			out.writeUTF("");
+		} else {
+			out.writeUTF(ctxName);
+		}
+
 		out.writeByte(state.codeValue());
 
 		if (activity == null) {
@@ -459,21 +529,13 @@ public class DefaultProcess implements Process {
 			out.writeUTF(activity.getName());
 		}
 
-		out.writeInt(timeoutMap.size());
+		List<Timeout> timeouts = getTimeouts();
+		int size = timeouts.size();
 
-		for (Map.Entry<String, List<Timeout>> e : timeoutMap.entrySet()) {
-			List<Timeout> list = e.getValue();
+		out.writeInt(size);
 
-			if (list != null) {
-				out.writeUTF(e.getKey());
-
-				out.writeInt(list.size());
-				for (int i = 0, len = list.size(); i < len; ++i) {
-					Timeout to = list.get(i);
-
-					out.writeObject(InactiveTimeout.copyFrom(to));
-				}
-			}
+		for (int i = 0; i < size; ++i) {
+			out.writeObject(InactiveTimeout.copyFrom(timeouts.get(i)));
 		}
 	}
 }

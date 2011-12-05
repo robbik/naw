@@ -2,6 +2,7 @@ package org.naw.core.pipeline;
 
 import org.naw.core.Process;
 import org.naw.core.ProcessContext;
+import org.naw.core.activity.Activity;
 import org.naw.core.compensation.CompensationHandler;
 
 public interface Pipeline {
@@ -11,6 +12,8 @@ public interface Pipeline {
 	Sink getSink();
 
 	Pipeline getParent();
+	
+	Activity getFirstActivity();
 
 	Pipeline init() throws Exception;
 
@@ -22,5 +25,7 @@ public interface Pipeline {
 
 	Pipeline execute(Process process);
 
-	void destroy();
+	void hibernate();
+
+	void shutdown();
 }

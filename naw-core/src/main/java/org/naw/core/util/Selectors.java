@@ -1,6 +1,6 @@
 package org.naw.core.util;
 
-import static org.naw.core.listener.LifeCycleListener.Category.PROCESS_CONTEXT_DESTROYED;
+import static org.naw.core.listener.LifeCycleListener.Category.PROCESS_CONTEXT_SHUTDOWN;
 import static org.naw.core.listener.LifeCycleListener.Category.PROCESS_CONTEXT_INITIALIZED;
 import static org.naw.core.listener.LifeCycleListener.Category.PROCESS_CREATED;
 import static org.naw.core.listener.LifeCycleListener.Category.PROCESS_STATE_CHANGE;
@@ -72,16 +72,16 @@ public abstract class Selectors {
 		}
 	}
 
-	public static void fireProcessContextDestroyed(ProcessContext ctx) {
+	public static void fireProcessContextShutdown(ProcessContext ctx) {
 		Selector<LifeCycleListener> selector = ctx.getSelector();
 
 		List<LifeCycleListener> list = selector
-				.select(PROCESS_CONTEXT_DESTROYED);
+				.select(PROCESS_CONTEXT_SHUTDOWN);
 
 		if (list != null) {
 			synchronized (list) {
 				for (int i = 0, len = list.size(); i < len; ++i) {
-					list.get(i).processContextDestroyed(ctx);
+					list.get(i).processContextShutdown(ctx);
 				}
 			}
 		}

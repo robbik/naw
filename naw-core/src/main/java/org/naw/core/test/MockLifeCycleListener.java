@@ -267,7 +267,7 @@ public class MockLifeCycleListener extends SimpleLifeCycleListener {
 	}
 
 	@Override
-	public void processContextDestroyed(ProcessContext ctx) {
+	public void processContextShutdown(ProcessContext ctx) {
 		synchronized (monitor) {
 			if (log.isTraceEnabled()) {
 				log.trace("process context " + ctx.getName() + " destroyed");

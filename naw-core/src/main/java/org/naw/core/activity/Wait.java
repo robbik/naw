@@ -1,9 +1,13 @@
 package org.naw.core.activity;
 
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static org.naw.core.ProcessState.AFTER;
+import static org.naw.core.ProcessState.BEFORE;
+import static org.naw.core.ProcessState.SLEEP;
+
 import java.util.concurrent.TimeUnit;
 
 import org.naw.core.Process;
-import org.naw.core.ProcessState;
 import org.naw.core.util.Timeout;
 import org.naw.core.util.Timer;
 import org.naw.core.util.TimerTask;
@@ -35,7 +39,7 @@ public class Wait extends AbstractActivity implements TimerTask {
 	public void init(ActivityContext ctx) throws Exception {
 		super.init(ctx);
 
-		timer = ctx.getProcessContext().getTimer();
+		timer = procctx.getTimer();
 	}
 
 	public void execute(Process process) throws Exception {
@@ -44,26 +48,35 @@ public class Wait extends AbstractActivity implements TimerTask {
 		if (deadline > 0) {
 			to = timer.newTimeout(this, deadline, process.getId(), name);
 		} else {
-			to = timer.newTimeout(this, duration, TimeUnit.MILLISECONDS, process.getId(), name);
+			to = timer.newTimeout(this, duration, MILLISECONDS,
+					process.getId(), name);
 		}
 
-		if (to != null) {
-			process.registerTimeout(to);
-		}
+		synchronized (process) {
+			if (process.compare(BEFORE, this)) {
+				if (to != null) {
+					process.registerTimeout(to);
+				}
 
-		process.compareAndUpdate(ProcessState.BEFORE, this, ProcessState.SLEEP);
+				process.update(SLEEP);
+			}
+		}
 	}
 
 	public void run(Timeout timeout) throws Exception {
-		Process process = ctx.getProcessContext().findProcess(timeout.getProcessId());
+		Process process = procctx.findProcess(timeout.getProcessId());
 		if (process == null) {
 			return;
 		}
 
-		boolean updated = process.compareAndUpdate(ProcessState.BEFORE, this, ProcessState.ON);
+		boolean updated = process.compareAndUpdate(BEFORE, this, AFTER);
 
 		if (!updated) {
-			updated = process.compareAndUpdate(ProcessState.SLEEP, this, ProcessState.ON);
+			updated = process.compareAndUpdate(SLEEP, this, AFTER);
+
+			if (updated) {
+				process.unregisterTimeout(timeout);
+			}
 		}
 
 		if (updated) {
@@ -72,8 +85,8 @@ public class Wait extends AbstractActivity implements TimerTask {
 	}
 
 	@Override
-	public void destroy() {
-		super.destroy();
+	public void shutdown() {
+		super.shutdown();
 
 		timer = null;
 	}

@@ -114,7 +114,7 @@ public class ReceiveTest {
 		assertTrue(((MockPartnerLink) pipeline.getProcessContext()
 				.findPartnerLink("xx")).subscribed("xx", act));
 
-		pipeline.destroy();
+		pipeline.shutdown();
 	}
 
 	@Test(expected = IllegalArgumentException.class)
@@ -142,7 +142,7 @@ public class ReceiveTest {
 		assertEquals(0, process.getMessage().get("data").size());
 		assertEquals(1, process.getMessage().getVariables().size());
 
-		pipeline.destroy();
+		pipeline.shutdown();
 	}
 
 	@Test
@@ -173,7 +173,7 @@ public class ReceiveTest {
 
 		assertNull(sourceref.get());
 
-		pipeline.destroy();
+		pipeline.shutdown();
 	}
 
 	@Test
@@ -204,7 +204,7 @@ public class ReceiveTest {
 
 		assertEquals("testUnit", sourceref.get());
 
-		pipeline.destroy();
+		pipeline.shutdown();
 	}
 
 	@Test
@@ -226,7 +226,7 @@ public class ReceiveTest {
 
 		assertFalse(latch.await(5, TimeUnit.SECONDS));
 
-		pipeline.destroy();
+		pipeline.shutdown();
 	}
 
 	@Test
@@ -270,7 +270,7 @@ public class ReceiveTest {
 
 		assertNull(sourceref.get());
 
-		pipeline.destroy();
+		pipeline.shutdown();
 	}
 
 	@Test
@@ -314,7 +314,7 @@ public class ReceiveTest {
 
 		assertEquals("testUnit", sourceref.get());
 
-		pipeline.destroy();
+		pipeline.shutdown();
 	}
 
 	@Test
@@ -350,7 +350,7 @@ public class ReceiveTest {
 		assertNull(msgref.get());
 		assertNull(sourceref.get());
 
-		pipeline.destroy();
+		pipeline.shutdown();
 	}
 
 	@Test
@@ -386,7 +386,7 @@ public class ReceiveTest {
 		assertNull(msgref.get());
 		assertNull(sourceref.get());
 
-		pipeline.destroy();
+		pipeline.shutdown();
 	}
 
 	@Test
@@ -429,13 +429,13 @@ public class ReceiveTest {
 
 		assertNotNull(errorRef.get());
 
-		pipeline.destroy();
+		pipeline.shutdown();
 	}
 
 	@Test(expected = NullPointerException.class)
 	public void testDestroyBeforeInit() throws Exception {
 		Receive act = newActivity(true, true);
-		act.destroy();
+		act.shutdown();
 	}
 
 	@Test
@@ -446,7 +446,7 @@ public class ReceiveTest {
 		ProcessContext procctx = pipeline.getProcessContext();
 
 		pipeline.init();
-		pipeline.destroy();
+		pipeline.shutdown();
 
 		assertFalse(((MockPartnerLink) procctx.findPartnerLink("xx"))
 				.subscribed("xx", act));
@@ -459,8 +459,8 @@ public class ReceiveTest {
 		DefaultPipeline pipeline = newPipeline(act);
 
 		pipeline.init();
-		pipeline.destroy();
+		pipeline.shutdown();
 
-		act.destroy();
+		act.shutdown();
 	}
 }

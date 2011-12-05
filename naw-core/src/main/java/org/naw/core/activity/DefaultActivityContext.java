@@ -3,75 +3,111 @@ package org.naw.core.activity;
 import static org.naw.core.ProcessState.AFTER;
 import static org.naw.core.ProcessState.BEFORE;
 import static org.naw.core.ProcessState.ERROR;
+import static org.naw.core.ProcessState.HIBERNATED;
+
+import java.util.concurrent.Executor;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.naw.core.Process;
 import org.naw.core.ProcessContext;
 import org.naw.core.pipeline.Pipeline;
 import org.naw.core.pipeline.Sink;
+import org.naw.core.util.DirectExecutor;
+import org.naw.core.util.internal.ObjectUtils;
 
+/**
+ * Default implementation of {@link ActivityContext}
+ */
 public class DefaultActivityContext implements ActivityContext {
 
-    private final Pipeline pipeline;
+	private final Pipeline pipeline;
 
-    private final Activity activity;
+	private final Executor executor;
 
-    private DefaultActivityContext next;
+	private final Activity activity;
 
-    public DefaultActivityContext(Pipeline pipeline, Activity activity) {
-        this.pipeline = pipeline;
-        this.activity = activity;
+	private DefaultActivityContext next;
 
-        next = null;
-    }
+	private final AtomicBoolean hibernate;
 
-    public void setNext(DefaultActivityContext next) {
-        this.next = next;
-    }
+	public DefaultActivityContext(Pipeline pipeline, Activity activity) {
+		this.pipeline = pipeline;
+		executor = ObjectUtils.coalesce(pipeline.getProcessContext()
+				.getExecutor(), DirectExecutor.INSTANCE);
 
-    public DefaultActivityContext getNext() {
-        return next;
-    }
+		this.activity = activity;
 
-    public void unsetNext() {
-        next = null;
-    }
+		next = null;
+		hibernate = new AtomicBoolean(false);
+	}
 
-    public Pipeline getPipeline() {
-        return pipeline;
-    }
+	public void setNext(DefaultActivityContext next) {
+		this.next = next;
+	}
 
-    public ProcessContext getProcessContext() {
-        return pipeline.getProcessContext();
-    }
+	public DefaultActivityContext getNext() {
+		return next;
+	}
 
-    public Activity getActivity() {
-        return activity;
-    }
+	public void unsetNext() {
+		next = null;
+	}
 
-    public void execute(Process process) {
-        process.update(AFTER, activity);
+	public Pipeline getPipeline() {
+		return pipeline;
+	}
 
-        if (next == null) {
-            Sink sink = pipeline.getSink();
+	public ProcessContext getProcessContext() {
+		return pipeline.getProcessContext();
+	}
 
-            if (sink != null) {
-                sink.sunk(pipeline, process);
-            }
-        } else {
-            Activity nextActivity = next.activity;
+	public Activity getActivity() {
+		return activity;
+	}
 
-            process.update(BEFORE, nextActivity);
-            try {
-                nextActivity.execute(process);
-            } catch (Throwable t) {
-                process.update(ERROR, nextActivity);
+	public void execute(final Process process) {
+		process.update(AFTER, activity);
 
-                // run compensation handlers
-                pipeline.exceptionThrown(process, t, false);
+		if (next == null) {
+			Sink sink = pipeline.getSink();
 
-                // terminate the process
-                getProcessContext().terminate(process.getId());
-            }
-        }
-    }
+			if (sink != null) {
+				sink.sunk(pipeline, process);
+			}
+		} else if (hibernate.get()) {
+			process.update(HIBERNATED, activity);
+		} else {
+			executor.execute(new NextRunnable(process));
+		}
+	}
+
+	public void hibernate() {
+		hibernate.set(true);
+	}
+
+	private class NextRunnable implements Runnable {
+
+		private final Process process;
+
+		public NextRunnable(Process process) {
+			this.process = process;
+		}
+
+		public void run() {
+			Activity nextActivity = next.activity;
+
+			process.update(BEFORE, nextActivity);
+			try {
+				nextActivity.execute(process);
+			} catch (Throwable t) {
+				process.update(ERROR, nextActivity);
+
+				// run compensation handlers
+				pipeline.exceptionThrown(process, t, false);
+
+				// terminate the process
+				getProcessContext().terminate(process.getId());
+			}
+		}
+	}
 }

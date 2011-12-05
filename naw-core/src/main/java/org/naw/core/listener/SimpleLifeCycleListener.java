@@ -21,7 +21,7 @@ public class SimpleLifeCycleListener implements LifeCycleListener {
 		// do nothing
 	}
 
-	public void processContextDestroyed(ProcessContext ctx) {
+	public void processContextShutdown(ProcessContext ctx) {
 		// do nothing
 	}
 }

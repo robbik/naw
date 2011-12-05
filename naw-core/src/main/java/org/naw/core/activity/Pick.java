@@ -19,12 +19,12 @@ public class Pick extends AbstractActivity {
 
 	private List<PickOnMessage> onMessages;
 
-	private final AtomicBoolean destroyed;
+	private final AtomicBoolean shutdown;
 
 	public Pick(String name) {
 		super(name);
 
-		destroyed = new AtomicBoolean(false);
+		shutdown = new AtomicBoolean(false);
 	}
 
 	public void setCreateInstance(boolean createInstance) {
@@ -61,9 +61,11 @@ public class Pick extends AbstractActivity {
 	}
 
 	public void execute(Process process) throws Exception {
-		if (onAlarms != null) {
-			for (int i = onAlarms.size() - 1; i >= 0; --i) {
-				onAlarms.get(i).execute(process);
+		synchronized (process) {
+			if (onAlarms != null) {
+				for (int i = onAlarms.size() - 1; i >= 0; --i) {
+					onAlarms.get(i).execute(process);
+				}
 			}
 		}
 
@@ -84,16 +86,31 @@ public class Pick extends AbstractActivity {
 	}
 
 	@Override
-	public void destroy() {
-		super.destroy();
-		
-		if (!destroyed.compareAndSet(false, true)) {
+	public void hibernate() {
+		if (onMessages != null) {
+			for (int i = onMessages.size() - 1; i >= 0; --i) {
+				onMessages.get(i).hibernate();
+			}
+		}
+
+		if (onAlarms != null) {
+			for (int i = onAlarms.size() - 1; i >= 0; --i) {
+				onAlarms.get(i).hibernate();
+			}
+		}
+	}
+
+	@Override
+	public void shutdown() {
+		if (!shutdown.compareAndSet(false, true)) {
 			return;
 		}
 
+		super.shutdown();
+
 		if (onMessages != null) {
 			for (int i = onMessages.size() - 1; i >= 0; --i) {
-				onMessages.get(i).destroy();
+				onMessages.get(i).shutdown();
 			}
 
 			onMessages.clear();
@@ -102,7 +119,7 @@ public class Pick extends AbstractActivity {
 
 		if (onAlarms != null) {
 			for (int i = onAlarms.size() - 1; i >= 0; --i) {
-				onAlarms.get(i).destroy();
+				onAlarms.get(i).shutdown();
 			}
 
 			onAlarms.clear();

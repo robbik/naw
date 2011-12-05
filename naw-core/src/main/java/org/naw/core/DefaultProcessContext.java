@@ -6,11 +6,13 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.Executor;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.naw.core.activity.Activity;
-import org.naw.core.exchange.Message;
 import org.naw.core.listener.LifeCycleListener;
+import org.naw.core.logging.Logger;
+import org.naw.core.logging.LoggerFactory;
 import org.naw.core.partnerLink.PartnerLink;
 import org.naw.core.pipeline.DefaultPipeline;
 import org.naw.core.pipeline.Pipeline;
@@ -21,6 +23,7 @@ import org.naw.core.util.Selectors;
 import org.naw.core.util.SynchronizedHashMap;
 import org.naw.core.util.Timer;
 import org.naw.core.util.internal.ObjectUtils;
+import org.naw.core.util.internal.ProcessUtils;
 
 /**
  * This class is default implementation of {@link org.naw.core.ProcessContext}
@@ -29,6 +32,21 @@ import org.naw.core.util.internal.ObjectUtils;
  * 
  */
 public class DefaultProcessContext implements ProcessContext, Sink {
+
+	private static final Logger log = LoggerFactory
+			.getLogger(DefaultProcessContext.class);
+
+	private static final int STATE_UNINITIALIZED = 0;
+
+	private static final int STATE_RUNNING = 0;
+
+	private static final int STATE_HIBERNATING = 1;
+
+	private static final int STATE_SHUTTING_DOWN = 2;
+
+	private static final int STATE_HIBERNATED = 3;
+
+	private static final int STATE_SHUTDOWN = 4;
 
 	private final String name;
 
@@ -40,13 +58,15 @@ public class DefaultProcessContext implements ProcessContext, Sink {
 
 	private Timer timer;
 
+	private Executor executor;
+
 	private DefaultPipeline pipeline;
 
 	private ProcessFactory processFactory;
 
 	private final Map<String, Process> instances;
 
-	private final AtomicBoolean destroyed;
+	private final AtomicInteger state;
 
 	private final Selector<LifeCycleListener> selector;
 
@@ -64,12 +84,14 @@ public class DefaultProcessContext implements ProcessContext, Sink {
 
 		storage = null;
 		timer = null;
+		executor = null;
+
 		pipeline = null;
 		processFactory = DefaultProcessFactory.INSTANCE;
 
 		instances = new SynchronizedHashMap<String, Process>();
 
-		destroyed = new AtomicBoolean(false);
+		state = new AtomicInteger(STATE_UNINITIALIZED);
 
 		selector = new Selector<LifeCycleListener>();
 	}
@@ -115,6 +137,19 @@ public class DefaultProcessContext implements ProcessContext, Sink {
 		return timer;
 	}
 
+	public void setExecutor(Executor executor) {
+		this.executor = executor;
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see org.naw.core.ProcessContext#getExecutor()
+	 */
+	public Executor getExecutor() {
+		return executor;
+	}
+
 	public Pipeline getPipeline() {
 		return pipeline;
 	}
@@ -128,8 +163,8 @@ public class DefaultProcessContext implements ProcessContext, Sink {
 	}
 
 	public void addPartnerLink(String name, PartnerLink link) {
-		if (destroyed.get()) {
-			throw new IllegalStateException("context already destroyed");
+		if (state.get() != STATE_UNINITIALIZED) {
+			throw new IllegalStateException("unexpected state " + state.get());
 		}
 
 		links.put(name, link);
@@ -183,8 +218,8 @@ public class DefaultProcessContext implements ProcessContext, Sink {
 	 * @see org.naw.process.ProcessContext#init()
 	 */
 	public void init() throws Exception {
-		if (destroyed.get()) {
-			throw new IllegalStateException("context already destroyed");
+		if (!state.compareAndSet(STATE_UNINITIALIZED, STATE_RUNNING)) {
+			throw new IllegalStateException();
 		}
 
 		pipeline.init();
@@ -198,28 +233,11 @@ public class DefaultProcessContext implements ProcessContext, Sink {
 	 * @see org.naw.process.ProcessContext#newProcess()
 	 */
 	public Process newProcess() {
-		if (destroyed.get()) {
-			throw new IllegalStateException("context already destroyed");
+		if (state.get() != STATE_RUNNING) {
+			return null; // workflow not in running state
 		}
 
 		Process process = processFactory.newProcess();
-		process.init(this);
-
-		instances.put(process.getId(), process);
-		return process;
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see org.naw.process.ProcessContext#newProcess(org.naw.exchange.Message)
-	 */
-	public Process newProcess(Message message) {
-		if (destroyed.get()) {
-			throw new IllegalStateException("context already destroyed");
-		}
-
-		Process process = processFactory.newProcess(message);
 		process.init(this);
 
 		instances.put(process.getId(), process);
@@ -250,6 +268,10 @@ public class DefaultProcessContext implements ProcessContext, Sink {
 	 * @see org.naw.process.ProcessContext#activate(org.naw.process.Process)
 	 */
 	public void activate(Process process) throws Exception {
+		if (state.get() != STATE_RUNNING) {
+			throw new IllegalStateException("workflow not in running state");
+		}
+
 		String pid = process.getId();
 
 		if (process.getState() == TERMINATED) {
@@ -263,7 +285,11 @@ public class DefaultProcessContext implements ProcessContext, Sink {
 
 			process.init(this);
 
-			instances.put(pid, process);
+			synchronized (process) {
+				if (process.getState() != TERMINATED) {
+					instances.put(pid, process);
+				}
+			}
 		}
 	}
 
@@ -273,11 +299,8 @@ public class DefaultProcessContext implements ProcessContext, Sink {
 	 * @see org.naw.process.ProcessContext#terminate(java.lang.String)
 	 */
 	public void terminate(String pid) {
-		if (destroyed.get()) {
-			throw new IllegalStateException("context already destroyed");
-		}
-
 		Process process = instances.remove(pid);
+
 		if (process != null) {
 			process.update(ProcessState.TERMINATED, null);
 			process.destroy();
@@ -298,13 +321,60 @@ public class DefaultProcessContext implements ProcessContext, Sink {
 	/*
 	 * (non-Javadoc)
 	 * 
-	 * @see org.naw.process.ProcessContext#destroy()
+	 * @see org.naw.process.ProcessContext#shutdown()
 	 */
-	public void destroy() {
-		if (!destroyed.compareAndSet(false, true)) {
+	public void shutdown() {
+		if (!state.compareAndSet(STATE_RUNNING, STATE_SHUTTING_DOWN)) {
 			return;
 		}
 
+		// waiting for running processes
+		int running = 0, last = 0;
+
+		do {
+			synchronized (instances) {
+				running = ProcessUtils.countRunning(instances.values());
+			}
+
+			if (running > 0) {
+				if (running != last) {
+					log.info("waiting for " + running
+							+ " running processes to shutdown");
+
+					last = running;
+				}
+
+				try {
+					Thread.sleep(500);
+				} catch (InterruptedException ex) {
+					break;
+				}
+			}
+		} while (running > 0);
+
+		if (running > 0) {
+			synchronized (instances) {
+				running = ProcessUtils.countRunning(instances.values());
+			}
+
+			if (running > 0) {
+				log.info(running
+						+ " running processes detected, forcing shutdown");
+			}
+		}
+
+		destroy();
+	}
+
+	public void shutdownNow() {
+		if (!state.compareAndSet(STATE_RUNNING, STATE_SHUTTING_DOWN)) {
+			return;
+		}
+
+		destroy();
+	}
+
+	private void destroy() {
 		// destroy instances
 		synchronized (instances) {
 			for (Process p : instances.values()) {
@@ -314,8 +384,8 @@ public class DefaultProcessContext implements ProcessContext, Sink {
 			instances.clear();
 		}
 
-		// destroy pipeline
-		pipeline.destroy();
+		// shutdown pipeline
+		pipeline.shutdown();
 
 		// unlink partner links
 		links.clear();
@@ -325,6 +395,94 @@ public class DefaultProcessContext implements ProcessContext, Sink {
 		storage = null;
 		timer = null;
 
-		Selectors.fireProcessContextDestroyed(this);
+		state.set(STATE_SHUTDOWN);
+
+		Selectors.fireProcessContextShutdown(this);
+	}
+
+	public void hibernate() {
+		if (!state.compareAndSet(STATE_RUNNING, STATE_HIBERNATING)) {
+			return;
+		}
+
+		// hibernate pipeline
+		pipeline.hibernate();
+
+		// wait for running processes
+		int running, sleeping, last;
+
+		last = 0;
+		do {
+			synchronized (instances) {
+				running = ProcessUtils.countRunning(instances.values());
+			}
+
+			if (running > 0) {
+				if (running != last) {
+					log.info("wait for " + running
+							+ " running processes to be hibernated");
+
+					last = running;
+				}
+
+				try {
+					Thread.sleep(500);
+				} catch (InterruptedException ex) {
+					break;
+				}
+			}
+		} while (running > 0);
+
+		// wait at most 6 seconds for sleeping processes
+		last = 0;
+		sleeping = 0;
+
+		for (int i = 0; i < 12; ++i) {
+			synchronized (instances) {
+				sleeping = ProcessUtils.countSleeping(instances.values());
+			}
+
+			if (sleeping == 0) {
+				break;
+			}
+
+			if (sleeping != last) {
+				log.info("wait for " + sleeping
+						+ " sleeping processes to be hibernated, " + (11 - i)
+						+ " waits left");
+
+				last = sleeping;
+			}
+
+			try {
+				Thread.sleep(500);
+			} catch (InterruptedException ex) {
+				break;
+			}
+		}
+
+		if (running > 0) {
+			synchronized (instances) {
+				running = ProcessUtils.countRunning(instances.values());
+			}
+
+			if (running > 0) {
+				log.info(running
+						+ " running processes detected, forcing hibernate");
+			}
+		}
+
+		if (sleeping > 0) {
+			synchronized (instances) {
+				sleeping = ProcessUtils.countSleeping(instances.values());
+			}
+
+			if (sleeping > 0) {
+				log.info(running
+						+ " sleeping processes detected, forcing hibernate");
+			}
+		}
+
+		state.set(STATE_HIBERNATED);
 	}
 }

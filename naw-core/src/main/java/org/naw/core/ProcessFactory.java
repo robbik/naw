@@ -1,10 +1,14 @@
 package org.naw.core;
 
-import org.naw.core.exchange.Message;
-
+/**
+ * Factory design-pattern to create a new process
+ */
 public interface ProcessFactory {
 
+	/**
+	 * create new un-initialized process with default parameters
+	 * 
+	 * @return new process
+	 */
 	Process newProcess();
-
-	Process newProcess(Message msg);
 }

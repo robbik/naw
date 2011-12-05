@@ -1,7 +1,7 @@
 package org.naw.core.activity;
 
+import static org.naw.core.ProcessState.AFTER;
 import static org.naw.core.ProcessState.BEFORE;
-import static org.naw.core.ProcessState.ON;
 import static org.naw.core.ProcessState.SLEEP;
 
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -28,12 +28,12 @@ public class Invoke extends AbstractActivity implements PartnerLinkListener {
 
 	private PartnerLink link;
 
-	private final AtomicBoolean destroyed;
+	private final AtomicBoolean shutdown;
 
 	public Invoke(String name) {
 		super(name);
 
-		destroyed = new AtomicBoolean(false);
+		shutdown = new AtomicBoolean(false);
 	}
 
 	public void setPartnerLink(String partnerLink) {
@@ -62,14 +62,15 @@ public class Invoke extends AbstractActivity implements PartnerLinkListener {
 
 		link = procctx.findPartnerLink(partnerLink);
 		if (link == null) {
-			throw new IllegalArgumentException("partner link " + partnerLink + " cannot be found");
+			throw new IllegalArgumentException("partner link " + partnerLink
+					+ " cannot be found");
 		}
 
 		link.subscribe(operation + "_callback", this);
 	}
 
 	public void messageReceived(MessageEvent e) {
-		if (oneWay || destroyed.get()) {
+		if (oneWay || shutdown.get()) {
 			return;
 		}
 
@@ -77,22 +78,27 @@ public class Invoke extends AbstractActivity implements PartnerLinkListener {
 		if (process == null) {
 			return;
 		}
-		
-		boolean updated = process.compareAndUpdate(BEFORE, this, ON);
-		
-		if (!updated) {
-			updated = process.compareAndUpdate(SLEEP, this, ON);
-		}
-		
-		if (updated) {
-			process.getMessage().set(responseVar, e.getMessage());
 
+		boolean updated;
+
+		synchronized (process) {
+			updated = process.compare(BEFORE, this)
+					|| process.compare(SLEEP, this);
+
+			if (updated) {
+				process.getMessage().set(responseVar, e.getMessage());
+				process.update(AFTER);
+			}
+		}
+
+		if (updated) {
 			ctx.execute(process);
 		}
 	}
 
 	public void execute(Process process) throws Exception {
-		link.publish(process.getId(), operation, process.getMessage().get(requestVar));
+		link.publish(process.getId(), operation,
+				process.getMessage().get(requestVar));
 
 		if (oneWay) {
 			ctx.execute(process);
@@ -102,12 +108,12 @@ public class Invoke extends AbstractActivity implements PartnerLinkListener {
 	}
 
 	@Override
-	public void destroy() {
-		super.destroy();
-
-		if (!destroyed.compareAndSet(false, true)) {
+	public void shutdown() {
+		if (!shutdown.compareAndSet(false, true)) {
 			return;
 		}
+
+		super.shutdown();
 
 		// unsubscribe from partner link
 		link.unsubscribe(operation + "_callback", this);

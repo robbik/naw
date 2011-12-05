@@ -180,7 +180,7 @@ public class PerformanceTest3 {
 
 		long globalEnd = System.currentTimeMillis();
 
-		processctx.destroy();
+		processctx.shutdown();
 
 		System.out.println();
 		System.out.println();

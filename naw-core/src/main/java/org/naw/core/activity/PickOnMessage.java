@@ -1,7 +1,7 @@
 package org.naw.core.activity;
 
+import static org.naw.core.ProcessState.AFTER;
 import static org.naw.core.ProcessState.BEFORE;
-import static org.naw.core.ProcessState.ON;
 import static org.naw.core.ProcessState.SLEEP;
 
 import java.util.Map;
@@ -44,12 +44,12 @@ public class PickOnMessage implements PartnerLinkListener, Sink {
 
 	private PartnerLink link;
 
-	private final AtomicBoolean destroyed;
+	private final AtomicBoolean shutdown;
 
 	public PickOnMessage(Pick parent) {
 		this.parent = parent;
 
-		destroyed = new AtomicBoolean(false);
+		shutdown = new AtomicBoolean(false);
 	}
 
 	public void setPartnerLink(String partnerLink) {
@@ -98,7 +98,8 @@ public class PickOnMessage implements PartnerLinkListener, Sink {
 
 		link = procctx.findPartnerLink(partnerLink);
 		if (link == null) {
-			throw new IllegalArgumentException("partner link " + partnerLink + " cannot be found");
+			throw new IllegalArgumentException("partner link " + partnerLink
+					+ " cannot be found");
 		}
 
 		link.subscribe(operation, this);
@@ -112,34 +113,40 @@ public class PickOnMessage implements PartnerLinkListener, Sink {
 		if (createInstance) {
 			process = procctx.newProcess();
 		} else {
-			process = procctx.findProcess((String) message.get(correlationAttribute));
+			process = procctx.findProcess((String) message
+					.get(correlationAttribute));
 		}
 
 		if (process == null) {
 			return;
 		}
-		
+
 		boolean ok = createInstance;
-		
-		if (ok) {
-			process.update(ON, parent);
-		} else {
-			ok = process.compareAndUpdate(BEFORE, parent, ON);
-			
+
+		synchronized (process) {
 			if (!ok) {
-				ok = process.compareAndUpdate(SLEEP, parent, ON);
+				ok = process.compare(BEFORE, parent)
+						|| process.compare(SLEEP, parent);
+			}
+
+			if (ok) {
+				parent.afterExecute(process);
+
+				if (!oneWay) {
+					process.setAttribute(attrName, e.getSource());
+				}
+
+				process.getMessage().set(variable, message);
+
+				if (pipeline == null) {
+					process.update(AFTER, parent);
+				} else {
+					process.update(BEFORE, pipeline.getFirstActivity());
+				}
 			}
 		}
 
 		if (ok) {
-			parent.afterExecute(process);
-
-			if (!oneWay) {
-				process.setAttribute(attrName, e.getSource());
-			}
-
-			process.getMessage().set(variable, message);
-
 			if (pipeline == null) {
 				ctx.execute(process);
 			} else {
@@ -152,17 +159,24 @@ public class PickOnMessage implements PartnerLinkListener, Sink {
 		ctx.execute(process);
 	}
 
-	public void destroy() {
-		if (!destroyed.compareAndSet(false, true)) {
+	public void hibernate() {
+		// hibernate pipeline
+		if (pipeline != null) {
+			pipeline.hibernate();
+		}
+	}
+
+	public void shutdown() {
+		if (!shutdown.compareAndSet(false, true)) {
 			return;
 		}
 
 		// unlink from partnerLink
 		link.unsubscribe(operation, this);
 
-		// destroy pipeline
+		// shutdown pipeline
 		if (pipeline != null) {
-			pipeline.destroy();
+			pipeline.shutdown();
 		}
 
 		// gc works

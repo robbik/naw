@@ -33,7 +33,10 @@ public class AutoSaveProcess extends SimpleLifeCycleListener {
 
 		switch (strategy) {
 		case ON_SLEEP:
-			if (process.getState() == ProcessState.SLEEP) {
+			ProcessState state = process.getState();
+
+			if ((state == ProcessState.SLEEP)
+					|| (state == ProcessState.HIBERNATED)) {
 				storage.persist(process);
 			}
 			break;

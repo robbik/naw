@@ -65,19 +65,19 @@ public class ScriptTest {
 		assertEquals("OK", process.getMessage().get("data").get("response"));
 		assertEquals(1, process.getMessage().getVariables().size());
 
-		p.destroy();
+		p.shutdown();
 	}
 
 	@Test
 	public void testDestroyBeforeInit() throws Exception {
 		Script act = new Script("a");
-		act.destroy();
+		act.shutdown();
 	}
 
 	@Test
 	public void testDestroyAfterInit() throws Exception {
 		Script act = new Script("a");
-		newPipeline(act).init().destroy();
+		newPipeline(act).init().shutdown();
 	}
 
 	@Test
@@ -85,7 +85,7 @@ public class ScriptTest {
 		Script act = new Script("a");
 
 		Pipeline p = newPipeline(act).init();
-		p.destroy();
-		p.destroy();
+		p.shutdown();
+		p.shutdown();
 	}
 }

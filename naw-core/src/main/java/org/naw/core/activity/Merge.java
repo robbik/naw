@@ -28,10 +28,10 @@ public class Merge extends AbstractActivity {
 
 	public void execute(Process process) throws Exception {
 		Message message = process.getMessage();
-		
+
 		Map<String, Object> fromMap = message.get(fromVariable);
 		Map<String, Object> toMap = message.get(toVariable);
-		
+
 		if (fromMap != null) {
 			if (toMap == null) {
 				message.set(toVariable, fromMap);

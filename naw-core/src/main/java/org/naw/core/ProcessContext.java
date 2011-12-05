@@ -1,9 +1,9 @@
 package org.naw.core;
 
 import java.util.Collection;
+import java.util.concurrent.Executor;
 
 import org.naw.core.activity.Activity;
-import org.naw.core.exchange.Message;
 import org.naw.core.listener.LifeCycleListener;
 import org.naw.core.partnerLink.PartnerLink;
 import org.naw.core.pipeline.Pipeline;
@@ -12,10 +12,8 @@ import org.naw.core.util.Selector;
 import org.naw.core.util.Timer;
 
 /**
- * represent process context or a workflow (not the instance)
- * 
- * @author robbik
- * 
+ * Represent process context or a workflow (not the instance). The
+ * implementation of this class must ensure that the class is THREAD-SAFE.
  */
 public interface ProcessContext {
 
@@ -43,10 +41,22 @@ public interface ProcessContext {
 	/**
 	 * get pipeline used to execute this workflow
 	 * 
-	 * @return
+	 * @return pipeline
 	 */
 	Pipeline getPipeline();
 
+	/**
+	 * get shared executor
+	 * 
+	 * @return shared executor
+	 */
+	Executor getExecutor();
+
+	/**
+	 * get selector used to maintain life cycle listener registration
+	 * 
+	 * @return selector
+	 */
 	Selector<LifeCycleListener> getSelector();
 
 	/**
@@ -95,15 +105,6 @@ public interface ProcessContext {
 	Process newProcess();
 
 	/**
-	 * creating new workflow instance and specify its message
-	 * 
-	 * @param message
-	 *            the message
-	 * @return new workflow instance
-	 */
-	Process newProcess(Message message);
-
-	/**
 	 * find workflow instance in this context by its id
 	 * 
 	 * @param pid
@@ -138,7 +139,14 @@ public interface ProcessContext {
 	void terminate(String pid);
 
 	/**
-	 * destroy this workflow
+	 * gracefully shutdown this workflow
 	 */
-	void destroy();
+	void shutdown();
+
+	/**
+	 * force shutdown this workflow
+	 */
+	void shutdownNow();
+
+	void hibernate();
 }

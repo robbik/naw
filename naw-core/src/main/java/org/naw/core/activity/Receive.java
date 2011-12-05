@@ -1,13 +1,13 @@
 package org.naw.core.activity;
 
 import static org.naw.core.ProcessState.BEFORE;
-import static org.naw.core.ProcessState.ON;
 import static org.naw.core.ProcessState.SLEEP;
 
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.naw.core.Process;
+import org.naw.core.ProcessState;
 import org.naw.core.partnerLink.MessageEvent;
 import org.naw.core.partnerLink.PartnerLink;
 import org.naw.core.partnerLink.PartnerLinkListener;
@@ -33,12 +33,12 @@ public class Receive extends AbstractActivity implements PartnerLinkListener {
 
 	private PartnerLink link;
 
-	private final AtomicBoolean destroyed;
+	private final AtomicBoolean shutdown;
 
 	public Receive(String name) {
 		super(name);
 
-		destroyed = new AtomicBoolean(false);
+		shutdown = new AtomicBoolean(false);
 	}
 
 	public void setPartnerLink(String partnerLink) {
@@ -81,7 +81,7 @@ public class Receive extends AbstractActivity implements PartnerLinkListener {
 	}
 
 	public void messageReceived(MessageEvent e) {
-		if (destroyed.get()) {
+		if (shutdown.get()) {
 			return;
 		}
 
@@ -92,7 +92,8 @@ public class Receive extends AbstractActivity implements PartnerLinkListener {
 		if (createInstance) {
 			process = procctx.newProcess();
 		} else {
-			process = procctx.findProcess((String) message.get(correlationAttribute));
+			process = procctx.findProcess((String) message
+					.get(correlationAttribute));
 		}
 
 		if (process == null) {
@@ -101,23 +102,24 @@ public class Receive extends AbstractActivity implements PartnerLinkListener {
 
 		boolean ok = createInstance;
 
-		if (ok) {
-			process.update(ON, this);
-		} else {
-			ok = process.compareAndUpdate(BEFORE, this, ON);
-
+		synchronized (process) {
 			if (!ok) {
-				ok = process.compareAndUpdate(SLEEP, this, ON);
+				ok = process.compare(BEFORE, this)
+						|| process.compare(SLEEP, this);
+			}
+
+			if (ok) {
+				if (!oneWay) {
+					process.setAttribute(attrName, e.getSource());
+				}
+
+				process.getMessage().set(variable, message);
+
+				process.update(ProcessState.AFTER, this);
 			}
 		}
 
 		if (ok) {
-			if (!oneWay) {
-				process.setAttribute(attrName, e.getSource());
-			}
-
-			process.getMessage().set(variable, message);
-
 			ctx.execute(process);
 		}
 	}
@@ -127,14 +129,14 @@ public class Receive extends AbstractActivity implements PartnerLinkListener {
 	}
 
 	@Override
-	public void destroy() {
-		super.destroy();
-
-		if (!destroyed.compareAndSet(false, true)) {
+	public void shutdown() {
+		if (!shutdown.compareAndSet(false, true)) {
 			return;
 		}
 
-		// unsubscribe from partner link
+		super.shutdown();
+
+		// un-subscribe from partner link
 		link.unsubscribe(operation, this);
 
 		// let gc do its work

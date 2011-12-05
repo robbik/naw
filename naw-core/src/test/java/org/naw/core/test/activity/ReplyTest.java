@@ -66,7 +66,7 @@ public class ReplyTest {
 		DefaultPipeline pipeline = newPipeline(act);
 		pipeline.init();
 
-		pipeline.destroy();
+		pipeline.shutdown();
 	}
 
 	@Test(expected = IllegalArgumentException.class)
@@ -112,7 +112,7 @@ public class ReplyTest {
 		assertEquals(1, ref.get().size());
 		assertEquals("77", ref.get().get("initial"));
 
-		pipeline.destroy();
+		pipeline.shutdown();
 	}
 
 	@Test
@@ -145,23 +145,23 @@ public class ReplyTest {
 
 		assertNull(ref.get());
 
-		pipeline.destroy();
+		pipeline.shutdown();
 	}
 
 	@Test
 	public void testDestroyBeforeInit() throws Exception {
-		newActivity(true, true).destroy();
+		newActivity(true, true).shutdown();
 	}
 
 	@Test
 	public void testDestroyAfterInit() throws Exception {
-		newPipeline(newActivity(true, true)).init().destroy();
+		newPipeline(newActivity(true, true)).init().shutdown();
 	}
 
 	@Test
 	public void testDoubleDestroyAfterInit() throws Exception {
 		Pipeline p = newPipeline(newActivity(true, true)).init();
-		p.destroy();
-		p.destroy();
+		p.shutdown();
+		p.shutdown();
 	}
 }

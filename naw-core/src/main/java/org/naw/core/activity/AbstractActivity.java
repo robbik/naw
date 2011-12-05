@@ -29,8 +29,12 @@ public abstract class AbstractActivity implements Activity {
 	}
 
 	public abstract void execute(Process process) throws Exception;
+	
+	public void hibernate() {
+		// do nothing
+	}
 
-	public void destroy() {
+	public void shutdown() {
 		procctx = null;
 		ctx = null;
 	}

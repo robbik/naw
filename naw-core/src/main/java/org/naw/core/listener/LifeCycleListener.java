@@ -13,13 +13,13 @@ public interface LifeCycleListener {
 	
 	void processContextInitialized(ProcessContext ctx);
 	
-	void processContextDestroyed(ProcessContext ctx);
+	void processContextShutdown(ProcessContext ctx);
 	
 	public static enum Category {
 		PROCESS_STATE_CHANGE,
 		PROCESS_CREATED,
 		PROCESS_TERMINATED,
 		PROCESS_CONTEXT_INITIALIZED,
-		PROCESS_CONTEXT_DESTROYED
+		PROCESS_CONTEXT_SHUTDOWN
 	}
 }

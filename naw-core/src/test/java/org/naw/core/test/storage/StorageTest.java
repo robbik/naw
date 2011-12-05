@@ -4,10 +4,9 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.naw.core.ProcessState.AFTER;
 import static org.naw.core.ProcessState.BEFORE;
-import static org.naw.core.ProcessState.ON;
 import static org.naw.core.ProcessState.SLEEP;
-import static org.naw.core.listener.LifeCycleListener.Category.PROCESS_CONTEXT_DESTROYED;
 import static org.naw.core.listener.LifeCycleListener.Category.PROCESS_CONTEXT_INITIALIZED;
+import static org.naw.core.listener.LifeCycleListener.Category.PROCESS_CONTEXT_SHUTDOWN;
 import static org.naw.core.listener.LifeCycleListener.Category.PROCESS_CREATED;
 import static org.naw.core.listener.LifeCycleListener.Category.PROCESS_STATE_CHANGE;
 import static org.naw.core.listener.LifeCycleListener.Category.PROCESS_TERMINATED;
@@ -119,7 +118,7 @@ public class StorageTest {
 				createMerge(), createReply());
 
 		procctx.getSelector().add(mock, PROCESS_CONTEXT_INITIALIZED,
-				PROCESS_CONTEXT_DESTROYED, PROCESS_CREATED,
+				PROCESS_CONTEXT_SHUTDOWN, PROCESS_CREATED,
 				PROCESS_STATE_CHANGE, PROCESS_TERMINATED);
 
 		if (inMemory) {
@@ -144,7 +143,6 @@ public class StorageTest {
 		procctx = createProcessContext(true);
 
 		mock.expectProcessCreated();
-		mock.expectProcessStateChanged(ON, new MockActivity("receive"));
 		mock.expectProcessStateChanged(AFTER, new MockActivity("receive"));
 		mock.expectProcessStateChanged(BEFORE, new MockActivity("invoke"));
 		mock.expectProcessStateChanged(SLEEP, new MockActivity("invoke"));
@@ -162,7 +160,7 @@ public class StorageTest {
 		String pid = proc.getId();
 
 		// 3rd] destroy and force gc
-		procctx.destroy();
+		procctx.shutdown();
 
 		proc = null;
 		procctx = null;
@@ -185,7 +183,6 @@ public class StorageTest {
 		assertEquals(1, procctx.findAllProcesses().size());
 
 		// 6th] receive
-		mock.expectProcessStateChanged(ON, new MockActivity("invoke"));
 		mock.expectProcessStateChanged(AFTER, new MockActivity("invoke"));
 		mock.expectProcessStateChanged(BEFORE, new MockActivity("merge"));
 		mock.expectProcessStateChanged(AFTER, new MockActivity("merge"));
@@ -200,7 +197,7 @@ public class StorageTest {
 		mock.assertExpected(5, TimeUnit.SECONDS);
 
 		// 7th] destroy
-		procctx.destroy();
+		procctx.shutdown();
 	}
 
 	@Ignore
@@ -212,7 +209,6 @@ public class StorageTest {
 		procctx = createProcessContext(false);
 
 		mock.expectProcessCreated();
-		mock.expectProcessStateChanged(ON, new MockActivity("receive"));
 		mock.expectProcessStateChanged(AFTER, new MockActivity("receive"));
 		mock.expectProcessStateChanged(BEFORE, new MockActivity("invoke"));
 		mock.expectProcessStateChanged(SLEEP, new MockActivity("invoke"));
@@ -227,7 +223,7 @@ public class StorageTest {
 		assertEquals(1, procctx.findAllProcesses().size());
 
 		// 3rd] destroy and force gc
-		procctx.destroy();
+		procctx.shutdown();
 	}
 
 	@Ignore
@@ -247,7 +243,6 @@ public class StorageTest {
 		assertEquals(1, procctx.findAllProcesses().size());
 
 		// 6th] receive
-		mock.expectProcessStateChanged(ON, new MockActivity("invoke"));
 		mock.expectProcessStateChanged(AFTER, new MockActivity("invoke"));
 		mock.expectProcessStateChanged(BEFORE, new MockActivity("merge"));
 		mock.expectProcessStateChanged(AFTER, new MockActivity("merge"));
@@ -263,6 +258,6 @@ public class StorageTest {
 		mock.assertExpected(5, TimeUnit.SECONDS);
 
 		// 7th] destroy
-		procctx.destroy();
+		procctx.shutdown();
 	}
 }

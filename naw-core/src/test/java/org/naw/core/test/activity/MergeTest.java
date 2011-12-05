@@ -41,7 +41,7 @@ public class MergeTest {
         act.setFromVariable("from");
         act.setToVariable("to");
 
-        newPipeline(act).init().destroy();
+        newPipeline(act).init().shutdown();
     }
 
     @Test
@@ -65,7 +65,7 @@ public class MergeTest {
         assertEquals(mapTo, process.getMessage().get("to"));
         assertEquals(1, process.getMessage().getVariables().size());
 
-        pipeline.destroy();
+        pipeline.shutdown();
     }
 
     @Test
@@ -91,7 +91,7 @@ public class MergeTest {
 
         assertEquals(2, process.getMessage().getVariables().size());
 
-        pipeline.destroy();
+        pipeline.shutdown();
     }
 
     @Test
@@ -124,7 +124,7 @@ public class MergeTest {
         assertEquals(mapr, process.getMessage().get("to"));
         assertEquals(2, process.getMessage().getVariables().size());
 
-        pipeline.destroy();
+        pipeline.shutdown();
     }
 
     @Test
@@ -156,13 +156,13 @@ public class MergeTest {
         assertEquals(mapr, process.getMessage().get("to"));
         assertEquals(2, process.getMessage().getVariables().size());
 
-        pipeline.destroy();
+        pipeline.shutdown();
     }
 
     @Test
     public void testDestroyBeforeInit() throws Exception {
         Merge act = new Merge("a");
-        act.destroy();
+        act.shutdown();
     }
 
     @Test
@@ -171,7 +171,7 @@ public class MergeTest {
         act.setFromVariable("from");
         act.setToVariable("to");
 
-        newPipeline(act).init().destroy();
+        newPipeline(act).init().shutdown();
     }
 
     @Test
@@ -181,7 +181,7 @@ public class MergeTest {
         act.setToVariable("to");
 
         Pipeline p = newPipeline(act).init();
-        p.destroy();
-        p.destroy();
+        p.shutdown();
+        p.shutdown();
     }
 }

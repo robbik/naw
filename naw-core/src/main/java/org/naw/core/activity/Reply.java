@@ -56,8 +56,8 @@ public class Reply extends AbstractActivity {
 		ctx.execute(process);
 	}
 
-	public void destroy() {
-		super.destroy();
+	public void shutdown() {
+		super.shutdown();
 
 		link = null;
 	}

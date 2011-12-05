@@ -148,7 +148,7 @@ public class ProcessEndToEndTest {
 		Thread.sleep(1000);
 		assertTrue(processctx.findAllProcesses().isEmpty());
 
-		processctx.destroy();
+		processctx.shutdown();
 
 		assertNotNull(received);
 		assertEquals("requestResponseSimpleTest()", received.getDestination());
@@ -182,7 +182,7 @@ public class ProcessEndToEndTest {
 
 		assertTrue(processctx.findAllProcesses().isEmpty());
 
-		processctx.destroy();
+		processctx.shutdown();
 
 		assertNull(received);
 	}
@@ -209,7 +209,7 @@ public class ProcessEndToEndTest {
 		Thread.sleep(1000);
 		assertTrue(processctx.findAllProcesses().isEmpty());
 
-		processctx.destroy();
+		processctx.shutdown();
 
 		assertNotNull(received);
 		assertEquals("requestResponseSimpleTest()", received.getDestination());
@@ -239,7 +239,7 @@ public class ProcessEndToEndTest {
 		Thread.sleep(1000);
 		assertTrue(processctx.findAllProcesses().isEmpty());
 
-		processctx.destroy();
+		processctx.shutdown();
 
 		assertNotNull(received);
 		assertEquals("requestResponseSimpleTest()", received.getDestination());
