@@ -54,7 +54,7 @@ public class AutoSaveProcess extends SimpleLifeCycleListener {
 				return;
 			}
 
-			storage.remove(process.getId());
+			storage.remove(process);
 		}
 	}
 

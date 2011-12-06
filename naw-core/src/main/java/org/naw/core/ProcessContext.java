@@ -12,20 +12,20 @@ import org.naw.core.util.Selector;
 import org.naw.core.util.Timer;
 
 /**
- * Represent process context or a workflow (not the instance). The
- * implementation of this class must ensure that the class is THREAD-SAFE.
+ * Represent process context (not the process). The implementation of this class
+ * must ensure that the class is THREAD-SAFE.
  */
 public interface ProcessContext {
 
 	/**
-	 * retrieve workflow name
+	 * retrieve process context name
 	 * 
-	 * @return workflow name
+	 * @return process context name
 	 */
 	String getName();
 
 	/**
-	 * retrieve storage used by this workflow
+	 * retrieve storage used by this process context
 	 * 
 	 * @return the storage
 	 */
@@ -39,7 +39,7 @@ public interface ProcessContext {
 	Timer getTimer();
 
 	/**
-	 * get pipeline used to execute this workflow
+	 * get pipeline used to execute this process context
 	 * 
 	 * @return pipeline
 	 */
@@ -60,8 +60,8 @@ public interface ProcessContext {
 	Selector<LifeCycleListener> getSelector();
 
 	/**
-	 * initialize this workflow (this method MUST be invoked before creating new
-	 * process / workflow instance)
+	 * initialize this process context (this method MUST be invoked before
+	 * creating new process)
 	 * 
 	 * @throws Exception
 	 *             if an error occurred
@@ -69,7 +69,7 @@ public interface ProcessContext {
 	void init() throws Exception;
 
 	/**
-	 * find partner link used by this workflow using its name
+	 * find partner link used by this process context using its name
 	 * 
 	 * @param name
 	 *            partner link name
@@ -98,55 +98,56 @@ public interface ProcessContext {
 	void registerActivity(Activity activity) throws Exception;
 
 	/**
-	 * creating new workflow instance
+	 * creating new process
 	 * 
-	 * @return new workflow instance
+	 * @return new process
 	 */
 	Process newProcess();
 
 	/**
-	 * find workflow instance in this context by its id
+	 * find process in this context by its id
 	 * 
 	 * @param pid
-	 *            workflow instance id
-	 * @return workflow instance or <code>null</code> if not found
+	 *            process id
+	 * @return process or <code>null</code> if not found
 	 */
 	Process findProcess(String pid);
 
 	/**
-	 * find all workflow instances in this context
+	 * find all processes in this context
 	 * 
-	 * @return list of workflow instance
+	 * @return list of processes
 	 */
 	Collection<Process> findAllProcesses();
 
 	/**
-	 * add process into this context and activate it
-	 * 
-	 * @param process
-	 *            the process
-	 * @throws Exception
-	 *             if an error occurred or the same process has been found
-	 */
-	void activate(Process process) throws Exception;
-
-	/**
-	 * terminate and destroy workflow instance
+	 * terminate and destroy process
 	 * 
 	 * @param pid
-	 *            workflow instance id
+	 *            process id
 	 */
 	void terminate(String pid);
 
 	/**
-	 * gracefully shutdown this workflow
+	 * gracefully shutdown this process context
 	 */
 	void shutdown();
 
 	/**
-	 * force shutdown this workflow
+	 * force shutdown this process context
 	 */
 	void shutdownNow();
 
+	/**
+	 * resume context (wake-up) from hibernate state
+	 * 
+	 * @throws Exception
+	 *             if an error occurred
+	 */
+	void resume() throws Exception;
+
+	/**
+	 * hibernate this process
+	 */
 	void hibernate();
 }

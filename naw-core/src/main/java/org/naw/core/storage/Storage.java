@@ -8,36 +8,46 @@ import org.naw.core.Process;
 public interface Storage {
 
 	/**
-	 * persist workflow instance
+	 * persist process
 	 * 
 	 * @param process
-	 *            workflow instance
+	 *            the process
 	 * @return <code>true</code> if persisted, <code>false</code> otherwise
 	 */
 	boolean persist(Process process);
 
 	/**
-	 * remove workflow instance from this storage because the process is already
+	 * remove process from this storage because the process is already
 	 * terminated
 	 * 
 	 * @param pid
-	 *            workflow instance if
+	 *            the process
 	 */
-	void remove(String pid);
+	void remove(Process process);
 
 	/**
-	 * find workflow instance by its id
+	 * find process by its id
 	 * 
 	 * @param pid
-	 *            workflow instance id
-	 * @return workflow instance or <code>null</code> if not found
+	 *            process id
+	 * @return process or <code>null</code> if not found
 	 */
 	Process find(String pid);
 
 	/**
-	 * find all workflow instance
+	 * find all processes that has context name <code>contextName</code>
 	 * 
-	 * @return array of workflow instance, cannot be <code>null</code>
+	 * @param contextName
+	 *            the context name
+	 * 
+	 * @return array of process, cannot be <code>null</code>
+	 */
+	Process[] findByProcessContext(String contextName);
+
+	/**
+	 * find all processes
+	 * 
+	 * @return array of process, cannot be <code>null</code>
 	 */
 	Process[] findAll();
 }

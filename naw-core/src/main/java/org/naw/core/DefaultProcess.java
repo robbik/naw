@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.naw.core.activity.AbstractActivity;
@@ -27,6 +28,7 @@ import org.naw.core.util.Timeout;
 import org.naw.core.util.Timer;
 import org.naw.core.util.TimerTask;
 import org.naw.core.util.internal.ObjectUtils;
+import org.naw.core.util.internal.SharedExecutors;
 
 public class DefaultProcess implements Process {
 
@@ -239,7 +241,9 @@ public class DefaultProcess implements Process {
 		this.state = state;
 		this.activity = activity;
 
-		if (state != TERMINATED) {
+		if (state == TERMINATED) {
+			Selectors.fireProcessTerminated(ctx, this);
+		} else {
 			Selectors.fireProcessStateChange(ctx, this);
 		}
 	}
@@ -255,7 +259,9 @@ public class DefaultProcess implements Process {
 
 		this.state = state;
 
-		if (state != TERMINATED) {
+		if (state == TERMINATED) {
+			Selectors.fireProcessTerminated(ctx, this);
+		} else {
 			Selectors.fireProcessStateChange(ctx, this);
 		}
 	}
@@ -276,7 +282,9 @@ public class DefaultProcess implements Process {
 			this.state = newState;
 			this.activity = newActivity;
 
-			if (state != TERMINATED) {
+			if (state == TERMINATED) {
+				Selectors.fireProcessTerminated(ctx, this);
+			} else {
 				Selectors.fireProcessStateChange(ctx, this);
 			}
 		}
@@ -296,7 +304,9 @@ public class DefaultProcess implements Process {
 		if (ok && (this.state != newState)) {
 			this.state = newState;
 
-			if (state != TERMINATED) {
+			if (state == TERMINATED) {
+				Selectors.fireProcessTerminated(ctx, this);
+			} else {
 				Selectors.fireProcessStateChange(ctx, this);
 			}
 		}
@@ -312,8 +322,56 @@ public class DefaultProcess implements Process {
 		return activity;
 	}
 
+	private void execute(final ActivityContext actx, final Activity activity) {
+		Executor executor = ctx.getExecutor();
+		if (executor == null) {
+			executor = SharedExecutors.DIRECT;
+		}
+
+		executor.execute(new Runnable() {
+			public void run() {
+				try {
+					activity.execute(DefaultProcess.this);
+				} catch (Throwable t) {
+					update(ERROR, activity);
+
+					// run compensation handlers
+					actx.getPipeline().exceptionThrown(DefaultProcess.this, t,
+							false);
+
+					// terminate the process
+					ctx.terminate(id);
+				}
+			}
+		});
+	}
+
+	private void wakeUp(final ActivityContext actx, final Activity activity) {
+		Executor executor = ctx.getExecutor();
+		if (executor == null) {
+			executor = SharedExecutors.DIRECT;
+		}
+
+		executor.execute(new Runnable() {
+			public void run() {
+				try {
+					activity.wakeUp(DefaultProcess.this);
+				} catch (Throwable t) {
+					update(ERROR, activity);
+
+					// run compensation handlers
+					actx.getPipeline().exceptionThrown(DefaultProcess.this, t,
+							false);
+
+					// terminate the process
+					ctx.terminate(id);
+				}
+			}
+		});
+	}
+
 	public synchronized void init(ProcessContext ctx) {
-		if (activated) {
+		if (activated || destroyed) {
 			return;
 		}
 
@@ -337,27 +395,16 @@ public class DefaultProcess implements Process {
 		case INIT:
 			break; // do nothing
 		case BEFORE:
-			// re-execute
-			try {
-				activity.execute(this);
-			} catch (Throwable t) {
-				update(ERROR, activity);
-
-				// run compensation handlers
-				actx.getPipeline().exceptionThrown(this, t, false);
-
-				// terminate the process
-				ctx.terminate(id);
-
-				return;
-			}
-
+			// execute
+			execute(actx, activity);
 			break;
 		case SLEEP:
-			break; // do nothing
+			// wake-up
+			wakeUp(actx, activity);
+			break;
 		case AFTER:
 		case HIBERNATED:
-			// re-execute next activity
+			// execute next activity
 			actx.execute(this);
 			break;
 		case ERROR:
@@ -425,16 +472,18 @@ public class DefaultProcess implements Process {
 
 		timeoutMap.clear();
 
-		// clear attributes
+		// clear
 		attributes.clear();
+		message.clear();
 
 		// gc works
+		ctx = null;
+		timeoutMap = null;
+
+		state = TERMINATED;
 		activity = null;
 
-		if (state == TERMINATED) {
-			Selectors.fireProcessTerminated(ctx, this);
-		}
-
+		activated = false;
 		destroyed = true;
 	}
 

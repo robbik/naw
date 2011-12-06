@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -23,7 +23,7 @@ public class MockPartnerLink implements PartnerLink {
 
 	private Map<String, List<PartnerLinkListener>> listeners;
 
-	private ExecutorService executorService;
+	private Executor executor;
 
 	private Lock slock;
 
@@ -31,19 +31,19 @@ public class MockPartnerLink implements PartnerLink {
 
 	public MockPartnerLink() {
 		listeners = new HashMap<String, List<PartnerLinkListener>>();
-		executorService = Executors.newCachedThreadPool();
+		executor = Executors.newCachedThreadPool();
 
 		ReentrantReadWriteLock sxlock = new ReentrantReadWriteLock(true);
 		slock = sxlock.readLock();
 		xlock = sxlock.writeLock();
 	}
 
-	public ExecutorService getExecutorService() {
-		return executorService;
+	public Executor getExecutor() {
+		return executor;
 	}
 
-	public void setExecutorService(ExecutorService executorService) {
-		this.executorService = executorService;
+	public void setExecutor(Executor executor) {
+		this.executor = executor;
 	}
 
 	public void subscribe(String operation, PartnerLinkListener listener) {
@@ -76,6 +76,20 @@ public class MockPartnerLink implements PartnerLink {
 		xlock.unlock();
 	}
 
+	public int subscriptions(String operation) {
+		int found;
+		slock.lock();
+
+		if (listeners.containsKey(operation)) {
+			found = listeners.get(operation).size();
+		} else {
+			found = 0;
+		}
+
+		slock.unlock();
+		return found;
+	}
+
 	public boolean subscribed(String operation, PartnerLinkListener listener) {
 		boolean found = false;
 		slock.lock();
@@ -102,7 +116,7 @@ public class MockPartnerLink implements PartnerLink {
 		List<PartnerLinkListener> list = listeners.get(operation);
 
 		if (list != null) {
-			if (executorService == null) {
+			if (executor == null) {
 				for (int i = 0, len = list.size(); i < len; ++i) {
 					try {
 						list.get(i).messageReceived(e);
@@ -114,7 +128,7 @@ public class MockPartnerLink implements PartnerLink {
 				}
 			} else {
 				for (int i = 0, len = list.size(); i < len; ++i) {
-					executorService.submit(new Task(list.get(i), e));
+					executor.execute(new Task(list.get(i), e));
 				}
 			}
 		}

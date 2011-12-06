@@ -70,6 +70,17 @@ public class MockLifeCycleListener extends SimpleLifeCycleListener {
 		}
 	}
 
+	public void expectProcessStateChanged(ProcessState state,
+			String activityName) {
+		synchronized (monitor) {
+			qxctx.add(null);
+			qxprocess.add(null);
+
+			qxstate.add(state);
+			qxactivity.add(new MockActivity(activityName));
+		}
+	}
+
 	public void expectProcessTerminated() {
 		synchronized (monitor) {
 			qxctx.add(null);
@@ -160,6 +171,10 @@ public class MockLifeCycleListener extends SimpleLifeCycleListener {
 		assertExpected(null, wait, unit);
 	}
 
+	public void assertNotExpected(long wait, TimeUnit unit) {
+		assertNotExpected(null, wait, unit);
+	}
+
 	public void assertExpected(String message, long wait, TimeUnit unit) {
 		long deadline = System.currentTimeMillis() + unit.toMillis(wait);
 		Boolean ok;
@@ -182,6 +197,32 @@ public class MockLifeCycleListener extends SimpleLifeCycleListener {
 				}
 			}
 		}
+	}
+
+	public void assertNotExpected(String message, long wait, TimeUnit unit) {
+		long deadline = System.currentTimeMillis() + unit.toMillis(wait);
+		Boolean ok;
+
+		synchronized (monitor) {
+			while (!Boolean.TRUE.equals(ok = expected())) {
+				if (ok == null) {
+					Thread.yield();
+				} else {
+					long realWait = deadline - System.currentTimeMillis();
+					if (realWait <= 0) {
+						return;
+					}
+
+					try {
+						monitor.wait(realWait);
+					} catch (InterruptedException e) {
+						throw new RuntimeException("assertion interrupted");
+					}
+				}
+			}
+		}
+
+		throw new AssertionError(message == null ? "" : message);
 	}
 
 	@Override
@@ -207,10 +248,12 @@ public class MockLifeCycleListener extends SimpleLifeCycleListener {
 	@Override
 	public void processStateChange(ProcessContext ctx, Process process) {
 		synchronized (monitor) {
+			Activity activity = process.getActivity();
+
 			if (log.isTraceEnabled()) {
 				log.trace("process " + process.getId() + " state changed to "
-						+ process.getState() + "@"
-						+ process.getActivity().getName());
+						+ process.getState()
+						+ (activity == null ? "" : "@" + activity.getName()));
 			}
 
 			if (qxctx.isEmpty()) {
@@ -220,7 +263,7 @@ public class MockLifeCycleListener extends SimpleLifeCycleListener {
 			qctx.add(null);
 			qprocess.add(null);
 			qstate.add(process.getState());
-			qactivity.add(process.getActivity());
+			qactivity.add(activity);
 
 			monitor.notifyAll();
 		}

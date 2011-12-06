@@ -3,7 +3,7 @@ package org.naw.core.partnerLink;
 import java.util.Map;
 
 /**
- * Workflow partner link
+ * Process context partner link
  */
 public interface PartnerLink {
 
@@ -21,8 +21,7 @@ public interface PartnerLink {
 	 * Publish (broadcast) message
 	 * 
 	 * @param source
-	 *            source of the message (who publish the message, the workflow
-	 *            instance id)
+	 *            source of the message (who publish the message, the process id)
 	 * @param operation
 	 *            partner link related operation
 	 * @param message
@@ -31,13 +30,12 @@ public interface PartnerLink {
 	void publish(String source, String operation, Map<String, Object> message);
 
 	/**
-	 * Send message to specific destination (workflow instance id)
+	 * Send message to specific destination (process id)
 	 * 
 	 * @param source
-	 *            source of the message (who publish the message, the workflow
-	 *            instance id)
+	 *            source of the message (who publish the message, the process id)
 	 * @param destination
-	 *            destination of the message (the workflow instance id)
+	 *            destination of the message (the process id)
 	 * @param operation
 	 *            partner link related operation
 	 * @param message

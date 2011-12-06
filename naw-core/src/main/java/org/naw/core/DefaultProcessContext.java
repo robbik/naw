@@ -74,7 +74,7 @@ public class DefaultProcessContext implements ProcessContext, Sink {
 	 * create new instance of {@link DefaultProcessContext}
 	 * 
 	 * @param name
-	 *            workflow name
+	 *            process context name
 	 */
 	public DefaultProcessContext(String name) {
 		this.name = name;
@@ -119,7 +119,7 @@ public class DefaultProcessContext implements ProcessContext, Sink {
 	}
 
 	/**
-	 * set timer used by this workflow
+	 * set timer used by this process context
 	 * 
 	 * @param timer
 	 *            the timer
@@ -200,10 +200,10 @@ public class DefaultProcessContext implements ProcessContext, Sink {
 	}
 
 	/**
-	 * set workflow activities
+	 * set process context activities
 	 * 
 	 * @param activities
-	 *            workflow activities
+	 *            process context activities
 	 */
 	public void setActivities(Activity... activities) {
 		pipeline = new DefaultPipeline();
@@ -234,7 +234,7 @@ public class DefaultProcessContext implements ProcessContext, Sink {
 	 */
 	public Process newProcess() {
 		if (state.get() != STATE_RUNNING) {
-			return null; // workflow not in running state
+			return null; // not in running state
 		}
 
 		Process process = processFactory.newProcess();
@@ -265,29 +265,43 @@ public class DefaultProcessContext implements ProcessContext, Sink {
 	/*
 	 * (non-Javadoc)
 	 * 
-	 * @see org.naw.process.ProcessContext#activate(org.naw.process.Process)
+	 * @see org.naw.core.ProcessContext#resume()
 	 */
-	public void activate(Process process) throws Exception {
+	public void resume() throws Exception {
+		if (storage == null) {
+			throw new UnsupportedOperationException("no storage defined");
+		}
+
 		if (state.get() != STATE_RUNNING) {
-			throw new IllegalStateException("workflow not in running state");
+			init();
 		}
 
-		String pid = process.getId();
+		Process[] processes = storage.findByProcessContext(name);
+		int len = processes.length;
 
-		if (process.getState() == TERMINATED) {
-			throw new Exception("process " + pid + " already terminated");
+		if (len == 0) {
+			return;
 		}
 
-		synchronized (instances) {
-			if (instances.containsKey(pid)) {
-				throw new Exception("process " + pid + " already activated");
+		for (int i = 0; i < len; ++i) {
+			Process process = processes[i];
+			if (process.getState() == TERMINATED) {
+				continue;
 			}
 
-			process.init(this);
+			String pid = process.getId();
 
-			synchronized (process) {
-				if (process.getState() != TERMINATED) {
-					instances.put(pid, process);
+			synchronized (instances) {
+				if (instances.containsKey(pid)) {
+					continue;
+				}
+
+				process.init(this);
+
+				synchronized (process) {
+					if (process.getState() != TERMINATED) {
+						instances.put(pid, process);
+					}
 				}
 			}
 		}
@@ -339,7 +353,7 @@ public class DefaultProcessContext implements ProcessContext, Sink {
 			if (running > 0) {
 				if (running != last) {
 					log.info("waiting for " + running
-							+ " running processes to shutdown");
+							+ " processes to shutdown");
 
 					last = running;
 				}
@@ -401,6 +415,10 @@ public class DefaultProcessContext implements ProcessContext, Sink {
 	}
 
 	public void hibernate() {
+		if (storage == null) {
+			throw new UnsupportedOperationException("no storage defined");
+		}
+
 		if (!state.compareAndSet(STATE_RUNNING, STATE_HIBERNATING)) {
 			return;
 		}
@@ -419,8 +437,8 @@ public class DefaultProcessContext implements ProcessContext, Sink {
 
 			if (running > 0) {
 				if (running != last) {
-					log.info("wait for " + running
-							+ " running processes to be hibernated");
+					log.info("waiting for " + running
+							+ " processes to be hibernated");
 
 					last = running;
 				}
@@ -447,7 +465,7 @@ public class DefaultProcessContext implements ProcessContext, Sink {
 			}
 
 			if (sleeping != last) {
-				log.info("wait for " + sleeping
+				log.info("waiting for " + sleeping
 						+ " sleeping processes to be hibernated, " + (11 - i)
 						+ " waits left");
 

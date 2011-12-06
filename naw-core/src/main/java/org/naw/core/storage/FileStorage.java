@@ -6,11 +6,14 @@ import java.io.FileOutputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.naw.core.Process;
 import org.naw.core.logging.Logger;
 import org.naw.core.logging.LoggerFactory;
+import org.naw.core.util.internal.IOUtils;
 
 public class FileStorage implements Storage {
 
@@ -19,13 +22,22 @@ public class FileStorage implements Storage {
 
 	private final File base;
 
+	private final File refs;
+
 	public FileStorage(File base) {
 		this.base = base;
-
 		if (!base.isDirectory()) {
 			if (!base.mkdirs()) {
 				throw new SecurityException("unable to create directories "
 						+ base);
+			}
+		}
+
+		refs = new File(base, "refs");
+		if (!refs.isDirectory()) {
+			if (!refs.mkdirs()) {
+				throw new SecurityException("unable to create directories "
+						+ refs);
 			}
 		}
 	}
@@ -34,9 +46,78 @@ public class FileStorage implements Storage {
 		this(new File(base));
 	}
 
-	public boolean persist(Process process) {
-		String pid = process.getId();
+	@SuppressWarnings("unchecked")
+	private Set<String> readIndex(String contextName) {
+		File file = new File(refs, contextName);
+		if (!file.canRead()) {
+			return null;
+		}
 
+		FileInputStream in = null;
+
+		try {
+			in = new FileInputStream(file);
+
+			ObjectInputStream ois = new ObjectInputStream(in);
+			return (Set<String>) ois.readObject();
+		} catch (Throwable t) {
+			log.error("unable to read index " + contextName, t);
+		} finally {
+			IOUtils.tryClose(in);
+		}
+
+		return null;
+	}
+
+	private void writeIndex(String contextName, Set<String> idx) {
+		File file = new File(refs, contextName);
+
+		if (idx.isEmpty()) {
+			if (!file.delete()) {
+				file.deleteOnExit();
+			}
+
+			return;
+		}
+
+		FileOutputStream out = null;
+
+		try {
+			out = new FileOutputStream(file);
+
+			ObjectOutputStream oos = new ObjectOutputStream(out);
+			oos.writeObject(idx);
+
+			oos.flush();
+		} catch (Throwable t) {
+			log.error("unable to write index " + contextName, t);
+		} finally {
+			IOUtils.tryClose(out);
+		}
+	}
+
+	private Process readData(String pid, File file) {
+		FileInputStream in = null;
+
+		try {
+			in = new FileInputStream(file);
+
+			ObjectInputStream ois = new ObjectInputStream(in);
+			return (Process) ois.readObject();
+		} catch (Throwable t) {
+			log.error("unable to read saved process " + pid, t);
+		} finally {
+			IOUtils.tryClose(in);
+		}
+
+		return null;
+	}
+
+	public synchronized boolean persist(Process process) {
+		String pid = process.getId();
+		String contextName = process.getContextName();
+
+		// data file
 		File subdir = new File(base, pid.substring(0, 2));
 		if (!subdir.isDirectory()) {
 			if (!subdir.mkdir()) {
@@ -57,19 +138,28 @@ public class FileStorage implements Storage {
 			log.error("unable to persist process " + pid, t);
 			return false;
 		} finally {
-			if (out != null) {
-				try {
-					out.close();
-				} catch (Throwable t) {
-					// do nothing
-				}
-			}
+			IOUtils.tryClose(out);
+		}
+
+		// index file
+		Set<String> idx = readIndex(contextName);
+		if (idx == null) {
+			idx = new HashSet<String>();
+		}
+
+		if (!idx.contains(pid)) {
+			idx.add(pid);
+			writeIndex(contextName, idx);
 		}
 
 		return true;
 	}
 
-	public void remove(String pid) {
+	public synchronized void remove(Process process) {
+		String pid = process.getId();
+		String contextName = process.getContextName();
+
+		// data file
 		File subdir = new File(base, pid.substring(0, 2));
 
 		if (subdir.isDirectory()) {
@@ -88,46 +178,40 @@ public class FileStorage implements Storage {
 				}
 			}
 		}
-	}
 
-	private Process load(String pid, File file) {
-		FileInputStream in = null;
+		// index file
+		Set<String> idx = readIndex(contextName);
 
-		try {
-			in = new FileInputStream(file);
+		if ((idx != null) && idx.contains(pid)) {
+			idx.remove(pid);
+			writeIndex(contextName, idx);
 
-			ObjectInputStream ois = new ObjectInputStream(in);
-			return (Process) ois.readObject();
-		} catch (Throwable t) {
-			log.error("unable to read saved process " + pid, t);
-		} finally {
-			if (in != null) {
-				try {
-					in.close();
-				} catch (Throwable t) {
-					// do nothing
+			String[] names = refs.list();
+			if ((names == null) || (names.length == 0)) {
+				if (!refs.delete()) {
+					refs.deleteOnExit();
 				}
 			}
 		}
-
-		return null;
 	}
 
-	public Process find(String pid) {
+	public synchronized Process find(String pid) {
+		// data file
 		File subdir = new File(base, pid.substring(0, 2));
 
 		if (subdir.isDirectory()) {
 			File name = new File(subdir, pid.substring(2));
 
 			if (name.canRead()) {
-				return load(pid, new File(subdir, pid.substring(2)));
+				return readData(pid, new File(subdir, pid.substring(2)));
 			}
 		}
 
 		return null;
 	}
 
-	private void findAll(File subdir, List<Process> procs) {
+	private synchronized void findAll(File subdir, List<Process> procs) {
+		// data files
 		File[] files = subdir.listFiles();
 		if (files == null) {
 			return;
@@ -139,7 +223,7 @@ public class FileStorage implements Storage {
 			File f = files[i];
 
 			if (f.canRead()) {
-				Process proc = load(pidPrefix + f.getName(), f);
+				Process proc = readData(pidPrefix + f.getName(), f);
 
 				if (proc != null) {
 					procs.add(proc);
@@ -163,5 +247,24 @@ public class FileStorage implements Storage {
 		}
 
 		return procs.toArray(new Process[0]);
+	}
+
+	public Process[] findByProcessContext(String contextName) {
+		Set<String> pids = readIndex(contextName);
+		if ((pids == null) || pids.isEmpty()) {
+			return new Process[0];
+		}
+
+		List<Process> list = new ArrayList<Process>();
+
+		for (String pid : pids) {
+			Process proc = find(pid);
+
+			if (proc != null) {
+				list.add(proc);
+			}
+		}
+
+		return list.toArray(new Process[0]);
 	}
 }

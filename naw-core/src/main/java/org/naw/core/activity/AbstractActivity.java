@@ -30,6 +30,10 @@ public abstract class AbstractActivity implements Activity {
 
 	public abstract void execute(Process process) throws Exception;
 	
+	public void wakeUp(Process process) throws Exception {
+		// do nothing
+	}
+	
 	public void hibernate() {
 		// do nothing
 	}

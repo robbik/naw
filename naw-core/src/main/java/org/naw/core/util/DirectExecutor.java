@@ -4,9 +4,7 @@ import java.util.concurrent.Executor;
 
 public class DirectExecutor implements Executor {
 	
-	public static DirectExecutor INSTANCE = new DirectExecutor();
-	
-	private DirectExecutor() {
+	public DirectExecutor() {
 		// do nothing
 	}
 

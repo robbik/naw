@@ -11,12 +11,12 @@ public abstract class ObjectUtils {
 	public static <T> T coalesce(T... values) {
 		for (int i = 0, len = values.length; i < len; ++i) {
 			T value = values[i];
-			
+
 			if (value != null) {
 				return value;
 			}
 		}
-		
+
 		return null;
 	}
 
@@ -165,6 +165,10 @@ public abstract class ObjectUtils {
 	}
 
 	public static byte[] toBytes(Object o) {
+		if (o == null) {
+			return null;
+		}
+
 		ByteArrayOutputStream out = new ByteArrayOutputStream();
 
 		try {
@@ -180,6 +184,10 @@ public abstract class ObjectUtils {
 	}
 
 	public static Object fromBytes(byte[] bytes) {
+		if (bytes == null) {
+			return null;
+		}
+
 		try {
 			ObjectInputStream ois = new ObjectInputStream(
 					new ByteArrayInputStream(bytes));

@@ -1,7 +1,7 @@
 package org.naw.core.util;
 
-import static org.naw.core.listener.LifeCycleListener.Category.PROCESS_CONTEXT_SHUTDOWN;
 import static org.naw.core.listener.LifeCycleListener.Category.PROCESS_CONTEXT_INITIALIZED;
+import static org.naw.core.listener.LifeCycleListener.Category.PROCESS_CONTEXT_SHUTDOWN;
 import static org.naw.core.listener.LifeCycleListener.Category.PROCESS_CREATED;
 import static org.naw.core.listener.LifeCycleListener.Category.PROCESS_STATE_CHANGE;
 import static org.naw.core.listener.LifeCycleListener.Category.PROCESS_TERMINATED;
@@ -13,6 +13,10 @@ import org.naw.core.ProcessContext;
 import org.naw.core.listener.LifeCycleListener;
 
 public abstract class Selectors {
+
+	public static final Object[] ALL_SELECTIONS = new Object[] {
+			PROCESS_STATE_CHANGE, PROCESS_CREATED, PROCESS_TERMINATED,
+			PROCESS_CONTEXT_INITIALIZED, PROCESS_CONTEXT_SHUTDOWN };
 
 	public static void fireProcessStateChange(ProcessContext ctx,
 			Process process) {

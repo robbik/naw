@@ -1,7 +1,6 @@
 package org.naw.core.test.storage;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
 import static org.naw.core.ProcessState.AFTER;
 import static org.naw.core.ProcessState.BEFORE;
 import static org.naw.core.ProcessState.SLEEP;
@@ -11,9 +10,9 @@ import static org.naw.core.listener.LifeCycleListener.Category.PROCESS_CREATED;
 import static org.naw.core.listener.LifeCycleListener.Category.PROCESS_STATE_CHANGE;
 import static org.naw.core.listener.LifeCycleListener.Category.PROCESS_TERMINATED;
 
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import org.junit.Before;
@@ -89,7 +88,6 @@ public class StorageTest {
 	@Before
 	public void before() throws Exception {
 		partnerLink = new MockPartnerLink();
-		partnerLink.setExecutorService(Executors.newCachedThreadPool());
 
 		partnerLink.subscribe("process_callback", new PartnerLinkListener() {
 			public void messageReceived(MessageEvent e) {
@@ -106,7 +104,15 @@ public class StorageTest {
 		mock = new MockLifeCycleListener();
 
 		inMemoryStorage = new InMemoryStorage();
+
 		fileStorage = new FileStorage("target/test-storage");
+
+		// MysqlDataSource ds = new MysqlDataSource();
+		// ds.setURL("jdbc:mysql://localhost:3306/naw");
+		// ds.setUser("root");
+		// ds.setPassword("rootPwd");
+
+		// fileStorage = new JdbcStorage(ds);
 	}
 
 	private DefaultProcessContext createProcessContext(boolean inMemory)
@@ -127,8 +133,8 @@ public class StorageTest {
 			procctx.setStorage(fileStorage);
 		}
 
-		procctx.getSelector().add(new AutoSaveProcess(),
-				PROCESS_STATE_CHANGE, PROCESS_TERMINATED);
+		procctx.getSelector().add(new AutoSaveProcess(), PROCESS_STATE_CHANGE,
+				PROCESS_TERMINATED);
 
 		procctx.init();
 
@@ -156,13 +162,8 @@ public class StorageTest {
 		// 2nd] down
 		assertEquals(1, procctx.findAllProcesses().size());
 
-		Process proc = procctx.findAllProcesses().iterator().next();
-		String pid = proc.getId();
-
 		// 3rd] destroy and force gc
 		procctx.shutdown();
-
-		proc = null;
 		procctx = null;
 
 		System.gc();
@@ -174,11 +175,7 @@ public class StorageTest {
 
 		// 5th] up
 		procctx = createProcessContext(true);
-
-		proc = procctx.getStorage().find(pid);
-		assertNotNull(proc);
-
-		procctx.activate(proc);
+		procctx.resume();
 
 		assertEquals(1, procctx.findAllProcesses().size());
 
@@ -229,18 +226,16 @@ public class StorageTest {
 	@Ignore
 	@Test
 	public void testUpReceive() throws Exception {
-		String pid = "5c43d44c98e849e3acd0bf4f563db8b7.1";
 		DefaultProcessContext procctx;
 
 		// 5th] up
 		procctx = createProcessContext(false);
+		procctx.resume();
 
-		Process proc = procctx.getStorage().find(pid);
-		assertNotNull(proc);
+		Collection<Process> procs = procctx.findAllProcesses();
 
-		procctx.activate(proc);
-
-		assertEquals(1, procctx.findAllProcesses().size());
+		assertEquals(1, procs.size());
+		String pid = procs.iterator().next().getId();
 
 		// 6th] receive
 		mock.expectProcessStateChanged(AFTER, new MockActivity("invoke"));

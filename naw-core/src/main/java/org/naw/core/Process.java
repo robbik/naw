@@ -90,7 +90,7 @@ public interface Process extends Serializable {
 	Map<String, Object> getAttributes();
 
 	/**
-	 * get message used by this workflow instance
+	 * get message used by this process
 	 * 
 	 * @return the message
 	 */

@@ -5,7 +5,7 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * represent a message used by a workflow instance
+ * represent a message used by a process
  */
 public interface Message extends Serializable {
 
@@ -50,4 +50,9 @@ public interface Message extends Serializable {
 	 * @return variable value, <code>null</code> if not exists
 	 */
 	Map<String, Object> get(String variable);
+
+	/**
+	 * remove all variables
+	 */
+	void clear();
 }

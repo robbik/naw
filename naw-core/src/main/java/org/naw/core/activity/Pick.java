@@ -113,7 +113,11 @@ public class Pick extends AbstractActivity {
 				onMessages.get(i).shutdown();
 			}
 
-			onMessages.clear();
+			try {
+				onMessages.clear();
+			} catch (Throwable t) {
+				//
+			}
 			onMessages = null;
 		}
 
@@ -122,7 +126,11 @@ public class Pick extends AbstractActivity {
 				onAlarms.get(i).shutdown();
 			}
 
-			onAlarms.clear();
+			try {
+				onAlarms.clear();
+			} catch (Throwable t) {
+				//
+			}
 			onAlarms = null;
 		}
 	}

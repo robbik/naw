@@ -12,8 +12,8 @@ import org.naw.core.Process;
 import org.naw.core.ProcessContext;
 import org.naw.core.pipeline.Pipeline;
 import org.naw.core.pipeline.Sink;
-import org.naw.core.util.DirectExecutor;
 import org.naw.core.util.internal.ObjectUtils;
+import org.naw.core.util.internal.SharedExecutors;
 
 /**
  * Default implementation of {@link ActivityContext}
@@ -33,7 +33,7 @@ public class DefaultActivityContext implements ActivityContext {
 	public DefaultActivityContext(Pipeline pipeline, Activity activity) {
 		this.pipeline = pipeline;
 		executor = ObjectUtils.coalesce(pipeline.getProcessContext()
-				.getExecutor(), DirectExecutor.INSTANCE);
+				.getExecutor(), SharedExecutors.DIRECT);
 
 		this.activity = activity;
 

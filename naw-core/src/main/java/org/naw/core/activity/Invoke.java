@@ -22,6 +22,8 @@ public class Invoke extends AbstractActivity implements PartnerLinkListener {
 
 	private boolean oneWay;
 
+	private boolean resendOnWakeUp;
+
 	private String requestVar;
 
 	private String responseVar;
@@ -54,6 +56,10 @@ public class Invoke extends AbstractActivity implements PartnerLinkListener {
 
 	public void setOneWay(boolean oneWay) {
 		this.oneWay = oneWay;
+	}
+
+	public void setResendOnWakeUp(boolean resendOnWakeUp) {
+		this.resendOnWakeUp = resendOnWakeUp;
 	}
 
 	@Override
@@ -104,6 +110,18 @@ public class Invoke extends AbstractActivity implements PartnerLinkListener {
 			ctx.execute(process);
 		} else {
 			process.compareAndUpdate(BEFORE, this, SLEEP);
+		}
+	}
+
+	@Override
+	public void wakeUp(Process process) throws Exception {
+		if (resendOnWakeUp) {
+			link.publish(process.getId(), operation,
+					process.getMessage().get(requestVar));
+
+			if (oneWay) {
+				ctx.execute(process);
+			}
 		}
 	}
 

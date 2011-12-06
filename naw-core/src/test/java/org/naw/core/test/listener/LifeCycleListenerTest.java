@@ -2,7 +2,6 @@ package org.naw.core.test.listener;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import org.junit.Before;
@@ -48,7 +47,6 @@ public class LifeCycleListenerTest {
 	@Before
 	public void before() throws Exception {
 		partnerLink = new MockPartnerLink();
-		partnerLink.setExecutorService(Executors.newCachedThreadPool());
 
 		partnerLink.subscribe("process_callback", new PartnerLinkListener() {
 			public void messageReceived(MessageEvent e) {

@@ -4,9 +4,14 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
+import java.sql.Types;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import javax.sql.DataSource;
 
@@ -45,6 +50,15 @@ public class JdbcStorage implements Storage {
 	private void persistMaster(Connection conn, String pid, Process proc)
 			throws SQLException {
 
+		Activity activity = proc.getActivity();
+		String activityName;
+
+		if (activity == null) {
+			activityName = null;
+		} else {
+			activityName = activity.getName();
+		}
+
 		PreparedStatement pstmt = conn
 				.prepareStatement("DELETE FROM naw_process WHERE pid = ?");
 		try {
@@ -60,7 +74,12 @@ public class JdbcStorage implements Storage {
 			pstmt.setString(1, pid);
 			pstmt.setString(2, proc.getContextName());
 			pstmt.setInt(3, proc.getState().codeValue());
-			pstmt.setString(4, proc.getActivity().getName());
+
+			if (activityName == null) {
+				pstmt.setNull(4, Types.VARCHAR);
+			} else {
+				pstmt.setString(4, activityName);
+			}
 
 			if (pstmt.executeUpdate() != 1) {
 				throw new SQLException("insert operation return non one result");
@@ -87,12 +106,15 @@ public class JdbcStorage implements Storage {
 			}
 
 			ProcessState state = ProcessState.valueOf(rs.getInt(2));
-			Activity activity = new AbstractActivity(rs.getString(3)) {
+			String activityName = rs.getString(3);
 
-				public void execute(Process process) throws Exception {
-					// do nothing
-				}
-			};
+			Activity activity = activityName == null ? null
+					: new AbstractActivity(activityName) {
+
+						public void execute(Process process) throws Exception {
+							// do nothing
+						}
+					};
 
 			proc.setContextName(rs.getString(1));
 			proc.noFireEventUpdate(state, activity);
@@ -132,7 +154,13 @@ public class JdbcStorage implements Storage {
 
 				for (Map.Entry<String, Object> e : values.entrySet()) {
 					pstmt.setString(3, e.getKey());
-					pstmt.setBytes(4, ObjectUtils.toBytes(e.getValue()));
+
+					byte[] bytes = ObjectUtils.toBytes(e.getValue());
+					if (bytes == null) {
+						pstmt.setNull(4, Types.BLOB);
+					} else {
+						pstmt.setBytes(4, bytes);
+					}
 
 					pstmt.addBatch();
 				}
@@ -161,16 +189,18 @@ public class JdbcStorage implements Storage {
 			while (rs.next()) {
 				String var = rs.getString(1);
 				String key = rs.getString(2);
+
 				Object value = ObjectUtils.fromBytes(rs.getBytes(3));
+				if (value != null) {
+					Map<String, Object> values = map.get(var);
 
-				Map<String, Object> values = map.get(var);
+					if (values == null) {
+						values = new HashMap<String, Object>();
+						map.put(var, values);
+					}
 
-				if (values == null) {
-					values = new HashMap<String, Object>();
-					map.put(var, values);
+					values.put(key, value);
 				}
-
-				values.put(key, value);
 			}
 		} finally {
 			JdbcUtils.tryClose(rs);
@@ -204,7 +234,13 @@ public class JdbcStorage implements Storage {
 
 			for (Map.Entry<String, Object> e : attributes.entrySet()) {
 				pstmt.setString(2, e.getKey());
-				pstmt.setBytes(3, ObjectUtils.toBytes(e.getValue()));
+
+				byte[] bytes = ObjectUtils.toBytes(e.getValue());
+				if (bytes == null) {
+					pstmt.setNull(3, Types.BLOB);
+				} else {
+					pstmt.setBytes(3, bytes);
+				}
 
 				pstmt.addBatch();
 			}
@@ -231,7 +267,9 @@ public class JdbcStorage implements Storage {
 				String key = rs.getString(1);
 				Object value = ObjectUtils.fromBytes(rs.getBytes(2));
 
-				proc.setAttribute(key, value);
+				if (value != null) {
+					proc.setAttribute(key, value);
+				}
 			}
 		} finally {
 			JdbcUtils.tryClose(rs);
@@ -321,6 +359,9 @@ public class JdbcStorage implements Storage {
 
 			// persist timeouts
 			persistTimeouts(conn, pid, process.getTimeouts());
+
+			// commit changes
+			conn.commit();
 		} catch (Throwable t) {
 			JdbcUtils.tryRollback(conn);
 
@@ -332,7 +373,9 @@ public class JdbcStorage implements Storage {
 		return false;
 	}
 
-	public void remove(String pid) {
+	public void remove(Process process) {
+		String pid = process.getId();
+
 		Connection conn = JdbcUtils.tryOpen(ds, false, false, log);
 		if (conn == null) {
 			return;
@@ -384,6 +427,9 @@ public class JdbcStorage implements Storage {
 				JdbcUtils.tryClose(pstmt);
 				pstmt = null;
 			}
+			
+			// commit changes
+			conn.commit();
 		} catch (Throwable t) {
 			JdbcUtils.tryRollback(conn);
 
@@ -393,13 +439,8 @@ public class JdbcStorage implements Storage {
 		}
 	}
 
-	public Process find(String pid) {
-		Connection conn = JdbcUtils.tryOpen(ds, false, false, log);
-		if (conn == null) {
-			return null;
-		}
-
-		Process process = processFactory.newProcess();
+	private Process find(Connection conn, String pid) {
+		Process process = processFactory.newProcess(pid);
 
 		try {
 			// load master data
@@ -414,20 +455,126 @@ public class JdbcStorage implements Storage {
 			// load timeouts
 			loadTimeouts(conn, pid, process);
 		} catch (Throwable t) {
-			JdbcUtils.tryRollback(conn);
 			process = null;
 
 			log.error("unable to find process " + pid, t);
-		} finally {
-			JdbcUtils.tryClose(conn);
 		}
 
 		return process;
 	}
 
+	public Process find(String pid) {
+		Connection conn = JdbcUtils.tryOpen(ds, true, false, log);
+		if (conn == null) {
+			return null;
+		}
+
+		return find(conn, pid);
+	}
+
+	public Process[] findByProcessContext(String contextName) {
+		Connection conn = JdbcUtils.tryOpen(ds, true, false, log);
+		if (conn == null) {
+			return null;
+		}
+
+		List<Process> list = new ArrayList<Process>();
+
+		PreparedStatement pstmt = null;
+		ResultSet rs = null;
+
+		try {
+			pstmt = conn
+					.prepareStatement("SELECT pid FROM naw_process WHERE context_name = ?");
+
+			pstmt.setString(1, contextName);
+
+			Set<String> pids = new HashSet<String>();
+
+			rs = pstmt.executeQuery();
+			while (rs.next()) {
+				pids.add(rs.getString(1));
+			}
+
+			JdbcUtils.tryClose(rs);
+			rs = null;
+
+			JdbcUtils.tryClose(pstmt);
+			pstmt = null;
+
+			for (String pid : pids) {
+				Process proc = find(conn, pid);
+
+				if (proc != null) {
+					list.add(proc);
+				}
+			}
+			
+			// commit changes
+			conn.commit();
+		} catch (Throwable t) {
+			JdbcUtils.tryRollback(conn);
+
+			log.error("unable to find processes with context " + contextName, t);
+		} finally {
+			JdbcUtils.tryClose(rs);
+			JdbcUtils.tryClose(pstmt);
+
+			JdbcUtils.tryClose(conn);
+		}
+
+		return list.toArray(new Process[0]);
+	}
+
 	public Process[] findAll() {
-		// TODO Auto-generated method stub
-		return null;
+		Connection conn = JdbcUtils.tryOpen(ds, true, false, log);
+		if (conn == null) {
+			return null;
+		}
+
+		List<Process> list = new ArrayList<Process>();
+
+		Statement stmt = null;
+		ResultSet rs = null;
+
+		try {
+			stmt = conn.createStatement();
+
+			Set<String> pids = new HashSet<String>();
+
+			rs = stmt.executeQuery("SELECT pid FROM naw_process");
+			while (rs.next()) {
+				pids.add(rs.getString(1));
+			}
+
+			JdbcUtils.tryClose(rs);
+			rs = null;
+
+			JdbcUtils.tryClose(stmt);
+			stmt = null;
+
+			for (String pid : pids) {
+				Process proc = find(conn, pid);
+
+				if (proc != null) {
+					list.add(proc);
+				}
+			}
+			
+			// commit changes
+			conn.commit();
+		} catch (Throwable t) {
+			JdbcUtils.tryRollback(conn);
+
+			log.error("unable to find all processes", t);
+		} finally {
+			JdbcUtils.tryClose(rs);
+			JdbcUtils.tryClose(stmt);
+
+			JdbcUtils.tryClose(conn);
+		}
+
+		return list.toArray(new Process[0]);
 	}
 
 }

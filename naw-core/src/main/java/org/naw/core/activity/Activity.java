@@ -3,8 +3,8 @@ package org.naw.core.activity;
 import org.naw.core.Process;
 
 /**
- * Represent workflow activity, unique per process context / workflow and shared
- * across processes in the same process context / workflow
+ * Represent process activity, unique per process context and shared
+ * across processes in the same process context
  */
 public interface Activity {
 
@@ -41,6 +41,11 @@ public interface Activity {
 	 *             if an error occurred
 	 */
 	void execute(Process process) throws Exception;
+
+	/**
+	 * force wake-up this sleeping activity
+	 */
+	void wakeUp(Process process) throws Exception;
 
 	/**
 	 * hibernate this activity

@@ -39,7 +39,7 @@ public interface ActivityContext {
 	void execute(Process process);
 
 	/**
-	 * This method is executed when workflow is hibernating
+	 * This method is executed when process context is hibernating
 	 */
 	void hibernate();
 }

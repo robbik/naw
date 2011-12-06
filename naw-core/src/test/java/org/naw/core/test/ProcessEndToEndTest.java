@@ -20,7 +20,6 @@ import org.naw.core.activity.Receive;
 import org.naw.core.activity.Reply;
 import org.naw.core.partnerLink.MessageEvent;
 import org.naw.core.partnerLink.PartnerLinkListener;
-import org.naw.core.test.MockPartnerLink;
 
 public class ProcessEndToEndTest {
 

@@ -11,4 +11,13 @@ public interface ProcessFactory {
 	 * @return new process
 	 */
 	Process newProcess();
+
+	/**
+	 * create new un-initialized process with default parameters and given pid
+	 * 
+	 * @param pid
+	 *            process id
+	 * @return new process
+	 */
+	Process newProcess(String pid);
 }

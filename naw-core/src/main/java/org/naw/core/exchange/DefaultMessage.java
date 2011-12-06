@@ -77,6 +77,10 @@ public class DefaultMessage implements Message {
 
 		return value;
 	}
+	
+	public synchronized void clear() {
+		var.clear();
+	}
 
 	@Override
 	public synchronized String toString() {

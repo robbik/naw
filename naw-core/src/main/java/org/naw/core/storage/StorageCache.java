@@ -28,8 +28,10 @@ public class StorageCache implements Storage {
 		return false;
 	}
 
-	public void remove(String pid) {
-		storage.remove(pid);
+	public void remove(Process process) {
+		String pid = process.getId();
+		
+		storage.remove(process);
 		cache.remove(pid);
 	}
 
@@ -45,6 +47,10 @@ public class StorageCache implements Storage {
 		}
 
 		return proc;
+	}
+
+	public Process[] findByProcessContext(String contextName) {
+		return storage.findByProcessContext(contextName);
 	}
 
 	public Process[] findAll() {

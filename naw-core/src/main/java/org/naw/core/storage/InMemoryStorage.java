@@ -14,10 +14,15 @@ import org.naw.core.Process;
 
 public class InMemoryStorage implements Storage {
 
+	// <pid, blob>
 	private Map<String, byte[]> disk;
+
+	// <pid, context-name>
+	private Map<String, String> idx1;
 
 	public InMemoryStorage() {
 		disk = Collections.synchronizedMap(new HashMap<String, byte[]>());
+		idx1 = new HashMap<String, String>();
 	}
 
 	public boolean persist(Process process) {
@@ -33,13 +38,21 @@ public class InMemoryStorage implements Storage {
 
 		String pid = process.getId();
 
-		disk.put(pid, out.toByteArray());
+		synchronized (disk) {
+			disk.put(pid, out.toByteArray());
+			idx1.put(pid, process.getContextName());
+		}
 
 		return true;
 	}
 
-	public void remove(String pid) {
-		disk.remove(pid);
+	public void remove(Process process) {
+		String pid = process.getId();
+		
+		synchronized (disk) {
+			disk.remove(pid);
+			idx1.remove(pid);
+		}
 	}
 
 	public Process find(String pid) {
@@ -56,6 +69,25 @@ public class InMemoryStorage implements Storage {
 		} catch (Throwable t) {
 			throw new RuntimeException(t);
 		}
+	}
+
+	public Process[] findByProcessContext(String contextName) {
+		List<Process> procs = new ArrayList<Process>();
+
+		synchronized (disk) {
+			for (Map.Entry<String, String> e : idx1.entrySet()) {
+				if (!contextName.equals(e.getValue())) {
+					continue;
+				}
+
+				Process proc = find(e.getKey());
+				if (proc != null) {
+					procs.add(proc);
+				}
+			}
+		}
+
+		return procs.toArray(new Process[0]);
 	}
 
 	public Process[] findAll() {

@@ -8,4 +8,8 @@ public class DefaultProcessFactory implements ProcessFactory {
 	public Process newProcess() {
 		return new DefaultProcess();
 	}
+	
+	public Process newProcess(String pid) {
+		return new DefaultProcess(pid);
+	}
 }

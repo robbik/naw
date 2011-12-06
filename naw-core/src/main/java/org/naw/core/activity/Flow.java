@@ -1,7 +1,6 @@
 package org.naw.core.activity;
 
 import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -9,6 +8,7 @@ import org.naw.core.Process;
 import org.naw.core.pipeline.DefaultPipeline;
 import org.naw.core.pipeline.Pipeline;
 import org.naw.core.pipeline.Sink;
+import org.naw.core.util.internal.SharedExecutors;
 
 /**
  * FLOW
@@ -48,7 +48,7 @@ public class Flow extends AbstractActivity implements Sink {
 
 		executor = procctx.getExecutor();
 		if (executor == null) {
-			executor = Executors.newCachedThreadPool();
+			executor = SharedExecutors.CACHED;
 		}
 
 		if (activities == null) {

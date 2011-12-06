@@ -120,7 +120,7 @@ public class PerformanceTest {
 		executor = Executors.newCachedThreadPool();
 
 		partnerLink = new MockPartnerLink();
-		partnerLink.setExecutorService(executor);
+		partnerLink.setExecutor(executor);
 
 		partnerLink.subscribe("process_callback", new PartnerLinkListener() {
 			public void messageReceived(MessageEvent e) {
