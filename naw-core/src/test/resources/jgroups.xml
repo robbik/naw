@@ -1,0 +1,66 @@
+<config>
+    <TCP bind_addr="0.0.0.0"
+         bind_port="${jgroups.tcp.bind_port:9980}"
+         discard_incompatible_packets="true"
+         enable_bundling="true"
+         enable_diagnostics="false"
+         loopback="true"
+         tcp_nodelay="true"
+         max_bundle_size="60000"
+         max_bundle_timeout="30"
+         oob_thread_pool.keep_alive_time="5000"
+         oob_thread_pool.max_threads="8"
+         oob_thread_pool.min_threads="1"
+         oob_thread_pool.enabled="true"
+         oob_thread_pool.queue_enabled="true"
+         oob_thread_pool.queue_max_size="100"
+         oob_thread_pool.rejection_policy="Run"
+         port_range="1"
+         thread_pool.enabled="true"
+         thread_pool.min_threads="1"
+         thread_pool.max_threads="25"
+         thread_pool.keep_alive_time="5000"
+         thread_pool.queue_enabled="true"
+         thread_pool.queue_max_size="100"
+         thread_pool.rejection_policy="Run"
+         timer_type="wheel"
+         timer.queue_max_size="100"
+         timer.wheel_size="500"
+         timer.tick_time="10"
+         timer.min_threads="1"
+         timer.max_threads="8"
+         timer.keep_alive_time="5000"
+     />
+    
+    <MPING bind_addr="0.0.0.0" mcast_addr="224.0.0.199" mcast_port="9999" ip_ttl="16" />
+
+    <MERGE3 min_interval="10000" max_interval="30000" />
+    
+    <DUPL incoming_copies="0" outgoing_copies="0" copy_unicast_msgs="false" copy_multicast_msgs="false" />
+
+    <FD_SOCK />
+
+    <FD timeout="10000" max_tries="5" />
+
+    <VERIFY_SUSPECT timeout="1500" />
+
+    <pbcast.NAKACK use_mcast_xmit="false"
+                   gc_lag="0"
+                   retransmit_timeout="300,600,1200,2400,4800"
+                   discard_delivered_msgs="true" />
+
+    <UNICAST timeout="300,600,1200,2400,3600"/>
+
+    <pbcast.STABLE stability_delay="1000" desired_avg_gossip="50000" max_bytes="400000"/>
+
+    <pbcast.GMS print_local_addr="false"
+                join_timeout="3000"
+                view_bundling="true" />
+
+    <FC max_credits="20000000" min_threshold="0.10"/>
+
+    <FRAG2 frag_size="59999"  />
+
+    <pbcast.STATE_TRANSFER  />
+</config>
+
