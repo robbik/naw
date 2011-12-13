@@ -77,9 +77,17 @@ public class DefaultMessage implements Message {
 
 		return value;
 	}
-	
+
 	public synchronized void clear() {
 		var.clear();
+	}
+
+	@Override
+	public synchronized Object clone() throws CloneNotSupportedException {
+		DefaultMessage c = new DefaultMessage();
+		c.var.putAll(var);
+		
+		return c;
 	}
 
 	@Override

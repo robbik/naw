@@ -7,7 +7,7 @@ import java.util.Set;
 /**
  * represent a message used by a process
  */
-public interface Message extends Serializable {
+public interface Message extends Serializable, Cloneable {
 
 	/**
 	 * set variable as empty map
@@ -55,4 +55,6 @@ public interface Message extends Serializable {
 	 * remove all variables
 	 */
 	void clear();
+
+	Object clone() throws CloneNotSupportedException;
 }

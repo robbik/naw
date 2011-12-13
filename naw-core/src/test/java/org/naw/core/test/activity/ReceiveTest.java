@@ -66,7 +66,7 @@ public class ReceiveTest {
 
 			public void execute(Process process) throws Exception {
 				if (msg != null) {
-					msg.set(process.getMessage());
+					msg.set((Message) process.getMessage().clone());
 				}
 
 				if (source != null) {
