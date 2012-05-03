@@ -15,17 +15,17 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.junit.Test;
-import org.naw.core.DefaultProcessContext;
-import org.naw.core.Process;
-import org.naw.core.ProcessContext;
-import org.naw.core.ProcessState;
-import org.naw.core.activity.AbstractActivity;
-import org.naw.core.activity.Activity;
-import org.naw.core.activity.Receive;
-import org.naw.core.compensation.CompensationHandler;
-import org.naw.core.exchange.Message;
-import org.naw.core.pipeline.DefaultPipeline;
-import org.naw.core.test.MockPartnerLink;
+import org.naw.activities.Activity;
+import org.naw.activities.support.AbstractActivity;
+import org.naw.engine.DefaultProcessContext;
+import org.naw.engine.NawProcess;
+import org.naw.engine.ProcessInstance;
+import org.naw.engine.RelativePosition;
+import org.naw.engine.compensation.CompensationHandler;
+import org.naw.engine.exchange.Message;
+import org.naw.engine.pipeline.DefaultPipeline;
+import org.naw.engine.test.MockPartnerLink;
+import org.naw.tasks.Receive;
 
 public class ReceiveTest {
 
@@ -39,7 +39,7 @@ public class ReceiveTest {
 	private static DefaultPipeline newPipeline(Activity... activities) {
 		DefaultPipeline pipeline = new DefaultPipeline();
 		pipeline.setActivities(activities);
-		pipeline.setProcessContext(newProcessContext());
+		pipeline.setNawProcess(newProcessContext());
 		pipeline.setSink(null);
 
 		return pipeline;
@@ -64,7 +64,7 @@ public class ReceiveTest {
 
 		Activity act = new AbstractActivity("abcd") {
 
-			public void execute(Process process) throws Exception {
+			public void execute(ProcessInstance process) throws Exception {
 				if (msg != null) {
 					msg.set((Message) process.getMessage().clone());
 				}
@@ -78,7 +78,7 @@ public class ReceiveTest {
 					latch.countDown();
 				}
 
-				ctx.execute(process);
+				ctx.next(process);
 			}
 		};
 
@@ -88,7 +88,7 @@ public class ReceiveTest {
 	private static Activity newErrorActivity() {
 		Activity act = new AbstractActivity("abcd2") {
 
-			public void execute(Process process) throws Exception {
+			public void execute(ProcessInstance process) throws Exception {
 				throw new Exception("FAILURE");
 			}
 		};
@@ -109,9 +109,9 @@ public class ReceiveTest {
 		Receive act = newActivity(true, true);
 
 		DefaultPipeline pipeline = newPipeline(act);
-		pipeline.init();
+		pipeline.initialize();
 
-		assertTrue(((MockPartnerLink) pipeline.getProcessContext()
+		assertTrue(((MockPartnerLink) pipeline.getNawProcess()
 				.findPartnerLink("xx")).subscribed("xx", act));
 
 		pipeline.shutdown();
@@ -122,7 +122,7 @@ public class ReceiveTest {
 		Receive act = newActivity(true, true);
 		act.setPartnerLink("zz");
 
-		newPipeline(act).init();
+		newPipeline(act).initialize();
 	}
 
 	@Test
@@ -130,12 +130,12 @@ public class ReceiveTest {
 		Receive act = newActivity(true, true);
 
 		DefaultPipeline pipeline = newPipeline(act);
-		pipeline.init();
+		pipeline.initialize();
 
-		Process process = pipeline.getProcessContext().newProcess();
+		ProcessInstance process = pipeline.getNawProcess().newProcess();
 		process.getMessage().declare("data");
 
-		act.execute(process);
+		act.next(process);
 
 		assertNull(process.getActivity());
 
@@ -155,9 +155,9 @@ public class ReceiveTest {
 		DefaultPipeline pipeline = newPipeline(newActivity(true, true),
 				newFinalActivity(latch, msgref, sourceref));
 
-		pipeline.init();
+		pipeline.initialize();
 
-		MockPartnerLink mpl = (MockPartnerLink) pipeline.getProcessContext()
+		MockPartnerLink mpl = (MockPartnerLink) pipeline.getNawProcess()
 				.findPartnerLink("xx");
 		mpl.publish("testUnit", "xx",
 				Collections.singletonMap("response", (Object) "OK"));
@@ -186,9 +186,9 @@ public class ReceiveTest {
 		DefaultPipeline pipeline = newPipeline(newActivity(true, false),
 				newFinalActivity(latch, msgref, sourceref));
 
-		pipeline.init();
+		pipeline.initialize();
 
-		MockPartnerLink mpl = (MockPartnerLink) pipeline.getProcessContext()
+		MockPartnerLink mpl = (MockPartnerLink) pipeline.getNawProcess()
 				.findPartnerLink("xx");
 		mpl.publish("testUnit", "xx",
 				Collections.singletonMap("response", (Object) "OK"));
@@ -214,13 +214,13 @@ public class ReceiveTest {
 
 		DefaultPipeline pipeline = newPipeline(newActivity(false, false),
 				newFinalActivity(latch, null, null));
-		pipeline.init();
+		pipeline.initialize();
 
 		Map<String, Object> map = new ConcurrentHashMap<String, Object>();
 		map.put("response", "OK");
 		map.put("processId", "-1");
 
-		MockPartnerLink mpl = (MockPartnerLink) pipeline.getProcessContext()
+		MockPartnerLink mpl = (MockPartnerLink) pipeline.getNawProcess()
 				.findPartnerLink("xx");
 		mpl.publish("testUnit", "xx", map);
 
@@ -241,19 +241,19 @@ public class ReceiveTest {
 		DefaultPipeline pipeline = newPipeline(act,
 				newFinalActivity(latch, msgref, sourceref));
 
-		pipeline.init();
+		pipeline.initialize();
 
-		Process proc = pipeline.getProcessContext().newProcess();
+		ProcessInstance proc = pipeline.getNawProcess().newProcess();
 		proc.getMessage().declare("data2");
 		proc.getMessage().get("data2").put("initial", "312");
 
-		proc.update(ProcessState.BEFORE, act);
+		proc.update(RelativePosition.BEFORE, act);
 
 		Map<String, Object> map = new ConcurrentHashMap<String, Object>();
 		map.put("response", "OK");
 		map.put("processId", proc.getId());
 
-		MockPartnerLink mpl = (MockPartnerLink) pipeline.getProcessContext()
+		MockPartnerLink mpl = (MockPartnerLink) pipeline.getNawProcess()
 				.findPartnerLink("xx");
 		mpl.publish("testUnit", "xx", map);
 
@@ -285,19 +285,19 @@ public class ReceiveTest {
 		DefaultPipeline pipeline = newPipeline(act,
 				newFinalActivity(latch, msgref, sourceref));
 
-		pipeline.init();
+		pipeline.initialize();
 
-		Process proc = pipeline.getProcessContext().newProcess();
+		ProcessInstance proc = pipeline.getNawProcess().newProcess();
 		proc.getMessage().declare("data2");
 		proc.getMessage().get("data2").put("initial", "312");
 
-		proc.update(ProcessState.BEFORE, act);
+		proc.update(RelativePosition.BEFORE, act);
 
 		Map<String, Object> map = new ConcurrentHashMap<String, Object>();
 		map.put("response", "OK");
 		map.put("processId", proc.getId());
 
-		MockPartnerLink mpl = (MockPartnerLink) pipeline.getProcessContext()
+		MockPartnerLink mpl = (MockPartnerLink) pipeline.getNawProcess()
 				.findPartnerLink("xx");
 		mpl.publish("testUnit", "xx", map);
 
@@ -329,19 +329,19 @@ public class ReceiveTest {
 		DefaultPipeline pipeline = newPipeline(act,
 				newFinalActivity(latch, msgref, sourceref));
 
-		pipeline.init();
+		pipeline.initialize();
 
-		Process proc = pipeline.getProcessContext().newProcess();
+		ProcessInstance proc = pipeline.getNawProcess().newProcess();
 		proc.getMessage().declare("data2");
 		proc.getMessage().get("data2").put("initial", "312");
 
-		proc.update(ProcessState.INIT, null);
+		proc.update(RelativePosition.INIT, null);
 
 		Map<String, Object> map = new ConcurrentHashMap<String, Object>();
 		map.put("response", "OK");
 		map.put("processId", proc.getId());
 
-		MockPartnerLink mpl = (MockPartnerLink) pipeline.getProcessContext()
+		MockPartnerLink mpl = (MockPartnerLink) pipeline.getNawProcess()
 				.findPartnerLink("xx");
 		mpl.publish("testUnit", "xx", map);
 
@@ -365,19 +365,19 @@ public class ReceiveTest {
 		DefaultPipeline pipeline = newPipeline(act,
 				newFinalActivity(latch, msgref, sourceref));
 
-		pipeline.init();
+		pipeline.initialize();
 
-		Process proc = pipeline.getProcessContext().newProcess();
+		ProcessInstance proc = pipeline.getNawProcess().newProcess();
 		proc.getMessage().declare("data2");
 		proc.getMessage().get("data2").put("initial", "312");
 
-		proc.update(ProcessState.INIT, null);
+		proc.update(RelativePosition.INIT, null);
 
 		Map<String, Object> map = new ConcurrentHashMap<String, Object>();
 		map.put("response", "OK");
 		map.put("processId", proc.getId());
 
-		MockPartnerLink mpl = (MockPartnerLink) pipeline.getProcessContext()
+		MockPartnerLink mpl = (MockPartnerLink) pipeline.getNawProcess()
 				.findPartnerLink("xx");
 		mpl.publish("testUnit", "xx", map);
 
@@ -402,14 +402,14 @@ public class ReceiveTest {
 				newFinalActivity(latch, msgref, sourceref), newErrorActivity());
 		pipeline.register(new CompensationHandler() {
 
-			public void compensate(Process process, Throwable error) {
+			public void compensate(ProcessInstance process, Throwable error) {
 				errorRef.set(error);
 			}
 		});
 
-		pipeline.init();
+		pipeline.initialize();
 
-		MockPartnerLink mpl = (MockPartnerLink) pipeline.getProcessContext()
+		MockPartnerLink mpl = (MockPartnerLink) pipeline.getNawProcess()
 				.findPartnerLink("xx");
 		mpl.publish("testUnit", "xx",
 				Collections.singletonMap("response", (Object) "OK"));
@@ -443,9 +443,9 @@ public class ReceiveTest {
 		Receive act = newActivity(true, true);
 
 		DefaultPipeline pipeline = newPipeline(act);
-		ProcessContext procctx = pipeline.getProcessContext();
+		NawProcess procctx = pipeline.getNawProcess();
 
-		pipeline.init();
+		pipeline.initialize();
 		pipeline.shutdown();
 
 		assertFalse(((MockPartnerLink) procctx.findPartnerLink("xx"))
@@ -458,7 +458,7 @@ public class ReceiveTest {
 
 		DefaultPipeline pipeline = newPipeline(act);
 
-		pipeline.init();
+		pipeline.initialize();
 		pipeline.shutdown();
 
 		act.shutdown();

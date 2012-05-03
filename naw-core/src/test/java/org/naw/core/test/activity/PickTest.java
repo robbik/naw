@@ -9,18 +9,18 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import org.junit.Test;
-import org.naw.core.DefaultProcessContext;
-import org.naw.core.Process;
-import org.naw.core.ProcessContext;
-import org.naw.core.ProcessState;
-import org.naw.core.activity.Activity;
-import org.naw.core.activity.Empty;
-import org.naw.core.activity.Pick;
-import org.naw.core.activity.PickOnMessage;
-import org.naw.core.test.MockActivity;
-import org.naw.core.test.MockLifeCycleListener;
-import org.naw.core.test.MockPartnerLink;
-import org.naw.core.util.Selectors;
+import org.naw.activities.Activity;
+import org.naw.core.utils.Selectors;
+import org.naw.engine.DefaultProcessContext;
+import org.naw.engine.NawProcess;
+import org.naw.engine.ProcessInstance;
+import org.naw.engine.RelativePosition;
+import org.naw.engine.test.MockActivity;
+import org.naw.engine.test.MockLifeCycleListener;
+import org.naw.engine.test.MockPartnerLink;
+import org.naw.tasks.Empty;
+import org.naw.tasks.Pick;
+import org.naw.tasks.PickOnMessage;
 
 public class PickTest {
 
@@ -60,8 +60,8 @@ public class PickTest {
 	public void testInit() throws Exception {
 		Activity act = newActivity(true, true);
 
-		ProcessContext procctx = newProcessContext(act);
-		procctx.init();
+		NawProcess procctx = newProcessContext(act);
+		procctx.initialize();
 
 		assertEquals(1,
 				((MockPartnerLink) procctx.findPartnerLink("xx"))
@@ -80,7 +80,7 @@ public class PickTest {
 		DefaultProcessContext procctx = newProcessContext(act);
 		procctx.removePartnerLink("xx");
 
-		procctx.init();
+		procctx.initialize();
 	}
 
 	@Test
@@ -88,15 +88,15 @@ public class PickTest {
 			throws Exception {
 		MockLifeCycleListener mock = new MockLifeCycleListener();
 
-		ProcessContext procctx = newProcessContext(newActivity(true, true));
+		NawProcess procctx = newProcessContext(newActivity(true, true));
 		procctx.getSelector().add(mock, Selectors.ALL_SELECTIONS);
 
-		procctx.init();
+		procctx.initialize();
 
 		mock.expectProcessCreated();
-		mock.expectProcessStateChanged(ProcessState.BEFORE, "EMPTY_xx1");
-		mock.expectProcessStateChanged(ProcessState.AFTER, "EMPTY_xx1");
-		mock.expectProcessStateChanged(ProcessState.AFTER, "ab");
+		mock.expectProcessStateChanged(RelativePosition.BEFORE, "EMPTY_xx1");
+		mock.expectProcessStateChanged(RelativePosition.AFTER, "EMPTY_xx1");
+		mock.expectProcessStateChanged(RelativePosition.AFTER, "ab");
 		mock.expectProcessTerminated();
 
 		MockPartnerLink mpl = (MockPartnerLink) procctx.findPartnerLink("xx");
@@ -113,15 +113,15 @@ public class PickTest {
 			throws Exception {
 		MockLifeCycleListener mock = new MockLifeCycleListener();
 
-		ProcessContext procctx = newProcessContext(newActivity(true, true));
+		NawProcess procctx = newProcessContext(newActivity(true, true));
 		procctx.getSelector().add(mock, Selectors.ALL_SELECTIONS);
 
-		procctx.init();
+		procctx.initialize();
 
 		mock.expectProcessCreated();
-		mock.expectProcessStateChanged(ProcessState.BEFORE, "EMPTY_xx2");
-		mock.expectProcessStateChanged(ProcessState.AFTER, "EMPTY_xx2");
-		mock.expectProcessStateChanged(ProcessState.AFTER, "ab");
+		mock.expectProcessStateChanged(RelativePosition.BEFORE, "EMPTY_xx2");
+		mock.expectProcessStateChanged(RelativePosition.AFTER, "EMPTY_xx2");
+		mock.expectProcessStateChanged(RelativePosition.AFTER, "ab");
 		mock.expectProcessTerminated();
 
 		MockPartnerLink mpl = (MockPartnerLink) procctx.findPartnerLink("xx");
@@ -138,10 +138,10 @@ public class PickTest {
 			throws Exception {
 		MockLifeCycleListener mock = new MockLifeCycleListener();
 
-		ProcessContext procctx = newProcessContext(newActivity(false, true));
+		NawProcess procctx = newProcessContext(newActivity(false, true));
 		procctx.getSelector().add(mock, Selectors.ALL_SELECTIONS);
 
-		procctx.init();
+		procctx.initialize();
 
 		mock.expectProcessCreated();
 
@@ -164,13 +164,13 @@ public class PickTest {
 			throws Exception {
 		MockLifeCycleListener mock = new MockLifeCycleListener();
 
-		ProcessContext procctx = newProcessContext(newActivity(false, true));
+		NawProcess procctx = newProcessContext(newActivity(false, true));
 		procctx.getSelector().add(mock, Selectors.ALL_SELECTIONS);
 
-		procctx.init();
+		procctx.initialize();
 
-		Process proc = procctx.newProcess();
-		proc.noFireEventUpdate(ProcessState.BEFORE, new MockActivity(
+		ProcessInstance proc = procctx.newProcess();
+		proc.noFireEventUpdate(RelativePosition.BEFORE, new MockActivity(
 				"EMPTY_xx1"));
 
 		MockPartnerLink mpl = (MockPartnerLink) procctx.findPartnerLink("xx");
@@ -179,7 +179,7 @@ public class PickTest {
 		data.put("response", "OK");
 		data.put("processId", proc.getId());
 
-		mock.expectProcessStateChanged(ProcessState.AFTER, "EMPTY_xx1");
+		mock.expectProcessStateChanged(RelativePosition.AFTER, "EMPTY_xx1");
 
 		mpl.publish("testUnit", "xx1", data);
 
@@ -193,13 +193,13 @@ public class PickTest {
 			throws Exception {
 		MockLifeCycleListener mock = new MockLifeCycleListener();
 
-		ProcessContext procctx = newProcessContext(newActivity(false, true));
+		NawProcess procctx = newProcessContext(newActivity(false, true));
 		procctx.getSelector().add(mock, Selectors.ALL_SELECTIONS);
 
-		procctx.init();
+		procctx.initialize();
 
-		Process proc = procctx.newProcess();
-		proc.noFireEventUpdate(ProcessState.SLEEP, new MockActivity("ab"));
+		ProcessInstance proc = procctx.newProcess();
+		proc.noFireEventUpdate(RelativePosition.SLEEP, new MockActivity("ab"));
 
 		MockPartnerLink mpl = (MockPartnerLink) procctx.findPartnerLink("xx");
 
@@ -207,9 +207,9 @@ public class PickTest {
 		data.put("response", "OK");
 		data.put("processId", proc.getId());
 
-		mock.expectProcessStateChanged(ProcessState.BEFORE, "EMPTY_xx1");
-		mock.expectProcessStateChanged(ProcessState.AFTER, "EMPTY_xx1");
-		mock.expectProcessStateChanged(ProcessState.AFTER, "ab");
+		mock.expectProcessStateChanged(RelativePosition.BEFORE, "EMPTY_xx1");
+		mock.expectProcessStateChanged(RelativePosition.AFTER, "EMPTY_xx1");
+		mock.expectProcessStateChanged(RelativePosition.AFTER, "ab");
 		mock.expectProcessTerminated();
 
 		mpl.publish("testUnit", "xx1", data);

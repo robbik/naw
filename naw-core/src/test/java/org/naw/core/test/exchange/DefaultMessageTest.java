@@ -7,7 +7,7 @@ import java.util.Collections;
 import java.util.Map;
 
 import org.junit.Test;
-import org.naw.core.exchange.DefaultMessage;
+import org.naw.engine.exchange.DefaultMessage;
 
 public class DefaultMessageTest {
 

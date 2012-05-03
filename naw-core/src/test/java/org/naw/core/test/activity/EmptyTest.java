@@ -7,20 +7,20 @@ import java.util.Map;
 import java.util.UUID;
 
 import org.junit.Test;
-import org.naw.core.DefaultProcessContext;
-import org.naw.core.Process;
-import org.naw.core.ProcessState;
-import org.naw.core.activity.Activity;
-import org.naw.core.activity.Empty;
-import org.naw.core.pipeline.DefaultPipeline;
-import org.naw.core.pipeline.Pipeline;
+import org.naw.activities.Activity;
+import org.naw.engine.DefaultProcessContext;
+import org.naw.engine.ProcessInstance;
+import org.naw.engine.RelativePosition;
+import org.naw.engine.pipeline.DefaultPipeline;
+import org.naw.engine.pipeline.Pipeline;
+import org.naw.tasks.Empty;
 
 public class EmptyTest {
 
     private static DefaultPipeline newPipeline(Activity... activities) {
         DefaultPipeline pipeline = new DefaultPipeline();
         pipeline.setActivities(activities);
-        pipeline.setProcessContext(new DefaultProcessContext("bb"));
+        pipeline.setNawProcess(new DefaultProcessContext("bb"));
         pipeline.setSink(null);
 
         return pipeline;
@@ -37,7 +37,7 @@ public class EmptyTest {
     @Test
     public void testInit() throws Exception {
         Pipeline p = newPipeline(new Empty("a"));
-        p.init();
+        p.initialize();
     }
 
     @Test
@@ -45,17 +45,17 @@ public class EmptyTest {
         Empty act = new Empty("a");
 
         Pipeline p = newPipeline(act);
-        p.init();
+        p.initialize();
 
         Map<String, Object> map = Collections.singletonMap("abcd", (Object) "1234");
 
-        Process process = p.getProcessContext().newProcess();
+        ProcessInstance process = p.getNawProcess().newProcess();
         process.getMessage().set("abcde", map);
 
-        act.execute(process);
+        act.next(process);
 
         assertEquals(act, process.getActivity());
-        assertEquals(ProcessState.AFTER, process.getState());
+        assertEquals(RelativePosition.AFTER, process.getState());
 
         assertEquals(map, process.getMessage().get("abcde"));
         assertEquals(1, process.getMessage().getVariables().size());
@@ -72,14 +72,14 @@ public class EmptyTest {
     @Test
     public void testDestroyAfterInit() throws Exception {
         Pipeline p = newPipeline(new Empty("a"));
-        p.init();
+        p.initialize();
         p.shutdown();
     }
 
     @Test
     public void testDoubleDestroyAfterInit() throws Exception {
         Pipeline p = newPipeline(new Empty("a"));
-        p.init();
+        p.initialize();
         p.shutdown();
         p.shutdown();
     }

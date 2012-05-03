@@ -13,13 +13,14 @@ import java.util.concurrent.TimeUnit;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.naw.core.DefaultProcessContext;
-import org.naw.core.activity.Invoke;
-import org.naw.core.activity.Merge;
-import org.naw.core.activity.Receive;
-import org.naw.core.activity.Reply;
-import org.naw.core.partnerLink.MessageEvent;
-import org.naw.core.partnerLink.PartnerLinkListener;
+import org.naw.engine.DefaultProcessContext;
+import org.naw.engine.test.MockPartnerLink;
+import org.naw.links.MessageEvent;
+import org.naw.links.PartnerLinkListener;
+import org.naw.tasks.Invoke;
+import org.naw.tasks.Merge;
+import org.naw.tasks.Receive;
+import org.naw.tasks.Reply;
 
 public class ProcessEndToEndTest {
 
@@ -43,8 +44,8 @@ public class ProcessEndToEndTest {
 
 	private static Merge createMerge() {
 		Merge act = new Merge("merge");
-		act.setFromVariable("response-1");
-		act.setToVariable("data");
+		act.setFrom("response-1");
+		act.setTo("data");
 
 		return act;
 	}
@@ -71,8 +72,8 @@ public class ProcessEndToEndTest {
 
 	private static Merge createMerge2() {
 		Merge act = new Merge("merge2");
-		act.setFromVariable("response-2");
-		act.setToVariable("data");
+		act.setFrom("response-2");
+		act.setTo("data");
 
 		return act;
 	}
@@ -132,7 +133,7 @@ public class ProcessEndToEndTest {
 		processctx.addPartnerLink("mock", partnerLink);
 		processctx.setActivities(createReceive(), createReply());
 
-		processctx.init();
+		processctx.initialize();
 
 		Map<String, Object> msg = new HashMap<String, Object>();
 		msg.put("/data/xxx/text()", "abcdef");
@@ -168,7 +169,7 @@ public class ProcessEndToEndTest {
 		processctx.addPartnerLink("mock", partnerLink);
 		processctx.setActivities(act, createReply());
 
-		processctx.init();
+		processctx.initialize();
 
 		Map<String, Object> msg = new HashMap<String, Object>();
 		msg.put("/data/xxx/text()", "azsw");
@@ -193,7 +194,7 @@ public class ProcessEndToEndTest {
 		processctx.setActivities(createReceive(), createInvoke(),
 				createMerge(), createReply());
 
-		processctx.init();
+		processctx.initialize();
 
 		Map<String, Object> msg = new HashMap<String, Object>();
 		msg.put("/data/xxx/text()", "zzzz");
@@ -223,7 +224,7 @@ public class ProcessEndToEndTest {
 		processctx.setActivities(createReceive(), createInvoke(),
 				createMerge(), createInvoke2(), createMerge2(), createReply());
 
-		processctx.init();
+		processctx.initialize();
 
 		Map<String, Object> msg = new HashMap<String, Object>();
 		msg.put("/data/xxx/text()", "aaa");

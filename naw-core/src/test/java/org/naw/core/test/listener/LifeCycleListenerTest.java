@@ -6,16 +6,16 @@ import java.util.concurrent.TimeUnit;
 
 import org.junit.Before;
 import org.junit.Test;
-import org.naw.core.DefaultProcessContext;
-import org.naw.core.ProcessState;
-import org.naw.core.activity.Activity;
-import org.naw.core.activity.Receive;
-import org.naw.core.activity.Reply;
-import org.naw.core.listener.LifeCycleListener;
-import org.naw.core.partnerLink.MessageEvent;
-import org.naw.core.partnerLink.PartnerLinkListener;
-import org.naw.core.test.MockLifeCycleListener;
-import org.naw.core.test.MockPartnerLink;
+import org.naw.activities.Activity;
+import org.naw.engine.DefaultProcessContext;
+import org.naw.engine.RelativePosition;
+import org.naw.engine.listener.LifeCycleListener;
+import org.naw.engine.test.MockLifeCycleListener;
+import org.naw.engine.test.MockPartnerLink;
+import org.naw.links.MessageEvent;
+import org.naw.links.PartnerLinkListener;
+import org.naw.tasks.Receive;
+import org.naw.tasks.Reply;
 
 public class LifeCycleListenerTest {
 
@@ -75,14 +75,14 @@ public class LifeCycleListenerTest {
 
 		mock.expectProcessContextInitialized(processctx);
 
-		processctx.init();
+		processctx.initialize();
 
 		mock.assertExpected(5, TimeUnit.SECONDS);
 
 		mock.expectProcessCreated();
-		mock.expectProcessStateChanged(ProcessState.AFTER, receive);
-		mock.expectProcessStateChanged(ProcessState.BEFORE, reply);
-		mock.expectProcessStateChanged(ProcessState.AFTER, reply);
+		mock.expectProcessStateChanged(RelativePosition.AFTER, receive);
+		mock.expectProcessStateChanged(RelativePosition.BEFORE, reply);
+		mock.expectProcessStateChanged(RelativePosition.AFTER, reply);
 		mock.expectProcessTerminated();
 
 		Map<String, Object> msg = new HashMap<String, Object>();
@@ -116,12 +116,12 @@ public class LifeCycleListenerTest {
 
 		mock.expectProcessContextInitialized(processctx);
 
-		processctx.init();
+		processctx.initialize();
 
 		mock.assertExpected(5, TimeUnit.SECONDS);
 
 		mock.expectProcessCreated();
-		mock.expectProcessStateChanged(ProcessState.AFTER, receive);
+		mock.expectProcessStateChanged(RelativePosition.AFTER, receive);
 		mock.expectProcessTerminated();
 
 		Map<String, Object> msg = new HashMap<String, Object>();

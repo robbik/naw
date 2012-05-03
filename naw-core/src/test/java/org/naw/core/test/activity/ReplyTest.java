@@ -13,15 +13,15 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.junit.Test;
-import org.naw.core.DefaultProcessContext;
-import org.naw.core.Process;
-import org.naw.core.activity.Activity;
-import org.naw.core.activity.Reply;
-import org.naw.core.partnerLink.MessageEvent;
-import org.naw.core.partnerLink.PartnerLinkListener;
-import org.naw.core.pipeline.DefaultPipeline;
-import org.naw.core.pipeline.Pipeline;
-import org.naw.core.test.MockPartnerLink;
+import org.naw.activities.Activity;
+import org.naw.engine.DefaultProcessContext;
+import org.naw.engine.ProcessInstance;
+import org.naw.engine.pipeline.DefaultPipeline;
+import org.naw.engine.pipeline.Pipeline;
+import org.naw.engine.test.MockPartnerLink;
+import org.naw.links.MessageEvent;
+import org.naw.links.PartnerLinkListener;
+import org.naw.tasks.Reply;
 
 public class ReplyTest {
 
@@ -35,7 +35,7 @@ public class ReplyTest {
 	private static DefaultPipeline newPipeline(Activity... activities) {
 		DefaultPipeline pipeline = new DefaultPipeline();
 		pipeline.setActivities(activities);
-		pipeline.setProcessContext(newProcessContext());
+		pipeline.setNawProcess(newProcessContext());
 		pipeline.setSink(null);
 
 		return pipeline;
@@ -64,7 +64,7 @@ public class ReplyTest {
 		Reply act = newActivity(true, true);
 
 		DefaultPipeline pipeline = newPipeline(act);
-		pipeline.init();
+		pipeline.initialize();
 
 		pipeline.shutdown();
 	}
@@ -74,7 +74,7 @@ public class ReplyTest {
 		Reply act = newActivity(true, true);
 		act.setPartnerLink("zz");
 
-		newPipeline(act).init();
+		newPipeline(act).initialize();
 	}
 
 	@Test
@@ -82,12 +82,12 @@ public class ReplyTest {
 		Reply act = newActivity(true, true);
 
 		DefaultPipeline pipeline = newPipeline(act);
-		pipeline.init();
+		pipeline.initialize();
 
 		final AtomicReference<Map<String, Object>> ref = new AtomicReference<Map<String, Object>>();
 		final CountDownLatch latch = new CountDownLatch(1);
 
-		pipeline.getProcessContext().findPartnerLink("xx")
+		pipeline.getNawProcess().findPartnerLink("xx")
 				.subscribe("op_callback", new PartnerLinkListener() {
 
 					public void messageReceived(MessageEvent e) {
@@ -97,13 +97,13 @@ public class ReplyTest {
 					}
 				});
 
-		Process process = pipeline.getProcessContext().newProcess();
+		ProcessInstance process = pipeline.getNawProcess().newProcess();
 		process.getMessage().declare("data");
 		process.getMessage().get("data").put("initial", "77");
 
 		process.setAttribute("EXCHANGE$op", "zz");
 
-		act.execute(process);
+		act.next(process);
 
 		assertTrue(latch.await(5, TimeUnit.SECONDS));
 
@@ -120,12 +120,12 @@ public class ReplyTest {
 		Reply act = newActivity(true, true);
 
 		DefaultPipeline pipeline = newPipeline(act);
-		pipeline.init();
+		pipeline.initialize();
 
 		final AtomicReference<Map<String, Object>> ref = new AtomicReference<Map<String, Object>>();
 		final CountDownLatch latch = new CountDownLatch(1);
 
-		pipeline.getProcessContext().findPartnerLink("xx")
+		pipeline.getNawProcess().findPartnerLink("xx")
 				.subscribe("op_callback", new PartnerLinkListener() {
 
 					public void messageReceived(MessageEvent e) {
@@ -135,11 +135,11 @@ public class ReplyTest {
 					}
 				});
 
-		Process process = pipeline.getProcessContext().newProcess();
+		ProcessInstance process = pipeline.getNawProcess().newProcess();
 		process.getMessage().declare("data");
 		process.getMessage().get("data").put("initial", "77");
 
-		act.execute(process);
+		act.next(process);
 
 		assertFalse(latch.await(5, TimeUnit.SECONDS));
 
@@ -155,12 +155,12 @@ public class ReplyTest {
 
 	@Test
 	public void testDestroyAfterInit() throws Exception {
-		newPipeline(newActivity(true, true)).init().shutdown();
+		newPipeline(newActivity(true, true)).initialize().shutdown();
 	}
 
 	@Test
 	public void testDoubleDestroyAfterInit() throws Exception {
-		Pipeline p = newPipeline(newActivity(true, true)).init();
+		Pipeline p = newPipeline(newActivity(true, true)).initialize();
 		p.shutdown();
 		p.shutdown();
 	}

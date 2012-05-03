@@ -1,0 +1,181 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsd:schema xmlns="http://www.naw.org/schema/naw"
+            xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+            targetNamespace="http://www.naw.org/schema/naw"
+            elementFormDefault="qualified"
+            attributeFormDefault="unqualified">
+
+    <xsd:element name="naw">
+        <xsd:complexType>
+            <xsd:choice minOccurs="0" maxOccurs="unbounded">
+                <xsd:element name="process" type="process" />
+                <xsd:element name="import" type="import" />
+                <xsd:element name="link" type="link" />
+            </xsd:choice>
+        </xsd:complexType>
+    </xsd:element>
+
+    <xsd:complexType name="process">
+        <xsd:choice minOccurs="1" maxOccurs="unbounded">
+            <xsd:group ref="tasks" />
+        </xsd:choice>
+
+        <xsd:attribute name="name" use="required" />
+    </xsd:complexType>
+
+    <xsd:complexType name="import">
+        <xsd:attribute name="url" type="xsd:string" />
+    </xsd:complexType>
+    
+    <xsd:group name="tasks">
+        <xsd:choice>
+            <xsd:element name="expression" type="expression" />
+            <xsd:element name="noop" type="noop" />
+            <xsd:element name="merge" type="merge" />
+            <xsd:element name="expression" type="expression" />
+            <xsd:element name="noop" type="noop" />
+            <xsd:element name="merge" type="merge" />
+            <xsd:element name="while" type="while" />
+            <xsd:element name="if" type="if" />
+            <xsd:element name="fork" type="fork" />
+            <xsd:element name="wait" type="wait" />
+            <xsd:element name="send" type="send" />
+            <xsd:element name="receive" type="receive" />
+            <xsd:element name="log" type="log" />
+        </xsd:choice>
+    </xsd:group>
+
+    <xsd:complexType name="expression">
+        <xsd:simpleContent>
+            <xsd:extension base="xsd:string">
+                <xsd:attribute name="language" type="xsd:string" use="required" />
+            </xsd:extension>
+        </xsd:simpleContent>
+    </xsd:complexType>
+
+    <xsd:complexType name="noop">
+        <xsd:attribute name="name" type="xsd:string" use="optional" />
+    </xsd:complexType>
+
+    <xsd:complexType name="merge">
+        <xsd:attribute name="name" type="xsd:string" use="optional" />
+
+        <xsd:attribute name="from" type="xsd:string" use="required" />
+        <xsd:attribute name="to" type="xsd:string" use="required" />
+    </xsd:complexType>
+
+    <xsd:complexType name="while">
+        <xsd:sequence>
+            <xsd:element name="expression" type="expression" minOccurs="1" maxOccurs="1" />
+
+            <xsd:choice minOccurs="1" maxOccurs="unbounded">
+                <xsd:group ref="tasks" />
+            </xsd:choice>
+        </xsd:sequence>
+
+        <xsd:attribute name="name" type="xsd:string" use="optional" />
+    </xsd:complexType>
+
+    <xsd:complexType name="if">
+        <xsd:sequence>
+            <xsd:element name="expression" type="expression" minOccurs="1" maxOccurs="1" />
+
+            <xsd:choice minOccurs="1" maxOccurs="unbounded">
+                <xsd:group ref="tasks" />
+            </xsd:choice>
+            
+            <xsd:sequence minOccurs="0" maxOccurs="1">
+                <xsd:element name="else">
+                    <xsd:complexType />
+                </xsd:element>
+            
+                <xsd:choice minOccurs="1" maxOccurs="unbounded">
+                    <xsd:group ref="tasks" />
+                </xsd:choice>
+            </xsd:sequence>
+        </xsd:sequence>
+
+        <xsd:attribute name="name" type="xsd:string" use="optional" />
+    </xsd:complexType>
+
+    <xsd:complexType name="fork">
+        <xsd:sequence>
+            <xsd:choice minOccurs="2" maxOccurs="unbounded">
+                <xsd:element name="flow">
+				    <xsd:complexType>
+				        <xsd:choice minOccurs="1" maxOccurs="unbounded">
+				            <xsd:group ref="tasks" />
+				        </xsd:choice>
+				    </xsd:complexType>
+                </xsd:element>
+            </xsd:choice>
+        </xsd:sequence>
+
+        <xsd:attribute name="name" type="xsd:string" use="optional" />
+    </xsd:complexType>
+    
+    <xsd:complexType name="wait">
+        <xsd:attribute name="name" type="xsd:string" use="optional" />
+
+        <xsd:attribute name="for" type="xsd:duration" />
+        <xsd:attribute name="until" type="xsd:dateTime" />
+    </xsd:complexType>
+    
+    <xsd:complexType name="send">
+        <xsd:attribute name="name" type="xsd:string" use="optional" />
+
+        <xsd:attribute name="varName" type="xsd:string" use="required" />
+        <xsd:attribute name="retriable" type="xsd:boolean" use="required" />
+        
+        <xsd:attribute name="to" type="xsd:anyURI" use="required" />
+        
+        <xsd:attribute name="exchange" type="xsd:string" use="optional" />
+    </xsd:complexType>
+    
+    <xsd:complexType name="receive">
+        <xsd:sequence>
+            <xsd:element name="received" minOccurs="1" maxOccurs="1">
+                <xsd:complexType>
+                    <xsd:choice minOccurs="1" maxOccurs="unbounded">
+                        <xsd:group ref="tasks" />
+                    </xsd:choice>
+
+                    <xsd:attribute name="varName" type="xsd:string" use="required" />
+                </xsd:complexType>
+            </xsd:element>
+
+            <xsd:element name="timeout" minOccurs="0" maxOccurs="1">
+                <xsd:complexType>
+                    <xsd:choice minOccurs="1" maxOccurs="unbounded">
+                        <xsd:group ref="tasks" />
+                    </xsd:choice>
+
+			        <xsd:attribute name="deadline" type="xsd:dateTime" />
+			        <xsd:attribute name="duration" type="xsd:duration" />
+                </xsd:complexType>
+            </xsd:element>
+        </xsd:sequence>
+
+        <xsd:attribute name="name" type="xsd:string" use="optional" />
+
+        <xsd:attribute name="from" type="xsd:anyURI" use="required" />
+
+        <xsd:attribute name="entryPoint" type="xsd:boolean" use="optional" default="false" />
+        
+        <xsd:attribute name="exchange" type="xsd:string" use="optional" />
+    </xsd:complexType>
+
+    <xsd:complexType name="link">
+        <xsd:attribute name="name" type="xsd:string" use="optional" />
+        <xsd:attribute name="class" type="xsd:string" use="required" />
+        
+        <xsd:anyAttribute namespace="##any" processContents="lax" />
+    </xsd:complexType>
+
+    <xsd:complexType name="log">
+        <xsd:attribute name="name" type="xsd:string" use="optional" />
+
+        <xsd:attribute name="logName" type="xsd:string" use="required" />
+        <xsd:attribute name="text" type="xsd:string" use="required" />
+    </xsd:complexType>
+</xsd:schema>

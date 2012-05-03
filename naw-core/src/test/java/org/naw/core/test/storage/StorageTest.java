@@ -1,14 +1,14 @@
 package org.naw.core.test.storage;
 
 import static org.junit.Assert.assertEquals;
-import static org.naw.core.ProcessState.AFTER;
-import static org.naw.core.ProcessState.BEFORE;
-import static org.naw.core.ProcessState.SLEEP;
-import static org.naw.core.listener.LifeCycleListener.Category.PROCESS_CONTEXT_INITIALIZED;
-import static org.naw.core.listener.LifeCycleListener.Category.PROCESS_CONTEXT_SHUTDOWN;
-import static org.naw.core.listener.LifeCycleListener.Category.PROCESS_CREATED;
-import static org.naw.core.listener.LifeCycleListener.Category.PROCESS_STATE_CHANGE;
-import static org.naw.core.listener.LifeCycleListener.Category.PROCESS_TERMINATED;
+import static org.naw.engine.RelativePosition.AFTER;
+import static org.naw.engine.RelativePosition.BEFORE;
+import static org.naw.engine.RelativePosition.SLEEP;
+import static org.naw.engine.listener.LifeCycleListener.Category.PROCESS_CONTEXT_INITIALIZED;
+import static org.naw.engine.listener.LifeCycleListener.Category.PROCESS_CONTEXT_SHUTDOWN;
+import static org.naw.engine.listener.LifeCycleListener.Category.PROCESS_CREATED;
+import static org.naw.engine.listener.LifeCycleListener.Category.PROCESS_STATE_CHANGE;
+import static org.naw.engine.listener.LifeCycleListener.Category.PROCESS_TERMINATED;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -18,21 +18,21 @@ import java.util.concurrent.TimeUnit;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
-import org.naw.core.DefaultProcessContext;
-import org.naw.core.Process;
-import org.naw.core.activity.Invoke;
-import org.naw.core.activity.Merge;
-import org.naw.core.activity.Receive;
-import org.naw.core.activity.Reply;
-import org.naw.core.listener.AutoSaveProcess;
-import org.naw.core.partnerLink.MessageEvent;
-import org.naw.core.partnerLink.PartnerLinkListener;
-import org.naw.core.storage.FileStorage;
-import org.naw.core.storage.InMemoryStorage;
-import org.naw.core.storage.Storage;
-import org.naw.core.test.MockActivity;
-import org.naw.core.test.MockLifeCycleListener;
-import org.naw.core.test.MockPartnerLink;
+import org.naw.engine.DefaultProcessContext;
+import org.naw.engine.ProcessInstance;
+import org.naw.engine.listener.AutoSaveProcess;
+import org.naw.engine.storage.FileStorage;
+import org.naw.engine.storage.InMemoryStorage;
+import org.naw.engine.storage.Storage;
+import org.naw.engine.test.MockActivity;
+import org.naw.engine.test.MockLifeCycleListener;
+import org.naw.engine.test.MockPartnerLink;
+import org.naw.links.MessageEvent;
+import org.naw.links.PartnerLinkListener;
+import org.naw.tasks.Invoke;
+import org.naw.tasks.Merge;
+import org.naw.tasks.Receive;
+import org.naw.tasks.Reply;
 
 public class StorageTest {
 
@@ -70,8 +70,8 @@ public class StorageTest {
 
 	private static Merge createMerge() {
 		Merge act = new Merge("merge");
-		act.setFromVariable("response-1");
-		act.setToVariable("data");
+		act.setFrom("response-1");
+		act.setTo("data");
 
 		return act;
 	}
@@ -136,7 +136,7 @@ public class StorageTest {
 		procctx.getSelector().add(new AutoSaveProcess(), PROCESS_STATE_CHANGE,
 				PROCESS_TERMINATED);
 
-		procctx.init();
+		procctx.initialize();
 
 		return procctx;
 	}
@@ -232,7 +232,7 @@ public class StorageTest {
 		procctx = createProcessContext(false);
 		procctx.resume();
 
-		Collection<Process> procs = procctx.findAllProcesses();
+		Collection<ProcessInstance> procs = procctx.findAllProcesses();
 
 		assertEquals(1, procs.size());
 		String pid = procs.iterator().next().getId();

@@ -8,20 +8,20 @@ import java.util.Map;
 import java.util.UUID;
 
 import org.junit.Test;
-import org.naw.core.DefaultProcessContext;
-import org.naw.core.Process;
-import org.naw.core.ProcessState;
-import org.naw.core.activity.Activity;
-import org.naw.core.activity.Merge;
-import org.naw.core.pipeline.DefaultPipeline;
-import org.naw.core.pipeline.Pipeline;
+import org.naw.activities.Activity;
+import org.naw.engine.DefaultProcessContext;
+import org.naw.engine.ProcessInstance;
+import org.naw.engine.RelativePosition;
+import org.naw.engine.pipeline.DefaultPipeline;
+import org.naw.engine.pipeline.Pipeline;
+import org.naw.tasks.Merge;
 
 public class MergeTest {
 
     private static DefaultPipeline newPipeline(Activity... activities) {
         DefaultPipeline pipeline = new DefaultPipeline();
         pipeline.setActivities(activities);
-        pipeline.setProcessContext(new DefaultProcessContext("bb"));
+        pipeline.setNawProcess(new DefaultProcessContext("bb"));
         pipeline.setSink(null);
 
         return pipeline;
@@ -38,29 +38,29 @@ public class MergeTest {
     @Test
     public void testInit() throws Exception {
         Merge act = new Merge("a");
-        act.setFromVariable("from");
-        act.setToVariable("to");
+        act.setFrom("from");
+        act.setTo("to");
 
-        newPipeline(act).init().shutdown();
+        newPipeline(act).initialize().shutdown();
     }
 
     @Test
     public void testExecuteIfFromVariableIsNotFound() throws Exception {
         Merge act = new Merge("a");
-        act.setFromVariable("from");
-        act.setToVariable("to");
+        act.setFrom("from");
+        act.setTo("to");
 
-        Pipeline pipeline = newPipeline(act).init();
+        Pipeline pipeline = newPipeline(act).initialize();
 
         Map<String, Object> mapTo = Collections.singletonMap("abcd", (Object) "1234");
 
-        Process process = pipeline.getProcessContext().newProcess();
+        ProcessInstance process = pipeline.getNawProcess().newProcess();
         process.getMessage().set("to", mapTo);
 
-        pipeline.execute(process);
+        pipeline.next(process);
 
         assertEquals(act, process.getActivity());
-        assertEquals(ProcessState.AFTER, process.getState());
+        assertEquals(RelativePosition.AFTER, process.getState());
 
         assertEquals(mapTo, process.getMessage().get("to"));
         assertEquals(1, process.getMessage().getVariables().size());
@@ -71,20 +71,20 @@ public class MergeTest {
     @Test
     public void testExecuteIfToVariableIsNotFound() throws Exception {
         Merge act = new Merge("a");
-        act.setFromVariable("from");
-        act.setToVariable("to");
+        act.setFrom("from");
+        act.setTo("to");
 
-        Pipeline pipeline = newPipeline(act).init();
+        Pipeline pipeline = newPipeline(act).initialize();
 
         Map<String, Object> mapFrom = Collections.singletonMap("abcd", (Object) "1234");
 
-        Process process = pipeline.getProcessContext().newProcess();
+        ProcessInstance process = pipeline.getNawProcess().newProcess();
         process.getMessage().set("from", mapFrom);
 
-        pipeline.execute(process);
+        pipeline.next(process);
 
         assertEquals(act, process.getActivity());
-        assertEquals(ProcessState.AFTER, process.getState());
+        assertEquals(RelativePosition.AFTER, process.getState());
 
         assertEquals(mapFrom, process.getMessage().get("from"));
         assertEquals(mapFrom, process.getMessage().get("to"));
@@ -97,10 +97,10 @@ public class MergeTest {
     @Test
     public void testExecuteIfValuesAreNotEquals() throws Exception {
         Merge act = new Merge("a");
-        act.setFromVariable("from");
-        act.setToVariable("to");
+        act.setFrom("from");
+        act.setTo("to");
 
-        Pipeline pipeline = newPipeline(act).init();
+        Pipeline pipeline = newPipeline(act).initialize();
 
         Map<String, Object> mapFrom = Collections.singletonMap("abcd", (Object) "1234");
 
@@ -111,14 +111,14 @@ public class MergeTest {
         mapr.put("abcde", "2222");
         mapr.put("abcd", "1234");
 
-        Process process = pipeline.getProcessContext().newProcess();
+        ProcessInstance process = pipeline.getNawProcess().newProcess();
         process.getMessage().set("from", mapFrom);
         process.getMessage().set("to", mapTo);
 
-        pipeline.execute(process);
+        pipeline.next(process);
 
         assertEquals(act, process.getActivity());
-        assertEquals(ProcessState.AFTER, process.getState());
+        assertEquals(RelativePosition.AFTER, process.getState());
 
         assertEquals(mapFrom, process.getMessage().get("from"));
         assertEquals(mapr, process.getMessage().get("to"));
@@ -130,10 +130,10 @@ public class MergeTest {
     @Test
     public void testExecuteIfValuesAreEquals() throws Exception {
         Merge act = new Merge("a");
-        act.setFromVariable("from");
-        act.setToVariable("to");
+        act.setFrom("from");
+        act.setTo("to");
 
-        Pipeline pipeline = newPipeline(act).init();
+        Pipeline pipeline = newPipeline(act).initialize();
 
         Map<String, Object> mapFrom = Collections.singletonMap("abcd", (Object) "1234");
 
@@ -143,14 +143,14 @@ public class MergeTest {
         Map<String, Object> mapr = new HashMap<String, Object>();
         mapr.put("abcd", "1234");
 
-        Process process = pipeline.getProcessContext().newProcess();
+        ProcessInstance process = pipeline.getNawProcess().newProcess();
         process.getMessage().set("from", mapFrom);
         process.getMessage().set("to", mapTo);
 
-        pipeline.execute(process);
+        pipeline.next(process);
 
         assertEquals(act, process.getActivity());
-        assertEquals(ProcessState.AFTER, process.getState());
+        assertEquals(RelativePosition.AFTER, process.getState());
 
         assertEquals(mapFrom, process.getMessage().get("from"));
         assertEquals(mapr, process.getMessage().get("to"));
@@ -168,19 +168,19 @@ public class MergeTest {
     @Test
     public void testDestroyAfterInit() throws Exception {
         Merge act = new Merge("a");
-        act.setFromVariable("from");
-        act.setToVariable("to");
+        act.setFrom("from");
+        act.setTo("to");
 
-        newPipeline(act).init().shutdown();
+        newPipeline(act).initialize().shutdown();
     }
 
     @Test
     public void testDoubleDestroyAfterInit() throws Exception {
         Merge act = new Merge("a");
-        act.setFromVariable("from");
-        act.setToVariable("to");
+        act.setFrom("from");
+        act.setTo("to");
 
-        Pipeline p = newPipeline(act).init();
+        Pipeline p = newPipeline(act).initialize();
         p.shutdown();
         p.shutdown();
     }
