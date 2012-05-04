@@ -1,0 +1,8 @@
+<naw xmlns="http://www.naw.org/schema/naw"
+     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+     xsi:schemaLocation="http://www.naw.org/schema/naw
+                         http://www.naw.org/schema/naw.xsd">
+
+    <link name="file" class="org.naw.links.spi.FileLinkFactory" />
+    
+</naw>

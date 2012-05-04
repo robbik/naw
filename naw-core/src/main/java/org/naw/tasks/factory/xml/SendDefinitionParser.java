@@ -28,7 +28,7 @@ public class SendDefinitionParser extends SingleObjectDefinitionParser {
 		String stmp = element.getAttribute("exchange");
 
 		if (StringUtils.hasText(stmp)) {
-			builder.addPropertyValue("exchangeId", stmp);
+			builder.addPropertyValue("exchangeVarName", stmp);
 		}
 	}
 }

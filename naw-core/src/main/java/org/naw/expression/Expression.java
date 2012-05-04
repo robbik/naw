@@ -1,13 +1,24 @@
 package org.naw.expression;
 
+import java.util.Map;
+
 import org.naw.core.task.DataExchange;
 import org.naw.core.task.Task;
 import org.naw.core.task.TaskContext;
 
+import rk.commons.ioc.factory.IocObjectFactory;
+import rk.commons.ioc.factory.MapWrapper;
+
 public abstract class Expression implements Task {
 	
+	protected Map<String, Object> objects;
+	
+	public void setIocObjectFactory(IocObjectFactory iocObjectFactory) {
+		objects = new MapWrapper(iocObjectFactory);
+	}
+
 	public void run(TaskContext context, DataExchange exchange) throws Exception {
-		execute(exchange);
+		eval(exchange);
 		
 		context.next(exchange);
 	}
@@ -16,7 +27,7 @@ public abstract class Expression implements Task {
 		run(context, exchange);
 	}
 
-	public abstract boolean getBoolean(DataExchange exchange) throws Exception;
+	public abstract <T> T eval(DataExchange exchange, Class<? extends T> returnType) throws Exception;
 	
-	public abstract void execute(DataExchange exchange) throws Exception;
+	public abstract Object eval(DataExchange exchange) throws Exception;
 }

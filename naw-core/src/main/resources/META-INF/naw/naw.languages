@@ -1,1 +1,2 @@
 ognl=org.naw.expression.languages.OgnlExpressionHandler
+mvel=org.naw.expression.languages.Mvel2ExpressionHandler

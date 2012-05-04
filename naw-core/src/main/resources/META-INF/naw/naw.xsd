@@ -11,6 +11,10 @@
                 <xsd:element name="process" type="process" />
                 <xsd:element name="import" type="import" />
                 <xsd:element name="link" type="link" />
+                <xsd:element name="jndi-context" type="jndi-context" />
+                <xsd:element name="jndi-ref" type="jndi-ref" />
+                
+                <xsd:any namespace="##other" processContents="strict" />
             </xsd:choice>
         </xsd:complexType>
     </xsd:element>
@@ -25,6 +29,26 @@
 
     <xsd:complexType name="import">
         <xsd:attribute name="url" type="xsd:string" />
+    </xsd:complexType>
+
+    <xsd:complexType name="jndi-context">
+        <xsd:sequence>
+            <xsd:element name="environment-property">
+                <xsd:complexType>
+                   <xsd:attribute name="name" type="xsd:string" use="required" />
+                   <xsd:attribute name="value" type="xsd:string" use="required" />
+                </xsd:complexType>
+            </xsd:element>
+        </xsd:sequence>
+    
+        <xsd:attribute name="name" use="optional" />
+    </xsd:complexType>
+
+    <xsd:complexType name="jndi-ref">
+        <xsd:attribute name="name" use="optional" />
+    
+        <xsd:attribute name="jndiContext-ref" type="xsd:string" />
+        <xsd:attribute name="jndiName" type="xsd:string" />
     </xsd:complexType>
     
     <xsd:group name="tasks">

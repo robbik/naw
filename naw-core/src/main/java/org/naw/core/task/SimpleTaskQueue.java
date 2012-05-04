@@ -50,9 +50,7 @@ public class SimpleTaskQueue implements TaskQueue {
 		}
 	}
 
-	public TaskContextFuture addLater(final TaskContext context,
-			final DataExchange exchange, long delay, TimeUnit unit) {
-
+	public TaskContextFuture addLater(final TaskContext context, final DataExchange exchange, long delay, TimeUnit unit) {
 		if (delay == 0) {
 			add(context, exchange);
 
@@ -68,9 +66,7 @@ public class SimpleTaskQueue implements TaskQueue {
 		}
 	}
 
-	public TaskContextFuture addLater(final TaskContext context,
-			final DataExchange exchange, long deadline) {
-
+	public TaskContextFuture addLater(final TaskContext context, final DataExchange exchange, long deadline) {
 		long now = System.currentTimeMillis();
 
 		if (deadline <= now) {
@@ -92,13 +88,12 @@ public class SimpleTaskQueue implements TaskQueue {
 		return (Entry) queue.take();
 	}
 
-	public Entry remove(long timeout, TimeUnit unit)
-			throws InterruptedException {
+	public Entry remove(long timeout, TimeUnit unit) throws InterruptedException {
 		return (Entry) queue.poll(timeout, unit);
 	}
 
 	public Entry poll() {
-		return (Entry) queue.poll();
+		return(Entry) queue.poll();
 	}
 
 	private static class EntryImpl implements Entry {

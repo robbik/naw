@@ -3,8 +3,6 @@
      xsi:schemaLocation="http://www.naw.org/schema/naw
                          http://www.naw.org/schema/naw.xsd">
 
-    <link name="file" class="org.naw.links.spi.FileLinkFactory" />
-
     <!--
     <process name="a">
         <noop />
@@ -53,20 +51,19 @@
     <process name="c">
         <receive from="file:/tmp/x.txt" entryPoint="true">
             <received varName="abcde">
-                <expression language="ognl">@java.lang.System@out.println('1')</expression>
+                <expression language="ognl">@java.lang.System@out.println('1' + exchange)</expression>
 
-                <send to="file:/tmp/x2.txt" varName="abcde" retriable="false" exchange="z1" />
+                <send to="file:/tmp/x2.txt" varName="abcde" retriable="false" exchange="za" />
 
-                <expression language="ognl">@java.lang.System@out.println('2')</expression>
+                <expression language="ognl">@java.lang.System@out.println('2' + exchange)</expression>
 
-                <receive from="file:/tmp/x2.txt" exchange="z1">
+                <receive from="file:/tmp/x2.txt" exchange="za">
                     <received varName="zzzz">
-                        <expression language="ognl">@java.lang.System@out.println(abcde)</expression>
-                        <expression language="ognl">@java.lang.System@out.println(zzzz)</expression>
+                        <expression language="ognl">@java.lang.System@out.println('3' + exchange)</expression>
                     </received>
 
                     <timeout duration="PT5S">
-                        <expression language="ognl">@java.lang.System@out.println('3')</expression>
+                        <expression language="ognl">@java.lang.System@out.println('4' + exchange)</expression>
                     </timeout>
                 </receive>
             </received>

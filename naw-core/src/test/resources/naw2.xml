@@ -1,0 +1,27 @@
+<naw xmlns="http://www.naw.org/schema/naw"
+     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+     xsi:schemaLocation="http://www.naw.org/schema/naw
+                         http://www.naw.org/schema/naw.xsd">
+    
+    <process name="c">
+        <receive from="file-spring:/tmp/x-spring.txt" entryPoint="true">
+            <received varName="abcde">
+                <expression language="ognl">@java.lang.System@out.println("1" + objects)</expression>
+
+                <send to="file-spring:/tmp/x2-spring.txt" varName="abcde" retriable="false" exchange="za" />
+
+                <expression language="ognl">@java.lang.System@out.println('2' + exchange)</expression>
+
+                <receive from="file-spring:/tmp/x2-spring.txt" exchange="za">
+                    <received varName="zzzz">
+                        <expression language="ognl">@java.lang.System@out.println('3' + exchange)</expression>
+                    </received>
+
+                    <timeout duration="PT5S">
+                        <expression language="ognl">@java.lang.System@out.println('4' + exchange)</expression>
+                    </timeout>
+                </receive>
+            </received>
+        </receive>
+    </process>
+</naw>

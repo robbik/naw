@@ -1,1 +1,1 @@
-http\://www.naw.org/schema/naw=org.naw.executables.factory.xml.NamespaceHandlerImpl
+http\://www.naw.org/schema/naw=org.naw.core.xml.NamespaceHandlerImpl

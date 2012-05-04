@@ -110,7 +110,7 @@ public class ReceiveDefinitionParser extends SingleObjectDefinitionParser {
 				throw new IllegalArgumentException("exchange must not be specified if entryPoint is true");
 			}
 
-			builder.addPropertyValue("exchangeId", sessionId);
+			builder.addPropertyValue("exchangeVarName", sessionId);
 		}
 		
 		parseReceived(receivedNode, delegate, builder);

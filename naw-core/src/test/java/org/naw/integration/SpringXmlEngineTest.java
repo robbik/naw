@@ -1,26 +1,25 @@
-package org.naw.core.test;
+package org.naw.integration;
 
 import java.io.FileOutputStream;
 import java.io.ObjectOutputStream;
-import java.util.Arrays;
 
 import org.junit.Test;
 import org.naw.core.Processor;
-import org.naw.core.XmlEngine;
+import org.springframework.context.support.GenericXmlApplicationContext;
 
 import rk.commons.util.ObjectUtils;
 
-public class XmlEngineTest {
+public class SpringXmlEngineTest {
 
 	@Test
-	public void refreshTest() throws Exception {
-		ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream("/tmp/x.txt"));
+	public void case1() throws Exception {
+		ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream("/tmp/x-spring.txt"));
 		ObjectUtils.writeBytes("abcdef", out);
 		out.close();
 		
-		final XmlEngine engine = new XmlEngine("classpath:naw1.xml");
+		GenericXmlApplicationContext spring = new GenericXmlApplicationContext("classpath:naw2-spring.xml");
 		
-		System.out.println(Arrays.toString(engine.getObjectQNames()));
+		final SpringXmlEngine engine = new SpringXmlEngine(spring, "classpath:naw2.xml");
 		
 		engine.start();
 		
@@ -28,6 +27,7 @@ public class XmlEngineTest {
 
 			public void run() {
 				Processor processor = engine.createProcessor();
+				
 				try {
 					processor.run();
 				} catch (InterruptedException e) {
@@ -40,7 +40,7 @@ public class XmlEngineTest {
 		
 		th.start();
 		
-		Thread.sleep(10000);
+		Thread.sleep(1000);
 		
 		th.interrupt();
 	}

@@ -36,7 +36,7 @@ public class While implements Task {
 	public void run(TaskContext context, DataExchange exchange) throws Exception {
 		initialize(context);
 		
-		if (predicate.getBoolean(exchange)) {
+		if (predicate.eval(exchange, boolean.class)) {
 			bodyEntryPoint.start(exchange);
 		} else {
 			context.next(exchange);

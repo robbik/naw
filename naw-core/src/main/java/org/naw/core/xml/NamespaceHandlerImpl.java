@@ -1,6 +1,9 @@
-package org.naw.executables.factory.xml;
+package org.naw.core.xml;
 
+import org.naw.executables.factory.xml.ExecutableDefinitionParser;
 import org.naw.expression.factory.xml.ExpressionDefinitionParser;
+import org.naw.jndi.factory.xml.JndiContextDefinitionParser;
+import org.naw.jndi.factory.xml.JndiRefDefinitionParser;
 import org.naw.links.factory.xml.LinkFactoryDefinitionParser;
 import org.naw.tasks.factory.xml.EmptyDefinitionParser;
 import org.naw.tasks.factory.xml.ForkDefinitionParser;
@@ -17,10 +20,12 @@ import rk.commons.ioc.factory.xml.NamespaceHandlerSupport;
 public class NamespaceHandlerImpl extends NamespaceHandlerSupport {
 
 	public void init() {
+	    ///// process
 		registerObjectDefinitionParser(
 				ExecutableDefinitionParser.ELEMENT_LOCAL_NAME,
 				new ExecutableDefinitionParser());
 
+		///// tasks...
 		registerObjectDefinitionParser(
 				ExpressionDefinitionParser.ELEMENT_LOCAL_NAME,
 				new ExpressionDefinitionParser());
@@ -64,5 +69,18 @@ public class NamespaceHandlerImpl extends NamespaceHandlerSupport {
 		registerObjectDefinitionParser(
 				LogDefinitionParser.ELEMENT_LOCAL_NAME,
 				new LogDefinitionParser());
+
+		///// add-ons (jndi)
+		try {
+			registerObjectDefinitionParser(
+					JndiContextDefinitionParser.ELEMENT_LOCAL_NAME,
+					new JndiContextDefinitionParser());
+			
+			registerObjectDefinitionParser(
+					JndiRefDefinitionParser.ELEMENT_LOCAL_NAME,
+					new JndiRefDefinitionParser());
+		} catch (Throwable t) {
+			// not supported
+		}
 	}
 }

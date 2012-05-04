@@ -18,7 +18,15 @@ public class FileLink implements Link {
 		file = new File(pathname);
 	}
 	
-	public void send(Object data) throws Exception {
+	public Object send(Object data, boolean oneWay) throws Exception {
+		File file;
+		
+		if (oneWay) {
+			file = this.file;
+		} else {
+			file = File.createTempFile("FileLink-", ".tmp");
+		}
+		
 		ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream(file));
 		
 		try {
@@ -32,9 +40,23 @@ public class FileLink implements Link {
 				// do nothing
 			}
 		}
+		
+		if (oneWay) {
+			return null;
+		} else {
+			return file;
+		}
 	}
 
-	public Object receive() throws Exception {
+	public Object receive(Object correlation) throws Exception {
+		File file;
+		
+		if (correlation == null) {
+			file = this.file;
+		} else {
+			file = (File) correlation;
+		}
+		
 		ObjectInputStream in = new ObjectInputStream(new FileInputStream(file));
 		
 		try {
@@ -46,41 +68,5 @@ public class FileLink implements Link {
 				// do nothing
 			}
 		}
-	}
-
-	public String sendAndReceive(Object data) throws Exception {
-		File file = File.createTempFile("FileLink-", ".tmp");
-		
-		ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream(file));
-		
-		try {
-			ObjectUtils.writeBytes(data, out);
-			
-			out.flush();
-		} finally {
-			try {
-				out.close();
-			} catch (Throwable t) {
-				// do nothing
-			}
-		}
-		
-		return file.getAbsolutePath();
-	}
-
-	public Object receive(String ref) throws Exception {
-//		ObjectInputStream in = new ObjectInputStream(new FileInputStream(new File(ref)));
-//		
-//		try {
-//			return ObjectUtils.readFromBytes(in);
-//		} finally {
-//			try {
-//				in.close();
-//			} catch (Throwable t) {
-//				// do nothing
-//			}
-//		}
-		
-		return null;
 	}
 }

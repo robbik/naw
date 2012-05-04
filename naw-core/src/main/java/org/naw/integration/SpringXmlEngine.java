@@ -1,18 +1,27 @@
-package org.naw.core;
+package org.naw.integration;
+
+import org.naw.core.AbstractEngine;
+import org.springframework.context.ApplicationContext;
 
 import rk.commons.ioc.context.XmlIocContext;
+import rk.commons.ioc.factory.SingletonIocObjectFactory;
+import rk.commons.ioc.integration.SpringIocObjectFactory;
 
-public class XmlEngine extends AbstractEngine {
+public class SpringXmlEngine extends AbstractEngine {
 
     private static final String NAMESPACE_URI = "http://www.naw.org/schema/naw";
 
     private static final String NAMESPACE_HANDLER = "classpath:META-INF/naw/naw.handlers";
 
     private static final String NAMESPACE_SCHEMA = "classpath:META-INF/naw/naw.schemas";
+    
+    protected final ApplicationContext spring;
 	
 	protected final XmlIocContext context;
 
-	public XmlEngine(String... locations) {
+	public SpringXmlEngine(ApplicationContext spring, String... locations) {
+		this.spring = spring;
+		
 		initialize();
 		
 		context = new XmlIocContext();
@@ -30,5 +39,9 @@ public class XmlEngine extends AbstractEngine {
 		context.setLocations(addDefaultImport(locations));
 
 		context.refresh(false);
+	}
+	
+	protected SingletonIocObjectFactory createIocObjectFactory() {
+		return new SpringIocObjectFactory(resourceLoader, spring);
 	}
 }

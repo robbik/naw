@@ -93,4 +93,9 @@ public class DataExchange implements Serializable, Map<String, Object> {
 	public Collection<Object> values() {
 		return vars.values();
 	}
+	
+	@Override
+	public String toString() {
+		return super.toString() + " [ public " + vars + "; private " + varspriv + " ]";
+	}
 }

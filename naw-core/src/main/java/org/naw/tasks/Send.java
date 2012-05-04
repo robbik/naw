@@ -19,7 +19,7 @@ public class Send implements Task, ObjectQNameAware, InitializingObject {
 
 	private boolean retriable;
 	
-	private String exchangeId;
+	private String exchangeVarName;
 	
 	private String objectQName;
 
@@ -37,8 +37,8 @@ public class Send implements Task, ObjectQNameAware, InitializingObject {
 		this.retriable = retriable;
 	}
 	
-	public void setExchangeId(String exchangeId) {
-		this.exchangeId = exchangeId;
+	public void setExchangeVarName(String exchangeVarName) {
+		this.exchangeVarName = exchangeVarName;
 	}
 
 	public void setObjectQName(String objectQName) {
@@ -48,18 +48,19 @@ public class Send implements Task, ObjectQNameAware, InitializingObject {
 	}
 
 	public void initialize() throws Exception {
-		if (exchangeId != null) {
-			exchangeId = ObjectUtils.getPackageName(objectQName).concat(":sendAndReceive__exchange#").concat(exchangeId);
+		if (exchangeVarName != null) {
+			exchangeVarName = ObjectUtils.getPackageName(objectQName).concat(
+					":sendAndReceive__exchange#").concat(exchangeVarName);
 		}
 	}
 
 	public void run(TaskContext context, DataExchange exchange) throws Exception {
-		if (exchangeId == null) {
-			// stateless
-			partnerLink.send(exchange.get(varName));
+		if (exchangeVarName == null) {
+			// oneWay
+			partnerLink.send(exchange.get(varName), true);
 		} else {
-			// stateful
-			exchange.setpriv(exchangeId, partnerLink.sendAndReceive(exchange.get(varName)));
+			// request-response
+			exchange.setpriv(exchangeVarName, partnerLink.send(exchange.get(varName), false));
 		}
 		
 		context.next(exchange);
@@ -67,12 +68,12 @@ public class Send implements Task, ObjectQNameAware, InitializingObject {
 
 	public void recover(TaskContext context, DataExchange exchange) throws Exception {
 		if (retriable) {
-			if (exchangeId == null) {
-				// stateless
-				partnerLink.send(exchange.get(varName));
+			if (exchangeVarName == null) {
+				// oneWay
+				partnerLink.send(exchange.get(varName), true);
 			} else {
-				// stateful
-				exchange.setpriv(exchangeId, partnerLink.sendAndReceive(exchange.get(varName)));
+				// request-response
+				exchange.setpriv(exchangeVarName, partnerLink.send(exchange.get(varName), false));
 			}
 		} else {
 			log.warning("activity is recovered but retry is disabled");

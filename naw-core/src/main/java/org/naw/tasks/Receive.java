@@ -33,7 +33,7 @@ public class Receive implements EntryPoint, ObjectQNameAware, InitializingObject
 	
 	private boolean entryPoint;
 	
-	private String exchangeId;
+	private String exchangeVarName;
 	
 	private String objectQName;
 
@@ -75,8 +75,8 @@ public class Receive implements EntryPoint, ObjectQNameAware, InitializingObject
 		return entryPoint;
 	}
 
-	public void setExchangeId(String exchangeId) {
-		this.exchangeId = exchangeId;
+	public void setExchangeVarName(String exchangeVarName) {
+		this.exchangeVarName = exchangeVarName;
 	}
 
 	public void setObjectQName(String objectQName) {
@@ -86,8 +86,9 @@ public class Receive implements EntryPoint, ObjectQNameAware, InitializingObject
 	}
 
 	public void initialize() throws Exception {
-		if (exchangeId != null) {
-			exchangeId = ObjectUtils.getPackageName(objectQName).concat(":sendAndReceive__exchange#").concat(exchangeId);
+		if (exchangeVarName != null) {
+			exchangeVarName = ObjectUtils.getPackageName(objectQName).concat(
+					":sendAndReceive__exchange#").concat(exchangeVarName);
 		}
 	}
 
@@ -120,13 +121,19 @@ public class Receive implements EntryPoint, ObjectQNameAware, InitializingObject
 		initialize(context);
 		
 		// receive data
-		Object data;
+		Object correlation;
 		
-		if (exchangeId == null) {
-			data = link.receive();
+		if (exchangeVarName == null) {
+			correlation = null;
 		} else {
-			data = link.receive((String) exchange.getpriv(exchangeId));
+			correlation = exchange.getpriv(exchangeVarName);
+			
+			if (correlation == null) {
+				throw new NullPointerException("no exchange value in variable " + exchangeVarName);
+			}
 		}
+		
+		Object data = link.receive(correlation);
 
 		// access scheduled onTimeout
 		TaskContextFuture future;
@@ -139,7 +146,11 @@ public class Receive implements EntryPoint, ObjectQNameAware, InitializingObject
 
 		if (data == null) {
 			if ((onTimeoutChain != null) && (future == null)) {
-				if (duration != null) {
+				long deadline;
+				
+				if (duration == null) {
+					deadline = this.deadline;
+				} else {
 					deadline = duration.add(Calendar.getInstance()).getTimeInMillis();
 				}
 
@@ -163,13 +174,21 @@ public class Receive implements EntryPoint, ObjectQNameAware, InitializingObject
 				exchange.unsetpriv(timeoutVarName);
 			}
 			
-			// create new data exchange
 			if (entryPoint) {
+				// this is entry point, so we need to re-run this task for another receive
+				context.start(null);
+
+				// create new data exchange
 				exchange = context.getExecutable().createDataExchange();
 			}
 
 			// save received data
 			exchange.set(varName, data);
+			
+			// unset correlation data
+			if (exchangeVarName != null) {
+				exchange.unsetpriv(exchangeVarName);
+			}
 
 			// start onReceive part
 			onReceiveChain.start(exchange);

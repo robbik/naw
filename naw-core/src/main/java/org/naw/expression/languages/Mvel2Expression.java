@@ -3,17 +3,16 @@ package org.naw.expression.languages;
 import java.util.HashMap;
 import java.util.Map;
 
-import ognl.Ognl;
-
+import org.mvel2.MVEL;
 import org.naw.core.task.DataExchange;
 import org.naw.expression.Expression;
 
-public class OgnlExpression extends Expression {
+public class Mvel2Expression extends Expression {
 	
-	private final Object tree;
+	private final Object compiled;
 	
-	public OgnlExpression(Object tree) {
-		this.tree = tree;
+	public Mvel2Expression(Object compiled) {
+		this.compiled = compiled;
 	}
 
 	public Object eval(DataExchange exchange) throws Exception {
@@ -22,16 +21,15 @@ public class OgnlExpression extends Expression {
 		root.put("exchange", exchange);
 		root.put("objects", objects);
 		
-		return Ognl.getValue(tree, root);
+		return MVEL.executeExpression(compiled, root);
 	}
 
-	@SuppressWarnings("unchecked")
 	public <T> T eval(DataExchange exchange, Class<? extends T> returnType) throws Exception {
 		Map<String, Object> root = new HashMap<String, Object>();
 		
 		root.put("exchange", exchange);
 		root.put("objects", objects);
 		
-		return (T) Ognl.getValue(tree, (Object) root, returnType);
+		return (T) MVEL.executeExpression(compiled, root, returnType);
 	}
 }

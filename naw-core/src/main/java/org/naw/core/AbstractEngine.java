@@ -1,6 +1,9 @@
 package org.naw.core;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 
 import org.apache.axis.types.DateTime;
 import org.apache.axis.types.Duration;
@@ -41,12 +44,14 @@ public abstract class AbstractEngine implements Engine {
 	protected AbstractEngine() {
 		statusLock = new Object();
 		status = STATUS_NONE;
-
+	}
+	
+	protected void initialize() {
 		taskQueue = new SimpleTaskQueue();
 		
 		resourceLoader = new ResourceLoader();
 
-		iocFactory = new SingletonIocObjectFactory(resourceLoader);
+		iocFactory = createIocObjectFactory();
 		
 		TypeConverterResolver typeResolver = iocFactory.getTypeConverterResolver();
 		typeResolver.register(String.class, DateTime.class, new StringToDateTimeConverter());
@@ -63,6 +68,36 @@ public abstract class AbstractEngine implements Engine {
 
 		Runtime.getRuntime().addShutdownHook(shutdownHook);
 	}
+	
+	protected SingletonIocObjectFactory createIocObjectFactory() {
+		return new SingletonIocObjectFactory(resourceLoader);
+	}
+	
+	protected String[] addDefaultImport(String[] locations) {
+		boolean defImportsFound = false;
+
+		for (int i = 0, n = locations.length; i < n; ++i) {
+			if ("classpath:META-INF/naw/naw-default.xml".equals(locations[i])) {
+				defImportsFound = true;
+				break;
+			}
+		}
+		
+		if (!defImportsFound) {
+			List<String> newLocations = new ArrayList<String>();
+			
+			newLocations.add("classpath:META-INF/naw/naw-default.xml");
+			
+			for (int i = 0, n = locations.length; i < n; ++i) {
+				newLocations.add(locations[i]);
+			}
+			
+			locations = newLocations.toArray(new String[0]);
+			newLocations.clear();
+		}
+		
+		return locations;
+	}
 
 	public TaskQueue getTaskQueue() {
 		return taskQueue;
@@ -72,7 +107,7 @@ public abstract class AbstractEngine implements Engine {
 		this.taskQueue = taskQueue;
 	}
 	
-	public String[] getObjectQNames() {
+	public Set<String> getObjectQNames() {
 		return iocFactory.getObjectQNames();
 	}
 
@@ -86,10 +121,9 @@ public abstract class AbstractEngine implements Engine {
 				return;
 			}
 
-			List<Executable> executables = iocFactory.getObjectsOfType(Executable.class);
+			Collection<Executable> executables = iocFactory.getObjectsOfType(Executable.class).values();
 
-			for (int i = 0, n = executables.size(); i < n; ++i) {
-				Executable e = executables.get(i);
+			for (Executable e : executables) {
 				e.attach(this);
 
 				taskQueue.add(e.getEntryPoint(), null);

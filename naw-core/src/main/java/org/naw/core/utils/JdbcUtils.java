@@ -7,17 +7,15 @@ import java.sql.Statement;
 
 import javax.sql.DataSource;
 
-import org.naw.core.logging.Logger;
+import rk.commons.logging.Logger;
 
 public abstract class JdbcUtils {
 
-	public static Connection tryOpen(DataSource ds, boolean readOnly,
-			boolean autoCommit) {
+	public static Connection tryOpen(DataSource ds, boolean readOnly, boolean autoCommit) {
 		return tryOpen(ds, readOnly, autoCommit, null);
 	}
 
-	public static Connection tryOpen(DataSource ds, boolean readOnly,
-			boolean autoCommit, Logger log) {
+	public static Connection tryOpen(DataSource ds, boolean readOnly, boolean autoCommit, Logger log) {
 		Connection conn = null;
 
 		try {
@@ -27,8 +25,7 @@ public abstract class JdbcUtils {
 			conn.setAutoCommit(autoCommit);
 		} catch (Throwable t) {
 			if (log != null) {
-				log.error("unable to open jdbc connection with data source "
-						+ ds, t);
+				log.error("unable to open jdbc connection with data source " + ds, t);
 			}
 
 			tryClose(conn);
