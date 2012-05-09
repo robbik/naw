@@ -8,9 +8,9 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
-import rk.commons.ioc.factory.support.ObjectDefinitionBuilder;
-import rk.commons.ioc.factory.xml.ObjectDefinitionParserDelegate;
-import rk.commons.ioc.factory.xml.SingleObjectDefinitionParser;
+import rk.commons.inject.factory.support.ObjectDefinitionBuilder;
+import rk.commons.inject.factory.xml.ObjectDefinitionParserDelegate;
+import rk.commons.inject.factory.xml.SingleObjectDefinitionParser;
 
 public class ForkDefinitionParser extends SingleObjectDefinitionParser {
 
@@ -23,27 +23,7 @@ public class ForkDefinitionParser extends SingleObjectDefinitionParser {
 		return Fork.class;
 	}
 
-	private List<Object> doParseFlow(Element element, ObjectDefinitionParserDelegate delegate) {
-		List<Object> result = new ArrayList<Object>();
-		
-		NodeList childNodes = element.getChildNodes();
-		
-		for (int i = 0, n = childNodes.getLength(); i < n; ++i) {
-			Node node = childNodes.item(i);
-			
-			if (node instanceof Element) {
-				result.add(delegate.parse((Element) node));
-			}
-		}
-		
-		return result;
-	}
-
-	protected void doParse(Element element,
-			ObjectDefinitionParserDelegate delegate, ObjectDefinitionBuilder builder) {
-
-		builder.setObjectQName(element.getAttribute("name"));
-
+	protected void doParse(Element element, ObjectDefinitionParserDelegate delegate, ObjectDefinitionBuilder builder) {
 		List<Object> flowTasks = new ArrayList<Object>();
 		
 		NodeList childNodes = element.getChildNodes();
@@ -53,11 +33,12 @@ public class ForkDefinitionParser extends SingleObjectDefinitionParser {
 			
 			if (node instanceof Element) {
 				if (ELEMENT_FLOW_LOCAL_NAME.equals(delegate.getLocalName(node))) {
-					flowTasks.add(doParseFlow((Element) node, delegate));
+					flowTasks.add(delegate.parseChildElements((Element) node));
 				}
 			}
 		}
 		
+		builder.setObjectQName(element.getAttribute("name"));
 		builder.addPropertyValue("flowTasks", flowTasks.toArray());
 		
 		flowTasks.clear();

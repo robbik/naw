@@ -11,10 +11,11 @@ import org.naw.core.task.Task;
 import org.naw.core.task.TaskContext;
 import org.naw.core.task.TaskContextFuture;
 import org.naw.core.task.support.TaskContextUtils;
+import org.naw.exceptions.LinkException;
 import org.naw.links.Link;
 
-import rk.commons.ioc.factory.support.InitializingObject;
-import rk.commons.ioc.factory.support.ObjectQNameAware;
+import rk.commons.inject.factory.support.InitializingObject;
+import rk.commons.inject.factory.support.ObjectQNameAware;
 import rk.commons.util.ObjectUtils;
 
 public class Receive implements EntryPoint, ObjectQNameAware, InitializingObject {
@@ -29,6 +30,8 @@ public class Receive implements EntryPoint, ObjectQNameAware, InitializingObject
 	
 	private List<Task> onReceiveTasks;
 	
+	private List<Task> onErrorTasks;
+	
 	private List<Task> onTimeoutTasks;
 	
 	private boolean entryPoint;
@@ -39,9 +42,11 @@ public class Receive implements EntryPoint, ObjectQNameAware, InitializingObject
 
 	private String timeoutVarName;
 	
-	private TaskContext onTimeoutChain;
-	
 	private TaskContext onReceiveChain;
+	
+	private TaskContext onErrorChain;
+	
+	private TaskContext onTimeoutChain;
 
 	public void setPartnerLink(Link partnerLink) {
 		this.link = partnerLink;
@@ -61,6 +66,10 @@ public class Receive implements EntryPoint, ObjectQNameAware, InitializingObject
 
 	public void setOnReceiveTasks(List<Task> onReceiveTasks) {
 		this.onReceiveTasks = onReceiveTasks;
+	}
+
+	public void setOnErrorTasks(List<Task> onErrorTasks) {
+		this.onErrorTasks = onErrorTasks;
 	}
 
 	public void setOnTimeoutTasks(List<Task> onTimeoutTasks) {
@@ -106,6 +115,15 @@ public class Receive implements EntryPoint, ObjectQNameAware, InitializingObject
 			TaskContextUtils.addLast(onReceiveChain, nextTaskContext);
 		}
 		
+		if (onErrorTasks != null) {
+			onErrorChain = TaskContextUtils.chain(context.getEngine(), context.getExecutable(), onErrorTasks);
+			onErrorTasks = null;
+			
+			if (nextTaskContext != null) {
+				TaskContextUtils.addLast(onErrorChain, nextTaskContext);
+			}
+		}
+		
 		if (onTimeoutTasks != null) {
 			onTimeoutChain = TaskContextUtils.chain(context.getEngine(), context.getExecutable(), onTimeoutTasks);
 			onTimeoutTasks = null;
@@ -133,8 +151,20 @@ public class Receive implements EntryPoint, ObjectQNameAware, InitializingObject
 			}
 		}
 		
-		Object data = link.receive(correlation);
-
+		Object data = null;
+		
+		int errorCode = 0;
+		
+		try {
+			data = link.receive(correlation);
+		} catch (LinkException e) {
+			errorCode = e.getErrorCode();
+		}
+		
+		if (exchange != null) {
+			exchange.setLastError(errorCode);
+		}
+		
 		// access scheduled onTimeout
 		TaskContextFuture future;
 		
@@ -145,7 +175,9 @@ public class Receive implements EntryPoint, ObjectQNameAware, InitializingObject
 		}
 
 		if (data == null) {
-			if ((onTimeoutChain != null) && (future == null)) {
+			if ((onErrorChain != null) && (errorCode != 0)) {
+				onErrorChain.start(exchange);
+			} else if ((onTimeoutChain != null) && (future == null)) {
 				long deadline;
 				
 				if (duration == null) {
@@ -153,16 +185,14 @@ public class Receive implements EntryPoint, ObjectQNameAware, InitializingObject
 				} else {
 					deadline = duration.add(Calendar.getInstance()).getTimeInMillis();
 				}
-
+				
 				// schedule to start onTimeout
 				future = onTimeoutChain.startLater(exchange, deadline);
-
+				
 				// save it for further access
-				if (!entryPoint || (exchange == null)) {
-					exchange.setpriv(timeoutVarName, future);
-				}
+				exchange.setpriv(timeoutVarName, future);
 			}
-
+			
 			// we need to check the data again so run this task again
 			context.start(exchange);
 		} else {

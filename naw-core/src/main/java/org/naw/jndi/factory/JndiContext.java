@@ -5,7 +5,7 @@ import java.util.Map;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
 
-import rk.commons.ioc.factory.support.InitializingObject;
+import rk.commons.inject.factory.support.InitializingObject;
 
 public class JndiContext implements InitializingObject {
 	

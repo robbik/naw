@@ -7,9 +7,9 @@ import org.naw.jndi.factory.JndiContext;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 
-import rk.commons.ioc.factory.support.ObjectDefinitionBuilder;
-import rk.commons.ioc.factory.xml.ObjectDefinitionParserDelegate;
-import rk.commons.ioc.factory.xml.SingleObjectDefinitionParser;
+import rk.commons.inject.factory.support.ObjectDefinitionBuilder;
+import rk.commons.inject.factory.xml.ObjectDefinitionParserDelegate;
+import rk.commons.inject.factory.xml.SingleObjectDefinitionParser;
 
 public class JndiContextDefinitionParser extends SingleObjectDefinitionParser {
 	

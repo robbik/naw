@@ -3,9 +3,9 @@ package org.naw.expression.factory.xml;
 import org.naw.expression.Expression;
 import org.naw.expression.ExpressionHandlerResolver;
 
-import rk.commons.ioc.factory.IocObjectFactory;
-import rk.commons.ioc.factory.support.IocObjectFactoryAware;
-import rk.commons.ioc.factory.support.ObjectFactory;
+import rk.commons.inject.factory.IocObjectFactory;
+import rk.commons.inject.factory.support.IocObjectFactoryAware;
+import rk.commons.inject.factory.support.ObjectFactory;
 
 public class ExpressionFactory extends ObjectFactory<Expression> implements IocObjectFactoryAware {
 

@@ -15,7 +15,7 @@ import org.naw.tasks.factory.xml.SendDefinitionParser;
 import org.naw.tasks.factory.xml.WaitDefinitionParser;
 import org.naw.tasks.factory.xml.WhileDefinitionParser;
 
-import rk.commons.ioc.factory.xml.NamespaceHandlerSupport;
+import rk.commons.inject.factory.xml.NamespaceHandlerSupport;
 
 public class NamespaceHandlerImpl extends NamespaceHandlerSupport {
 

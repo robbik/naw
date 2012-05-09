@@ -3,8 +3,8 @@ package org.naw.integration;
 import org.naw.core.AbstractEngine;
 import org.springframework.context.ApplicationContext;
 
-import rk.commons.ioc.context.XmlIocContext;
-import rk.commons.ioc.factory.SingletonIocObjectFactory;
+import rk.commons.inject.context.XmlIocContext;
+import rk.commons.inject.factory.SingletonIocObjectFactory;
 import rk.commons.ioc.integration.SpringIocObjectFactory;
 
 public class SpringXmlEngine extends AbstractEngine {

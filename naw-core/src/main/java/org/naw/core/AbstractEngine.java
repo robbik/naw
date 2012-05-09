@@ -15,8 +15,8 @@ import org.naw.links.factory.StringToLinkConverter;
 import org.naw.tasks.support.StringToDateTimeConverter;
 import org.naw.tasks.support.StringToDurationConverter;
 
-import rk.commons.ioc.factory.SingletonIocObjectFactory;
-import rk.commons.ioc.factory.type.converter.TypeConverterResolver;
+import rk.commons.inject.factory.SingletonIocObjectFactory;
+import rk.commons.inject.factory.type.converter.TypeConverterResolver;
 import rk.commons.loader.ResourceLoader;
 
 public abstract class AbstractEngine implements Engine {

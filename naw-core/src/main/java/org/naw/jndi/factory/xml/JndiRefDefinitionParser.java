@@ -3,9 +3,9 @@ package org.naw.jndi.factory.xml;
 import org.naw.jndi.factory.JndiRefObjectFactory;
 import org.w3c.dom.Element;
 
-import rk.commons.ioc.factory.support.ObjectDefinitionBuilder;
-import rk.commons.ioc.factory.xml.ObjectDefinitionParserDelegate;
-import rk.commons.ioc.factory.xml.SingleObjectDefinitionParser;
+import rk.commons.inject.factory.support.ObjectDefinitionBuilder;
+import rk.commons.inject.factory.xml.ObjectDefinitionParserDelegate;
+import rk.commons.inject.factory.xml.SingleObjectDefinitionParser;
 import rk.commons.util.StringUtils;
 
 public class JndiRefDefinitionParser extends SingleObjectDefinitionParser {

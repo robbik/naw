@@ -2,7 +2,7 @@ package org.naw.tasks.support;
 
 import org.apache.axis.types.DateTime;
 
-import rk.commons.ioc.factory.type.converter.TypeConverter;
+import rk.commons.inject.factory.type.converter.TypeConverter;
 
 public class StringToDateTimeConverter implements TypeConverter {
 

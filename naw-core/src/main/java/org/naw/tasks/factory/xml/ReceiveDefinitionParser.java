@@ -1,16 +1,13 @@
 package org.naw.tasks.factory.xml;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import org.naw.tasks.Receive;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
-import rk.commons.ioc.factory.support.ObjectDefinitionBuilder;
-import rk.commons.ioc.factory.xml.ObjectDefinitionParserDelegate;
-import rk.commons.ioc.factory.xml.SingleObjectDefinitionParser;
+import rk.commons.inject.factory.support.ObjectDefinitionBuilder;
+import rk.commons.inject.factory.xml.ObjectDefinitionParserDelegate;
+import rk.commons.inject.factory.xml.SingleObjectDefinitionParser;
 import rk.commons.util.StringUtils;
 
 public class ReceiveDefinitionParser extends SingleObjectDefinitionParser {
@@ -23,20 +20,8 @@ public class ReceiveDefinitionParser extends SingleObjectDefinitionParser {
 	}
 	
 	private void parseReceived(Element element, ObjectDefinitionParserDelegate delegate, ObjectDefinitionBuilder builder) {
-		List<Object> tasks = new ArrayList<Object>();
-		
-		NodeList childNodes = element.getChildNodes();
-		
-		for (int i = 0, n = childNodes.getLength(); i < n; ++i) {
-			Node childNode = childNodes.item(i);
-			
-			if (childNode instanceof Element) {
-				tasks.add(delegate.parse((Element) childNode));
-			}
-		}
-
 		builder.addPropertyValue("varName", element.getAttribute("varName"));
-		builder.addPropertyValue("onReceiveTasks", tasks);
+		builder.addPropertyValue("onReceiveTasks", delegate.parseChildElements(element));
 	}
 	
 	private void parseTimeout(Element element, ObjectDefinitionParserDelegate delegate, ObjectDefinitionBuilder builder) {
@@ -58,23 +43,11 @@ public class ReceiveDefinitionParser extends SingleObjectDefinitionParser {
 			throw new IllegalArgumentException("duration cannot be appeared if deadline is specified, and vice versa");
 		}
 		
-		List<Object> tasks = new ArrayList<Object>();
-		
-		NodeList childNodes = element.getChildNodes();
-		
-		for (int i = 0, n = childNodes.getLength(); i < n; ++i) {
-			Node childNode = childNodes.item(i);
-			
-			if (childNode instanceof Element) {
-				tasks.add(delegate.parse((Element) childNode));
-			}
-		}
-
-		builder.addPropertyValue("onTimeoutTasks", tasks);
+		builder.addPropertyValue("onTimeoutTasks", delegate.parseChildElements(element));
 	}
 
 	protected void doParse(Element element, ObjectDefinitionParserDelegate delegate, ObjectDefinitionBuilder builder) {
-		Element receivedNode = null, timeoutNode = null;
+		Element receivedNode = null, errorNode = null, timeoutNode = null;
 		
 		NodeList childNodes = element.getChildNodes();
 		
@@ -84,6 +57,8 @@ public class ReceiveDefinitionParser extends SingleObjectDefinitionParser {
 			if (childNode instanceof Element) {
 				if ("received".equals(delegate.getLocalName(childNode))) {
 					receivedNode = (Element) childNode;
+				} else if ("error".equals(delegate.getLocalName(childNode))) {
+					errorNode = (Element) childNode;
 				} else if ("timeout".equals(delegate.getLocalName(childNode))) {
 					timeoutNode = (Element) childNode;
 				}
@@ -115,9 +90,17 @@ public class ReceiveDefinitionParser extends SingleObjectDefinitionParser {
 		
 		parseReceived(receivedNode, delegate, builder);
 		
+		if (errorNode != null) {
+			if (entryPoint) {
+				throw new IllegalArgumentException("error must not be specified if entryPoint is true");
+			}
+			
+			builder.addPropertyValue("onTimeoutTasks", delegate.parseChildElements(element));
+		}
+		
 		if (timeoutNode != null) {
 			if (entryPoint) {
-				throw new IllegalArgumentException("timeout must no be specified if entryPoint is true");
+				throw new IllegalArgumentException("timeout must not be specified if entryPoint is true");
 			}
 			
 			parseTimeout(timeoutNode, delegate, builder);

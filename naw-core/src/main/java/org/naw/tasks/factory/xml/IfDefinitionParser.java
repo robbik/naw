@@ -8,9 +8,9 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
-import rk.commons.ioc.factory.support.ObjectDefinitionBuilder;
-import rk.commons.ioc.factory.xml.ObjectDefinitionParserDelegate;
-import rk.commons.ioc.factory.xml.SingleObjectDefinitionParser;
+import rk.commons.inject.factory.support.ObjectDefinitionBuilder;
+import rk.commons.inject.factory.xml.ObjectDefinitionParserDelegate;
+import rk.commons.inject.factory.xml.SingleObjectDefinitionParser;
 
 public class IfDefinitionParser extends SingleObjectDefinitionParser {
 
@@ -28,44 +28,32 @@ public class IfDefinitionParser extends SingleObjectDefinitionParser {
 
 		builder.setObjectQName(element.getAttribute("name"));
 
-		NodeList childNodes = element.getChildNodes();
-
-		int i = 0;
-		int length = childNodes.getLength();
-
-		Node node = null;
-
-		while (i < length) {
-			node = childNodes.item(i);
-
-			if (node instanceof Element) {
-				break;
-			}
-
-			++i;
-		}
-
-		builder.addPropertyValue("predicate", delegate.parse((Element) node));
+		builder.addPropertyValue("predicate", delegate.parseFirstChildElement(element));
 
 		List<Object> thenTasks = new ArrayList<Object>();
 		List<Object> elseTasks = new ArrayList<Object>();
 		
 		boolean elseMode = false;
+		
+		NodeList childNodes = element.getChildNodes();
 
-		++i;
-		for (; i < length; ++i) {
-			node = childNodes.item(i);
+		for (int i = 0, j = 0, n = childNodes.getLength(); i < n; ++i) {
+			Node node = childNodes.item(i);
 
 			if (node instanceof Element) {
-				if (ELEMENT_ELSE_LOCAL_NAME.equals(delegate.getLocalName(node))) {
-					elseMode = true;
-				} else {
-					if (elseMode) {
-						elseTasks.add(delegate.parse((Element) node));
+				if (j > 0) {
+					if (ELEMENT_ELSE_LOCAL_NAME.equals(delegate.getLocalName(node))) {
+						elseMode = true;
 					} else {
-						thenTasks.add(delegate.parse((Element) node));
+						if (elseMode) {
+							elseTasks.add(delegate.parse((Element) node));
+						} else {
+							thenTasks.add(delegate.parse((Element) node));
+						}
 					}
 				}
+				
+				++j;
 			}
 		}
 

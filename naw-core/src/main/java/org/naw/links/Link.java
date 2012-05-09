@@ -1,5 +1,7 @@
 package org.naw.links;
 
+import org.naw.exceptions.LinkException;
+
 /**
  * Link with external entity
  */
@@ -18,7 +20,7 @@ public interface Link {
 	 * @throws Exception
 	 *             if an error occurred while sending
 	 */
-	Object send(Object data, boolean oneWay) throws Exception;
+	Object send(Object data, boolean oneWay) throws LinkException, Exception;
 
 	/**
 	 * receive data from external entity (and return immediately if the data is
@@ -34,5 +36,5 @@ public interface Link {
 	 * @throws Exception
 	 *             if an error occurred while receiving
 	 */
-	Object receive(Object correlationId) throws Exception;
+	Object receive(Object correlationId) throws LinkException, Exception;
 }

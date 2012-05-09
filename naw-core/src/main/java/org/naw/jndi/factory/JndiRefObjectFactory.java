@@ -2,8 +2,8 @@ package org.naw.jndi.factory;
 
 import javax.naming.NamingException;
 
-import rk.commons.ioc.factory.support.InitializingObject;
-import rk.commons.ioc.factory.support.ObjectFactory;
+import rk.commons.inject.factory.support.InitializingObject;
+import rk.commons.inject.factory.support.ObjectFactory;
 
 public class JndiRefObjectFactory extends ObjectFactory<Object> implements InitializingObject {
 

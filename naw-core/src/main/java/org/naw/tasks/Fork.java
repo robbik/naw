@@ -8,7 +8,7 @@ import org.naw.core.task.Task;
 import org.naw.core.task.TaskContext;
 import org.naw.core.task.support.TaskContextUtils;
 
-import rk.commons.ioc.factory.support.ObjectQNameAware;
+import rk.commons.inject.factory.support.ObjectQNameAware;
 
 public class Fork implements Task, ObjectQNameAware {
 

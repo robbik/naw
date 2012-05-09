@@ -3,10 +3,11 @@ package org.naw.tasks;
 import org.naw.core.task.DataExchange;
 import org.naw.core.task.Task;
 import org.naw.core.task.TaskContext;
+import org.naw.exceptions.LinkException;
 import org.naw.links.Link;
 
-import rk.commons.ioc.factory.support.InitializingObject;
-import rk.commons.ioc.factory.support.ObjectQNameAware;
+import rk.commons.inject.factory.support.InitializingObject;
+import rk.commons.inject.factory.support.ObjectQNameAware;
 import rk.commons.logging.Logger;
 import rk.commons.logging.LoggerFactory;
 import rk.commons.util.ObjectUtils;
@@ -55,30 +56,54 @@ public class Send implements Task, ObjectQNameAware, InitializingObject {
 	}
 
 	public void run(TaskContext context, DataExchange exchange) throws Exception {
+		int errorCode = 0;
+
 		if (exchangeVarName == null) {
 			// oneWay
-			partnerLink.send(exchange.get(varName), true);
+			try {
+				partnerLink.send(exchange.get(varName), true);
+			} catch (LinkException e) {
+				errorCode = e.getErrorCode();
+			}
 		} else {
 			// request-response
-			exchange.setpriv(exchangeVarName, partnerLink.send(exchange.get(varName), false));
+			try {
+				exchange.setpriv(exchangeVarName, partnerLink.send(exchange.get(varName), false));
+			} catch (LinkException e) {
+				errorCode = e.getErrorCode();
+			}
 		}
+		
+		exchange.setLastError(errorCode);
 		
 		context.next(exchange);
 	}
 
 	public void recover(TaskContext context, DataExchange exchange) throws Exception {
+		int errorCode = 0;
+
 		if (retriable) {
 			if (exchangeVarName == null) {
 				// oneWay
-				partnerLink.send(exchange.get(varName), true);
+				try {
+					partnerLink.send(exchange.get(varName), true);
+				} catch (LinkException e) {
+					errorCode = e.getErrorCode();
+				}
 			} else {
 				// request-response
-				exchange.setpriv(exchangeVarName, partnerLink.send(exchange.get(varName), false));
+				try {
+					exchange.setpriv(exchangeVarName, partnerLink.send(exchange.get(varName), false));
+				} catch (LinkException e) {
+					errorCode = e.getErrorCode();
+				}
 			}
 		} else {
 			log.warning("activity is recovered but retry is disabled");
 		}
 
+		exchange.setLastError(errorCode);
+		
 		context.next(exchange);
 	}
 }

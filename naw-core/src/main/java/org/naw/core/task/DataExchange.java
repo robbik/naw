@@ -10,12 +10,18 @@ import java.util.Set;
 public class DataExchange implements Serializable, Map<String, Object> {
 
 	private static final long serialVersionUID = 309868109865219978L;
+	
+	private static final String ERROR_CODE_KEY = "LAST_ERROR_CODE";
+	
+	private volatile int errorCode;
 
 	private final Map<String, Object> vars;
 
 	private final Map<String, Object> varspriv;
 	
 	public DataExchange() {
+		errorCode = 0;
+		
 		vars = Collections.synchronizedMap(new HashMap<String, Object>());
 		varspriv = Collections.synchronizedMap(new HashMap<String, Object>());
 	}
@@ -63,7 +69,11 @@ public class DataExchange implements Serializable, Map<String, Object> {
 	}
 
 	public Object get(Object name) {
-		return vars.get(name);
+		if (ERROR_CODE_KEY.equals(name)) {
+			return errorCode;
+		} else {
+			return vars.get(name);
+		}
 	}
 
 	public boolean isEmpty() {
@@ -94,8 +104,17 @@ public class DataExchange implements Serializable, Map<String, Object> {
 		return vars.values();
 	}
 	
+	public void setLastError(int code) {
+		errorCode = code;
+	}
+	
+	public int getLastError() {
+		return errorCode;
+	}
+	
 	@Override
 	public String toString() {
-		return super.toString() + " [ public " + vars + "; private " + varspriv + " ]";
+		return super.toString() + " [ errorCode = " + errorCode + " ; public "
+				+ vars + "; private " + varspriv + " ]";
 	}
 }

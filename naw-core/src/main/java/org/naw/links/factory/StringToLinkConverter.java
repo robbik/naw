@@ -2,11 +2,10 @@ package org.naw.links.factory;
 
 import java.net.URI;
 
-
-import rk.commons.ioc.factory.IocObjectFactory;
-import rk.commons.ioc.factory.ObjectInstantiationException;
-import rk.commons.ioc.factory.ObjectNotFoundException;
-import rk.commons.ioc.factory.type.converter.TypeConverter;
+import rk.commons.inject.factory.IocObjectFactory;
+import rk.commons.inject.factory.ObjectInstantiationException;
+import rk.commons.inject.factory.ObjectNotFoundException;
+import rk.commons.inject.factory.type.converter.TypeConverter;
 import rk.commons.util.StringUtils;
 
 public class StringToLinkConverter implements TypeConverter {

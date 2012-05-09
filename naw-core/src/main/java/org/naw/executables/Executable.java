@@ -9,7 +9,7 @@ import org.naw.core.task.Task;
 import org.naw.core.task.TaskContext;
 import org.naw.core.task.support.TaskContextUtils;
 
-import rk.commons.ioc.factory.support.InitializingObject;
+import rk.commons.inject.factory.support.InitializingObject;
 
 public class Executable implements InitializingObject {
 
