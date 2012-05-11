@@ -12,26 +12,20 @@ import org.naw.core.task.Task;
 import org.naw.core.task.TaskContext;
 import org.naw.core.task.TaskPipeline;
 import org.naw.core.task.support.Tasks;
-import org.naw.core.utils.ValueGenerators;
 import org.naw.exceptions.LinkException;
 import org.naw.executables.Executable;
 import org.naw.links.AsyncCallback;
 import org.naw.links.AsyncResult;
-import org.naw.links.Link;
 import org.naw.links.LinkExchange;
 import org.naw.links.Message;
 
-public class Receive implements Task, LifeCycleAware, AsyncCallback<Message> {
-	
-	private Link link;
+public class ReceiveReply implements Task, LifeCycleAware, AsyncCallback<Message> {
 
 	private String variable;
 
 	private long deadline;
 
 	private Duration duration;
-	
-	private boolean createInstance;
 	
 	private String exchangeVariable;
 	
@@ -47,20 +41,12 @@ public class Receive implements Task, LifeCycleAware, AsyncCallback<Message> {
 	
 	private TaskPipeline timeoutPipeline;
 
-	public void setLink(Link link) {
-		this.link = link;
-	}
-
 	public void setVariable(String variable) {
 		this.variable = variable;
 	}
 
 	public void setExchangeVariable(String exchangeVariable) {
 		this.exchangeVariable = exchangeVariable;
-	}
-	
-	public void setCreateInstance(boolean createInstance) {
-		this.createInstance = createInstance;
 	}
 	
 	public void setDeadline(DateTime deadline) {
@@ -118,26 +104,20 @@ public class Receive implements Task, LifeCycleAware, AsyncCallback<Message> {
 			}
 		}
 		
-		// use existing correlation
-		Object correlation;
+		// use correlation
+		LinkExchange lex = exchange.getpriv(exchangeVariable);
 		
-		if (createInstance || (exchangeVariable == null)) {
-			correlation = null;
-		} else {
-			LinkExchange lex = exchange.getpriv(exchangeVariable);
+		if (lex == null) {
+			// start timeout tasks
 			
-			if (lex == null) {
-				correlation = null;
+			if (timeoutPipeline == null) {
+				return; // DEAD END
 			} else {
-				correlation = lex.getCorrelation();
+				timeoutPipeline.start(exchange);
 			}
 		}
 		
 		// begin receive data
-		if (!createInstance) {
-			exchange.setLastError(0, "No error");
-		}
-		
 		boolean error = false;
 		
 		AsyncAttachment attachment = new AsyncAttachment();
@@ -145,7 +125,7 @@ public class Receive implements Task, LifeCycleAware, AsyncCallback<Message> {
 		attachment.context = context;
 		
 		try {
-			link.asyncReceive(correlation, attachment, deadline, this);
+			lex.getLink().asyncReceiveReply(lex.getCorrelation(), attachment, deadline, this);
 		} catch (LinkException e) {
 			// set last error
 			exchange.setLastError(e.getErrorCode(), e.getMessage());
@@ -169,32 +149,14 @@ public class Receive implements Task, LifeCycleAware, AsyncCallback<Message> {
 		
 		if (asyncResult.isSuccess()) {
 			// received
-			DataExchange exchange;
-			
-			if (createInstance) {
-				TaskContext context = attachment.context;
-				
-				// this is an entry point task, so we need to re-run this task for another receive
-				context.start(null);
-				
-				// create new data exchange
-				exchange = context.getExecutable().createDataExchange();
-			} else {
-				exchange = attachment.exchange;
-			}
+			DataExchange exchange = attachment.exchange;
 			
 			// set received data to variable
 			exchange.set(variable, asyncResult.getResult().getBody());
 			
-			// set correlation
+			// unset correlation
 			if (exchangeVariable != null) {
-				Object correlation = asyncResult.getResult().getCorrelation();
-				
-				if (correlation == null) {
-					correlation = ValueGenerators.correlation();
-				}
-				
-				exchange.setpriv(exchangeVariable, new LinkExchange(correlation, link));
+				exchange.unsetpriv(exchangeVariable);
 			}
 			
 			// start receive tasks

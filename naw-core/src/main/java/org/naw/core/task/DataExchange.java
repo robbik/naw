@@ -13,17 +13,22 @@ public class DataExchange implements Serializable, Map<String, Object> {
 	
 	private static final String ERROR_CODE_KEY = "LAST_ERROR_CODE";
 	
-	private volatile int errorCode;
-
+	private static final String ERROR_MSG_KEY = "LAST_ERROR_MSG";
+	
 	private final Map<String, Object> vars;
 
 	private final Map<String, Object> varspriv;
 	
+	private volatile int errorCode;
+	
+	private volatile String errorMsg;
+	
 	public DataExchange() {
-		errorCode = 0;
-		
 		vars = Collections.synchronizedMap(new HashMap<String, Object>());
 		varspriv = Collections.synchronizedMap(new HashMap<String, Object>());
+		
+		errorCode = 0;
+		errorMsg = "No error";
 	}
 	
 	public void set(String name, Object value) {
@@ -70,7 +75,9 @@ public class DataExchange implements Serializable, Map<String, Object> {
 
 	public Object get(Object name) {
 		if (ERROR_CODE_KEY.equals(name)) {
-			return errorCode;
+			return Integer.valueOf(errorCode);
+		} else if (ERROR_MSG_KEY.equals(name)) {
+			return errorMsg;
 		} else {
 			return vars.get(name);
 		}
@@ -104,12 +111,25 @@ public class DataExchange implements Serializable, Map<String, Object> {
 		return vars.values();
 	}
 	
-	public void setLastError(int code) {
-		errorCode = code;
+	public void setLastErrorCode(int errorCode) {
+		this.errorCode = errorCode;
 	}
 	
-	public int getLastError() {
+	public int getLastErrorCode() {
 		return errorCode;
+	}
+	
+	public void setLastErrorMessage(String errorMsg) {
+		this.errorMsg = errorMsg;
+	}
+	
+	public String getLastErrorMessage() {
+		return errorMsg;
+	}
+	
+	public void setLastError(int code, String msg) {
+		this.errorCode = code;
+		this.errorMsg = msg;
 	}
 	
 	@Override

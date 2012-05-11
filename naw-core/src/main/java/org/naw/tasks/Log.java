@@ -24,7 +24,7 @@ public class Log implements Task {
 	public void run(TaskContext context, DataExchange exchange) throws Exception {
 		log.info(text);
 		
-		context.next(exchange);
+		context.forward(exchange);
 	}
 
 	public void recover(TaskContext context, DataExchange exchange) throws Exception {

@@ -14,7 +14,7 @@ public class SpringXmlEngineTest {
 	@Test
 	public void case1() throws Exception {
 		ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream("/tmp/x-spring.txt"));
-		ObjectUtils.writeBytes("abcdef", out);
+		ObjectUtils.writeObject("abcdef", out);
 		out.close();
 		
 		GenericXmlApplicationContext spring = new GenericXmlApplicationContext("classpath:naw2-spring.xml");

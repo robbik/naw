@@ -5,4 +5,5 @@
 
     <link name="file" class="org.naw.links.spi.FileLinkFactory" />
     
+    <link name="direct" class="org.naw.links.spi.DirectLinkFactory" />
 </naw>

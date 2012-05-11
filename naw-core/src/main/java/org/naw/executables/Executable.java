@@ -4,20 +4,16 @@ import java.util.List;
 
 import org.naw.core.Engine;
 import org.naw.core.task.DataExchange;
-import org.naw.core.task.EntryPoint;
 import org.naw.core.task.Task;
-import org.naw.core.task.TaskContext;
-import org.naw.core.task.support.TaskContextUtils;
+import org.naw.core.task.support.Tasks;
 
 import rk.commons.inject.factory.support.InitializingObject;
 
 public class Executable implements InitializingObject {
-
+	
 	private String name;
 
 	private List<Object> tasks;
-
-	private TaskContext entryPoint;
 
 	public String getExecutableName() {
 		return name;
@@ -31,10 +27,6 @@ public class Executable implements InitializingObject {
 		this.tasks = tasks;
 	}
 
-	public TaskContext getEntryPoint() {
-		return entryPoint;
-	}
-
 	public void initialize() throws Exception {
 		if ((tasks == null) || tasks.isEmpty()) {
 			throw new IllegalArgumentException("tasks cannot be empty");
@@ -43,37 +35,19 @@ public class Executable implements InitializingObject {
 		for (int i = 0, n = this.tasks.size(); i < n; ++i) {
 			Object o = this.tasks.get(i);
 
-			if (i == 0) {
-				if (!(o instanceof EntryPoint)) {
-					throw new IllegalArgumentException("first task " + o.getClass() + " must derived from "
-							+ EntryPoint.class + " class");
-				}
-				
-				EntryPoint ep = (EntryPoint) o;
-				if (!ep.isEntryPoint()) {
-					throw new IllegalArgumentException("first task " + o.getClass() + " must be an entry point. " +
-							"This is usually can be done by setting entryPoint attribute to true");
-				}
-			} else {
-				if (!(o instanceof Task)) {
-					throw new IllegalArgumentException("task " + o.getClass() + " must derived from "
-							+ Task.class + " class");
-				}
+			if (!(o instanceof Task)) {
+				throw new IllegalArgumentException("task " + o.getClass() + " must derived from " + Task.class + " class");
 			}
 		}
 	}
 	
-	public void attach(Engine engine) {
-		if ((tasks == null) || tasks.isEmpty()) {
-			throw new IllegalArgumentException("executable already attached");
-		}
-		
-		Task[] tasks = this.tasks.toArray(new Task[0]);
+	public void start(Engine engine) {
+		start(engine, null);
+	}
 
-		this.tasks.clear();
-		this.tasks = null;
-		
-		entryPoint = TaskContextUtils.chain(engine, this, tasks);
+	@SuppressWarnings({ "unchecked", "rawtypes" })
+	public void start(Engine engine, DataExchange exchange) {
+		Tasks.pipeline(engine, this, (List) tasks).start(exchange);
 	}
 
 	public DataExchange createDataExchange() {

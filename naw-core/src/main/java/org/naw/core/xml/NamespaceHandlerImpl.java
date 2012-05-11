@@ -11,6 +11,8 @@ import org.naw.tasks.factory.xml.IfDefinitionParser;
 import org.naw.tasks.factory.xml.LogDefinitionParser;
 import org.naw.tasks.factory.xml.MergeDefinitionParser;
 import org.naw.tasks.factory.xml.ReceiveDefinitionParser;
+import org.naw.tasks.factory.xml.ReceiveReplyDefinitionParser;
+import org.naw.tasks.factory.xml.ReplyDefinitionParser;
 import org.naw.tasks.factory.xml.SendDefinitionParser;
 import org.naw.tasks.factory.xml.WaitDefinitionParser;
 import org.naw.tasks.factory.xml.WhileDefinitionParser;
@@ -59,8 +61,16 @@ public class NamespaceHandlerImpl extends NamespaceHandlerSupport {
 				new SendDefinitionParser());
 
 		registerObjectDefinitionParser(
+				ReplyDefinitionParser.ELEMENT_LOCAL_NAME,
+				new ReplyDefinitionParser());
+
+		registerObjectDefinitionParser(
 				ReceiveDefinitionParser.ELEMENT_LOCAL_NAME,
 				new ReceiveDefinitionParser());
+
+		registerObjectDefinitionParser(
+				ReceiveReplyDefinitionParser.ELEMENT_LOCAL_NAME,
+				new ReceiveReplyDefinitionParser());
 
 		registerObjectDefinitionParser(
 				LinkFactoryDefinitionParser.ELEMENT_LOCAL_NAME,

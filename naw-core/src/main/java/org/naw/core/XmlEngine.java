@@ -1,5 +1,7 @@
 package org.naw.core;
 
+import org.naw.core.impl.AbstractEngine;
+
 import rk.commons.inject.context.XmlIocContext;
 
 public class XmlEngine extends AbstractEngine {

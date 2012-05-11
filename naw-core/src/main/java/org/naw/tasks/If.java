@@ -2,13 +2,17 @@ package org.naw.tasks;
 
 import java.util.List;
 
+import org.naw.core.Engine;
 import org.naw.core.task.DataExchange;
+import org.naw.core.task.LifeCycleAware;
 import org.naw.core.task.Task;
 import org.naw.core.task.TaskContext;
-import org.naw.core.task.support.TaskContextUtils;
+import org.naw.core.task.TaskPipeline;
+import org.naw.core.task.support.Tasks;
+import org.naw.executables.Executable;
 import org.naw.expression.Expression;
 
-public class If implements Task {
+public class If implements Task, LifeCycleAware {
 
 	private Expression predicate;
 	
@@ -16,9 +20,9 @@ public class If implements Task {
 
 	private List<Task> elseTasks;
 
-	private volatile TaskContext thenEntryPoint;
+	private TaskPipeline pthen;
 
-	private volatile TaskContext elseEntryPoint;
+	private TaskPipeline pelse;
 
 	public void setPredicate(Expression predicate) {
 		this.predicate = predicate;
@@ -32,31 +36,24 @@ public class If implements Task {
 		this.elseTasks = elseTasks;
 	}
 
-	private synchronized void initialize(TaskContext context) {
-		if (thenEntryPoint == null) {
-			thenEntryPoint = TaskContextUtils.getFirstTaskContext(context, thenTasks);
-			thenTasks = null;
-
-			TaskContextUtils.addLast(thenEntryPoint, context);
-		}
-
-		if ((elseEntryPoint == null) && (elseTasks != null)) {
-			elseEntryPoint = TaskContextUtils.getFirstTaskContext(context, elseTasks);
-			elseTasks = null;
-
-			TaskContextUtils.addLast(elseEntryPoint, context);
-		}
+	public void beforeAdd(TaskContext ctx) {
+		Engine engine = ctx.getPipeline().getEngine();
+		Executable executable = ctx.getPipeline().getExecutable();
+		
+		pthen = Tasks.pipeline(engine, executable, thenTasks).addLast(ctx.getNext());
+		pelse = Tasks.pipeline(engine, executable, elseTasks).addLast(ctx.getNext());
+		
+		thenTasks = null;
+		elseTasks = null;
 	}
 
 	public void run(TaskContext context, DataExchange exchange) throws Exception {
-		initialize(context);
-		
 		if (predicate.eval(exchange, boolean.class)) {
-			thenEntryPoint.start(exchange);
-		} else if (elseEntryPoint != null) {
-			elseEntryPoint.start(exchange);
+			pthen.start(exchange);
+		} else if (pelse != null) {
+			pelse.start(exchange);
 		} else {
-			context.next(exchange);
+			context.forward(exchange);
 		}
 	}
 

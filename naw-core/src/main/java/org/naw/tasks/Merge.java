@@ -21,8 +21,7 @@ public class Merge implements Task {
 	}
 
 	@SuppressWarnings({ "rawtypes", "unchecked" })
-	public void run(TaskContext context, DataExchange exchange)
-			throws Exception {
+	public void run(TaskContext context, DataExchange exchange) throws Exception {
 		Object vfrom = exchange.get(from);
 		Object vto = exchange.get(to);
 
@@ -36,11 +35,10 @@ public class Merge implements Task {
 			exchange.set(to, vfrom);
 		}
 
-		context.next(exchange);
+		context.forward(exchange);
 	}
 
-	public void recover(TaskContext context, DataExchange exchange)
-			throws Exception {
+	public void recover(TaskContext context, DataExchange exchange) throws Exception {
 		run(context, exchange);
 	}
 }

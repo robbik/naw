@@ -3,43 +3,40 @@ package org.naw.tasks;
 import java.util.List;
 
 import org.naw.core.task.DataExchange;
+import org.naw.core.task.LifeCycleAware;
 import org.naw.core.task.Task;
 import org.naw.core.task.TaskContext;
-import org.naw.core.task.support.TaskContextUtils;
+import org.naw.core.task.TaskPipeline;
+import org.naw.core.task.support.Tasks;
 import org.naw.expression.Expression;
 
-public class While implements Task {
+public class While implements Task, LifeCycleAware {
 
 	private Expression predicate;
 
-	private List<Task> bodyTasks;
+	private List<Task> tasks;
 	
-	private volatile TaskContext bodyEntryPoint;
+	private TaskPipeline pipeline;
 
 	public void setPredicate(Expression predicate) {
 		this.predicate = predicate;
 	}
 
-	public void setBodyTasks(List<Task> bodyTasks) {
-		this.bodyTasks = bodyTasks;
+	public void setBodyTasks(List<Task> tasks) {
+		this.tasks = tasks;
 	}
 
-	private synchronized void initialize(TaskContext context) {
-		if (bodyEntryPoint == null) {
-			bodyEntryPoint = TaskContextUtils.getFirstTaskContext(context, bodyTasks);
-			bodyTasks = null;
-	
-			TaskContextUtils.addLast(bodyEntryPoint, context);
-		}
+	public void beforeAdd(TaskContext ctx) {
+		pipeline = Tasks.pipeline(ctx.getPipeline().getEngine(), ctx.getPipeline().getExecutable(), tasks).addLast(ctx);
+		
+		tasks = null;
 	}
 
 	public void run(TaskContext context, DataExchange exchange) throws Exception {
-		initialize(context);
-		
 		if (predicate.eval(exchange, boolean.class)) {
-			bodyEntryPoint.start(exchange);
+			pipeline.start(exchange);
 		} else {
-			context.next(exchange);
+			context.forward(exchange);
 		}
 	}
 

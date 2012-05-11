@@ -3,18 +3,14 @@ package org.naw.tasks;
 import org.naw.core.task.DataExchange;
 import org.naw.core.task.Task;
 import org.naw.core.task.TaskContext;
-import org.naw.core.utils.ValueGenerators;
 import org.naw.exceptions.LinkException;
-import org.naw.links.Link;
 import org.naw.links.LinkExchange;
 import org.naw.links.Message;
 
 import rk.commons.inject.factory.support.ObjectQNameAware;
 import rk.commons.logging.LoggerFactory;
 
-public class Send implements Task, ObjectQNameAware {
-
-	private Link link;
+public class Reply implements Task, ObjectQNameAware {
 
 	private String variable;
 
@@ -23,10 +19,6 @@ public class Send implements Task, ObjectQNameAware {
 	private String exchangeVariable;
 
 	private String objectQName;
-
-	public void setLink(Link link) {
-		this.link = link;
-	}
 
 	public void setVariable(String variable) {
 		this.variable = variable;
@@ -48,33 +40,14 @@ public class Send implements Task, ObjectQNameAware {
 		int errorCode = 0;
 		String errorMsg = "No error";
 		
-		if (exchangeVariable == null) {
-			// one-way
-			Message msg = new Message(exchange.get(variable));
-			
+		LinkExchange lex = exchange.getpriv(exchangeVariable);
+		
+		if (lex != null) {
 			try {
-				link.send(msg);
+				lex.getLink().sendReply(new Message(lex.getCorrelation(), exchange.get(variable)));
 			} catch (LinkException e) {
 				errorCode = e.getErrorCode();
 				errorMsg = e.getMessage();
-			}
-		} else {
-			// request-response
-			LinkExchange lex = exchange.getpriv(exchangeVariable);
-			
-			if (lex == null) {
-				lex = new LinkExchange(ValueGenerators.correlation(), link);
-			}
-			
-			try {
-				link.send(new Message(lex.getCorrelation(), exchange.get(variable)));
-			} catch (LinkException e) {
-				errorCode = e.getErrorCode();
-				errorMsg = e.getMessage();
-			}
-			
-			if (errorCode == 0) {
-				exchange.setpriv(exchangeVariable, lex);
 			}
 		}
 		

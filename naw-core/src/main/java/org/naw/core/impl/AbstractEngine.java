@@ -1,4 +1,4 @@
-package org.naw.core;
+package org.naw.core.impl;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -7,8 +7,12 @@ import java.util.Set;
 
 import org.apache.axis.types.DateTime;
 import org.apache.axis.types.Duration;
-import org.naw.core.task.SimpleTaskQueue;
+import org.naw.core.Engine;
+import org.naw.core.Processor;
 import org.naw.core.task.TaskQueue;
+import org.naw.core.task.impl.DefaultTaskQueue;
+import org.naw.core.task.support.HashedWheelTimer;
+import org.naw.core.task.support.Timer;
 import org.naw.executables.Executable;
 import org.naw.links.Link;
 import org.naw.links.factory.StringToLinkConverter;
@@ -32,6 +36,8 @@ public abstract class AbstractEngine implements Engine {
 	protected final Object statusLock;
 
 	protected int status;
+	
+	protected Timer timer;
 
 	protected TaskQueue taskQueue;
 	
@@ -47,7 +53,9 @@ public abstract class AbstractEngine implements Engine {
 	}
 	
 	protected void initialize() {
-		taskQueue = new SimpleTaskQueue();
+		timer = new HashedWheelTimer();
+		
+		taskQueue = new DefaultTaskQueue();
 		
 		resourceLoader = new ResourceLoader();
 
@@ -98,6 +106,10 @@ public abstract class AbstractEngine implements Engine {
 		
 		return locations;
 	}
+	
+	public Timer getTimer() {
+		return timer;
+	}
 
 	public TaskQueue getTaskQueue() {
 		return taskQueue;
@@ -112,7 +124,7 @@ public abstract class AbstractEngine implements Engine {
 	}
 
 	public Processor createProcessor() {
-		return new SimpleProcessor(this);
+		return new DefaultProcessor(this);
 	}
 
 	public void start() {
@@ -124,9 +136,7 @@ public abstract class AbstractEngine implements Engine {
 			Collection<Executable> executables = iocFactory.getObjectsOfType(Executable.class).values();
 
 			for (Executable e : executables) {
-				e.attach(this);
-
-				taskQueue.add(e.getEntryPoint(), null);
+				e.start(this);
 			}
 
 			status = STATUS_STARTED;

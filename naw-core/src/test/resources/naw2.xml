@@ -5,15 +5,15 @@
     
     <process name="c">
         <receive from="file-spring:/tmp/x-spring.txt" entryPoint="true">
-            <received varName="abcde">
+            <received variable="abcde">
                 <expression language="ognl">@java.lang.System@out.println("1" + objects)</expression>
 
-                <send to="file-spring:/tmp/x2-spring.txt" varName="abcde" retriable="false" exchange="za" />
+                <send to="file-spring:/tmp/x2-spring.txt" variable="abcde" retriable="false" exchangeVariable="za" />
 
                 <expression language="ognl">@java.lang.System@out.println('2' + exchange)</expression>
 
-                <receive from="file-spring:/tmp/x2-spring.txt" exchange="za">
-                    <received varName="zzzz">
+                <receive from="file-spring:/tmp/x2-spring.txt" exchangeVariable="za">
+                    <received variable="zzzz">
                         <expression language="ognl">@java.lang.System@out.println('3' + exchange)</expression>
                     </received>
 

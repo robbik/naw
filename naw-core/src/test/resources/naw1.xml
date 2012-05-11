@@ -2,70 +2,35 @@
      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
      xsi:schemaLocation="http://www.naw.org/schema/naw
                          http://www.naw.org/schema/naw.xsd">
-
-    <!--
-    <process name="a">
-        <noop />
-        <merge from="c" to="d" />
-        
-        <if>
-	        <expression language="ognl">
-	            false
-	        </expression>
-	        
-	        <noop />
-        <else />
-            <noop />
-        </if>
-        
-        <receive from="file:/tmp/x.txt">
-            <received varName="abcde">
-                <noop />
-            </received>
-            
-            <timeout duration="PT1H">
-                <noop />
-            </timeout>
-        </receive>
-    </process>
-
-    <process name="b">
-        <fork>
-            <flow>
-                <wait until="2012-03-12T05:30:30" />
-
-                <noop />
-            </flow>
-            <flow>
-                <noop />
-            </flow>
-            <flow>
-                <noop />
-            </flow>
-        </fork>
-        
-        <send to="file:/tmp/x.txt" varName="request" retriable="false" />
-    </process>
-    -->
     
     <process name="c">
-        <receive from="file:/tmp/x.txt" entryPoint="true">
-            <received varName="abcde">
+        <receive from="file:/tmp/x.txt" exchangeVariable="A" createInstance="true">
+            <received variable="abcde">
                 <expression language="ognl">@java.lang.System@out.println('1' + exchange)</expression>
 
-                <send to="file:/tmp/x2.txt" varName="abcde" retriable="false" exchange="za" />
+                <send to="file:/tmp/x2.txt" variable="abcde" retriable="false" exchangeVariable="za" />
 
                 <expression language="ognl">@java.lang.System@out.println('2' + exchange)</expression>
 
-                <receive from="file:/tmp/x2.txt" exchange="za">
-                    <received varName="zzzz">
+                <receive from="file:/tmp/x2.txt" exchangeVariable="za">
+                    <received variable="zzzz">
                         <expression language="ognl">@java.lang.System@out.println('3' + exchange)</expression>
                     </received>
 
                     <timeout duration="PT5S">
                         <expression language="ognl">@java.lang.System@out.println('4' + exchange)</expression>
                     </timeout>
+
+                    <error>
+                        <expression language="ognl">@java.lang.System@out.println('4E' + exchange.LAST_ERROR_CODE)</expression>
+                    </error>
                 </receive>
+                
+                <expression language="ognl">exchange.abcde = 'hehehe'</expression>
+                
+                <expression language="ognl">@java.lang.System@out.println('5' + exchange)</expression>
+                
+                <send to="file:/tmp/x.txt" exchangeVariable="A" variable="abcde" retriable="false" />
             </received>
         </receive>
     </process>

@@ -6,13 +6,11 @@ import org.naw.core.task.TaskContext;
 
 public class Empty implements Task {
 
-	public void run(TaskContext context, DataExchange exchange)
-			throws Exception {
-		context.next(exchange);
+	public void run(TaskContext context, DataExchange exchange) throws Exception {
+		context.forward(exchange);
 	}
 
-	public void recover(TaskContext context, DataExchange exchange)
-			throws Exception {
+	public void recover(TaskContext context, DataExchange exchange) throws Exception {
 		run(context, exchange);
 	}
 }

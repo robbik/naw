@@ -1,0 +1,79 @@
+<naw xmlns="http://www.naw.org/schema/naw"
+     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+     xsi:schemaLocation="http://www.naw.org/schema/naw
+                         http://www.naw.org/schema/naw.xsd">
+    
+    <process name="a">
+        <receive from="direct-test:A" exchangeVariable="x" createInstance="true">
+            <received variable="request">
+                <expression language="ognl">exchange.request = exchange.request + '_ARESPONSE'</expression>
+
+                <reply exchangeVariable="x" variable="request" retriable="false" />
+            </received>
+        </receive>
+    </process>
+    
+    <process name="b">
+        <receive from="direct-test:B" exchangeVariable="x" createInstance="true">
+            <received variable="request">
+                <merge from="request" to="requestA" />
+            
+                <expression language="ognl">exchange.requestA = exchange.requestA + '_AREQUEST'</expression>
+
+                <send to="direct-test:A" variable="requestA" exchangeVariable="x2" retriable="false" />
+                
+                <receive-reply exchangeVariable="x2">
+                    <received variable="responseA">
+                        <reply exchangeVariable="x" variable="responseA" retriable="false" />
+                    </received>
+
+                    <timeout duration="PT30S">
+                        <merge from="request" to="response" />
+                        
+                        <expression language="ognl">exchange.response = exchange.response + '_ATIMEOUT'</expression>
+                        <reply exchangeVariable="x" variable="response" retriable="false" />
+                    </timeout>
+                    
+                    <error>
+                        <merge from="request" to="response" />
+                        
+                        <expression language="ognl">exchange.response = exchange.response + '_AERR' + exchange.LAST_ERROR_MSG</expression>
+                        <reply exchangeVariable="x" variable="response" retriable="false" />
+                    </error>
+                </receive-reply>
+            </received>
+        </receive>
+    </process>
+    
+    <process name="c">
+        <receive from="direct-test:C" exchangeVariable="x" createInstance="true">
+            <received variable="request">
+                <merge from="request" to="requestB" />
+            
+                <expression language="ognl">exchange.requestB = exchange.requestB + '_BREQUEST'</expression>
+
+                <send to="direct-test:B" variable="requestB" exchangeVariable="x2" retriable="false" />
+                
+                <receive-reply exchangeVariable="x2">
+                    <received variable="responseB">
+                        <reply exchangeVariable="x" variable="responseB" retriable="false" />
+                    </received>
+
+                    <timeout duration="PT30S">
+                        <merge from="request" to="response" />
+                        
+                        <expression language="ognl">exchange.response = exchange.response + '_BTIMEOUT'</expression>
+                        <reply exchangeVariable="x" variable="response" retriable="false" />
+                    </timeout>
+                    
+                    <error>
+                        <merge from="request" to="response" />
+                        
+                        <expression language="ognl">exchange.response = exchange.response + '_BERR' + exchange.LAST_ERROR_MSG</expression>
+                        <reply exchangeVariable="x" variable="response" retriable="false" />
+                    </error>
+                </receive-reply>
+            </received>
+        </receive>
+    </process>
+</naw>

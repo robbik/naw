@@ -61,10 +61,13 @@
             <xsd:element name="merge" type="merge" />
             <xsd:element name="while" type="while" />
             <xsd:element name="if" type="if" />
+            <xsd:element name="correlation" type="correlation" />
             <xsd:element name="fork" type="fork" />
             <xsd:element name="wait" type="wait" />
             <xsd:element name="send" type="send" />
+            <xsd:element name="reply" type="reply" />
             <xsd:element name="receive" type="receive" />
+            <xsd:element name="receive-reply" type="receive-reply" />
             <xsd:element name="log" type="log" />
         </xsd:choice>
     </xsd:group>
@@ -122,6 +125,16 @@
         <xsd:attribute name="name" type="xsd:string" use="optional" />
     </xsd:complexType>
 
+    <xsd:complexType name="correlation">
+        <xsd:sequence>
+            <xsd:element name="expression" type="expression" minOccurs="1" maxOccurs="1" />
+        </xsd:sequence>
+
+        <xsd:attribute name="name" type="xsd:string" use="optional" />
+        
+        <xsd:attribute name="exchangeVariable" type="xsd:string" use="required" />
+    </xsd:complexType>
+
     <xsd:complexType name="fork">
         <xsd:sequence>
             <xsd:choice minOccurs="2" maxOccurs="unbounded">
@@ -148,12 +161,21 @@
     <xsd:complexType name="send">
         <xsd:attribute name="name" type="xsd:string" use="optional" />
 
-        <xsd:attribute name="varName" type="xsd:string" use="required" />
+        <xsd:attribute name="variable" type="xsd:string" use="required" />
         <xsd:attribute name="retriable" type="xsd:boolean" use="required" />
         
-        <xsd:attribute name="to" type="xsd:anyURI" use="required" />
+        <xsd:attribute name="to" type="xsd:string" use="required" />
         
-        <xsd:attribute name="exchange" type="xsd:string" use="optional" />
+        <xsd:attribute name="exchangeVariable" type="xsd:string" use="optional" />
+    </xsd:complexType>
+    
+    <xsd:complexType name="reply">
+        <xsd:attribute name="name" type="xsd:string" use="optional" />
+
+        <xsd:attribute name="variable" type="xsd:string" use="required" />
+        <xsd:attribute name="retriable" type="xsd:boolean" use="required" />
+        
+        <xsd:attribute name="exchangeVariable" type="xsd:string" use="required" />
     </xsd:complexType>
     
     <xsd:complexType name="receive">
@@ -164,39 +186,61 @@
                         <xsd:group ref="tasks" />
                     </xsd:choice>
 
-                    <xsd:attribute name="varName" type="xsd:string" use="required" />
+                    <xsd:attribute name="variable" type="xsd:string" use="required" />
                 </xsd:complexType>
             </xsd:element>
 
-            <xsd:element name="error" minOccurs="0" maxOccurs="1">
-                <xsd:complexType>
-                    <xsd:choice minOccurs="1" maxOccurs="unbounded">
-                        <xsd:group ref="tasks" />
-                    </xsd:choice>
-                </xsd:complexType>
-            </xsd:element>
-
-            <xsd:element name="timeout" minOccurs="0" maxOccurs="1">
-                <xsd:complexType>
-                    <xsd:choice minOccurs="1" maxOccurs="unbounded">
-                        <xsd:group ref="tasks" />
-                    </xsd:choice>
-
-			        <xsd:attribute name="deadline" type="xsd:dateTime" />
-			        <xsd:attribute name="duration" type="xsd:duration" />
-                </xsd:complexType>
-            </xsd:element>
+            <xsd:element name="timeout" type="timeout" minOccurs="0" maxOccurs="1" />
+            
+            <xsd:element name="error" type="error" minOccurs="0" maxOccurs="1" />
         </xsd:sequence>
 
         <xsd:attribute name="name" type="xsd:string" use="optional" />
 
-        <xsd:attribute name="from" type="xsd:anyURI" use="required" />
+        <xsd:attribute name="from" type="xsd:string" use="required" />
 
-        <xsd:attribute name="entryPoint" type="xsd:boolean" use="optional" default="false" />
+        <xsd:attribute name="createInstance" type="xsd:boolean" use="optional" default="false" />
         
-        <xsd:attribute name="exchange" type="xsd:string" use="optional" />
+        <xsd:attribute name="exchangeVariable" type="xsd:string" use="optional" />
     </xsd:complexType>
+    
+    <xsd:complexType name="receive-reply">
+        <xsd:sequence>
+            <xsd:element name="received" minOccurs="1" maxOccurs="1">
+                <xsd:complexType>
+                    <xsd:choice minOccurs="1" maxOccurs="unbounded">
+                        <xsd:group ref="tasks" />
+                    </xsd:choice>
 
+                    <xsd:attribute name="variable" type="xsd:string" use="required" />
+                </xsd:complexType>
+            </xsd:element>
+
+            <xsd:element name="timeout" type="timeout" minOccurs="0" maxOccurs="1" />
+            
+            <xsd:element name="error" type="error" minOccurs="0" maxOccurs="1" />
+        </xsd:sequence>
+
+        <xsd:attribute name="name" type="xsd:string" use="optional" />
+        
+        <xsd:attribute name="exchangeVariable" type="xsd:string" use="required" />
+    </xsd:complexType>
+    
+    <xsd:complexType name="error">
+        <xsd:choice minOccurs="1" maxOccurs="unbounded">
+            <xsd:group ref="tasks" />
+        </xsd:choice>
+    </xsd:complexType>
+    
+    <xsd:complexType name="timeout">
+        <xsd:choice minOccurs="1" maxOccurs="unbounded">
+            <xsd:group ref="tasks" />
+        </xsd:choice>
+
+        <xsd:attribute name="deadline" type="xsd:dateTime" />
+        <xsd:attribute name="duration" type="xsd:duration" />
+    </xsd:complexType>
+    
     <xsd:complexType name="link">
         <xsd:attribute name="name" type="xsd:string" use="optional" />
         <xsd:attribute name="class" type="xsd:string" use="required" />

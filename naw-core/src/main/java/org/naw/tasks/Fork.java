@@ -3,72 +3,70 @@ package org.naw.tasks;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.naw.core.Engine;
 import org.naw.core.task.DataExchange;
+import org.naw.core.task.LifeCycleAware;
 import org.naw.core.task.Task;
 import org.naw.core.task.TaskContext;
-import org.naw.core.task.support.TaskContextUtils;
+import org.naw.core.task.TaskPipeline;
+import org.naw.core.task.support.Tasks;
+import org.naw.executables.Executable;
 
 import rk.commons.inject.factory.support.ObjectQNameAware;
 
-public class Fork implements Task, ObjectQNameAware {
+public class Fork implements Task, ObjectQNameAware, LifeCycleAware {
 
-	private List<Task>[] flowTasks;
+	private List<Task>[] tasks;
 	
 	private String objectQName;
 	
-	private TaskContext[] flowEntryPoints;
+	private TaskPipeline[] pipelines;
 
-	private String privVarName;
+	private String joinVariable;
 	
 	@SuppressWarnings("unchecked")
-	public void setFlowTasks(Object[] flowTasks) {
-		this.flowTasks = new List[flowTasks.length];
-		System.arraycopy(flowTasks, 0, this.flowTasks, 0, flowTasks.length);
+	public void setFlowTasks(Object[] tasks) {
+		this.tasks = new List[tasks.length];
+		System.arraycopy(tasks, 0, this.tasks, 0, tasks.length);
 	}
 
 	public void setObjectQName(String objectQName) {
 		this.objectQName = objectQName;
 	}
 
-	private synchronized void initialize(TaskContext context) {
-		if (flowEntryPoints != null) {
-			return;
+	public void beforeAdd(TaskContext ctx) {
+		pipelines = new TaskPipeline[tasks.length];
+		
+		Engine engine = ctx.getPipeline().getEngine();
+		Executable executable = ctx.getPipeline().getExecutable();
+		
+		for (int i = 0, n = tasks.length; i < n; ++i) {
+			pipelines[i] = Tasks.pipeline(engine, executable, tasks[i]).addLast(ctx);
 		}
 		
-		flowEntryPoints = new TaskContext[flowTasks.length];
+		joinVariable = objectQName + "___join";
 		
-		for (int i = 0, n = flowTasks.length; i < n; ++i) {
-			flowEntryPoints[i] = TaskContextUtils.getFirstTaskContext(context, flowTasks[i]);
-			flowTasks[i] = null;
-
-			TaskContextUtils.addLast(flowEntryPoints[i], context);
-		}
-		
-		flowTasks = null;
-		
-		privVarName = objectQName + "___joinCounter";
+		tasks = null;
 	}
 
 	public void run(TaskContext context, DataExchange exchange) throws Exception {
-		initialize(context);
+		AtomicInteger join = exchange.getpriv(joinVariable);
 		
-		AtomicInteger joinCounter = exchange.getpriv(privVarName);
-		
-		if (joinCounter == null) {
-			int n = flowEntryPoints.length;
+		if (join == null) {
+			int n = pipelines.length;
 
-			exchange.setpriv(privVarName, new AtomicInteger(n));
+			exchange.setpriv(joinVariable, new AtomicInteger(n));
 			
 			for (int i = 0; i < n; ++i) {
-				flowEntryPoints[i].start(exchange);
+				pipelines[i].start(exchange);
 			}
 		} else {
-			int counter = joinCounter.decrementAndGet();
+			int counter = join.decrementAndGet();
 			
 			if (counter <= 0) {
-				exchange.remove(privVarName);
+				exchange.unsetpriv(joinVariable);
 
-				context.next(exchange);
+				context.forward(exchange);
 			}
 		}
 	}

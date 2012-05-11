@@ -20,7 +20,7 @@ public abstract class Expression implements Task {
 	public void run(TaskContext context, DataExchange exchange) throws Exception {
 		eval(exchange);
 		
-		context.next(exchange);
+		context.forward(exchange);
 	}
 
 	public void recover(TaskContext context, DataExchange exchange) throws Exception {

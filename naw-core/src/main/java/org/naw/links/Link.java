@@ -10,24 +10,21 @@ public interface Link {
 	/**
 	 * send data to external entity
 	 * 
-	 * @param data
+	 * @param message
 	 *            data to be sent
-	 * @param oneWay
-	 *            <code>true</code> if this operation is one way,
-	 *            <code>false</code> otherwise.
-	 * @return <code>null</code> if this operation is one way, correlation id
-	 *         otherwise.
 	 * @throws Exception
 	 *             if an error occurred while sending
 	 */
-	Object send(Object data, boolean oneWay) throws LinkException, Exception;
+	void send(Message message) throws LinkException, Exception;
+	
+	void sendReply(Message message) throws LinkException, Exception;
 
 	/**
 	 * receive data from external entity (and return immediately if the data is
 	 * not available yet)
 	 * 
-	 * @param correlationId
-	 *            correlation id returned by invoking {@link Link.send(Object,
+	 * @param correlation
+	 *            correlation returned by invoking {@link Link.send(Object,
 	 *            boolean)} method with oneWay argument is <code>true</code>. or
 	 *            <code>null</code> if this is not correlated with any send
 	 *            operation.
@@ -36,5 +33,7 @@ public interface Link {
 	 * @throws Exception
 	 *             if an error occurred while receiving
 	 */
-	Object receive(Object correlationId) throws LinkException, Exception;
+	AsyncResult<Message> asyncReceive(Object correlation, Object attachment, long deadline, AsyncCallback<Message> callback) throws Exception;
+	
+	AsyncResult<Message> asyncReceiveReply(Object correlation, Object attachment, long deadline, AsyncCallback<Message> callback) throws Exception;
 }

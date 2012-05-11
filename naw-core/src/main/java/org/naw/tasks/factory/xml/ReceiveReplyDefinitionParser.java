@@ -1,6 +1,6 @@
 package org.naw.tasks.factory.xml;
 
-import org.naw.tasks.Receive;
+import org.naw.tasks.ReceiveReply;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -10,13 +10,13 @@ import rk.commons.inject.factory.xml.ObjectDefinitionParserDelegate;
 import rk.commons.inject.factory.xml.SingleObjectDefinitionParser;
 import rk.commons.util.StringUtils;
 
-public class ReceiveDefinitionParser extends SingleObjectDefinitionParser {
+public class ReceiveReplyDefinitionParser extends SingleObjectDefinitionParser {
 
-	public static final String ELEMENT_LOCAL_NAME = "receive";
+	public static final String ELEMENT_LOCAL_NAME = "receive-reply";
 
 	@Override
 	protected Class<?> getObjectClass(Element element) {
-		return Receive.class;
+		return ReceiveReply.class;
 	}
 	
 	private void parseReceived(Element element, ObjectDefinitionParserDelegate delegate, ObjectDefinitionBuilder builder) {
@@ -65,40 +65,17 @@ public class ReceiveDefinitionParser extends SingleObjectDefinitionParser {
 			}
 		}
 		
-		boolean createInstance = false;
-		
 		builder.setObjectQName(element.getAttribute("name"));
 		
-		builder.addPropertyValue("link", element.getAttribute("from"));
-
-		String stmp = element.getAttribute("createInstance");
-		if (StringUtils.hasText(stmp)) {
-			createInstance = Boolean.parseBoolean(stmp);
-			
-			builder.addPropertyValue("createInstance", stmp);
-		}
-		
-		stmp = element.getAttribute("exchangeVariable");
-		
-		if (StringUtils.hasText(stmp)) {
-			builder.addPropertyValue("exchangeVariable", stmp);
-		}
+		builder.addPropertyValue("exchangeVariable", element.getAttribute("exchangeVariable"));
 		
 		parseReceived(receivedNode, delegate, builder);
 		
 		if (errorNode != null) {
-			if (createInstance) {
-				throw new IllegalArgumentException("error must not be specified if createInstance is true");
-			}
-			
 			builder.addPropertyValue("errorTasks", delegate.parseChildElements(errorNode));
 		}
 		
 		if (timeoutNode != null) {
-			if (createInstance) {
-				throw new IllegalArgumentException("timeout must not be specified if createInstance is true");
-			}
-			
 			parseTimeout(timeoutNode, delegate, builder);
 		}
 	}

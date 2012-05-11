@@ -1,6 +1,6 @@
 package org.naw.integration;
 
-import org.naw.core.AbstractEngine;
+import org.naw.core.impl.AbstractEngine;
 import org.springframework.context.ApplicationContext;
 
 import rk.commons.inject.context.XmlIocContext;
