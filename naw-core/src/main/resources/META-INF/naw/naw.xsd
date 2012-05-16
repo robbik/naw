@@ -175,6 +175,8 @@
         <xsd:attribute name="variable" type="xsd:string" use="required" />
         <xsd:attribute name="retriable" type="xsd:boolean" use="required" />
         
+        <xsd:attribute name="to" type="xsd:string" use="optional" />
+        
         <xsd:attribute name="exchangeVariable" type="xsd:string" use="required" />
     </xsd:complexType>
     

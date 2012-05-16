@@ -10,9 +10,8 @@ import java.io.ObjectOutputStream;
 
 import org.naw.exceptions.LinkException;
 import org.naw.links.AsyncCallback;
-import org.naw.links.AsyncResult;
-import org.naw.links.DefaultAsyncResult;
 import org.naw.links.Link;
+import org.naw.links.LinkAsyncResult;
 import org.naw.links.Message;
 
 import rk.commons.util.ObjectUtils;
@@ -23,6 +22,10 @@ public class FileLink implements Link {
 	
 	public FileLink(String pathname) {
 		file = new File(pathname);
+	}
+	
+	public String getArgument() {
+		return file.getAbsolutePath();
 	}
 	
 	public void send(Message msg) throws Exception {
@@ -45,8 +48,8 @@ public class FileLink implements Link {
 		send(msg);
 	}
 
-	public AsyncResult<Message> asyncReceive(final Object correlation, Object attachment, long deadline, final AsyncCallback<Message> callback) throws Exception {
-		final DefaultAsyncResult<Message> result = new DefaultAsyncResult<Message>(attachment);
+	public LinkAsyncResult asyncReceive(final Object correlation, Object attachment, long deadline, final AsyncCallback<Message> callback) throws Exception {
+		final LinkAsyncResult result = new LinkAsyncResult(this, attachment);
 		
 		new Thread(new Runnable() {
 			
@@ -88,7 +91,7 @@ public class FileLink implements Link {
 		return result;
 	}
 	
-	public AsyncResult<Message> asyncReceiveReply(Object correlation, Object attachment, long deadline, AsyncCallback<Message> callback) throws Exception {
+	public LinkAsyncResult asyncReceiveReply(Object correlation, Object attachment, long deadline, AsyncCallback<Message> callback) throws Exception {
 		return asyncReceive(correlation, attachment, deadline, callback);
 	}
 }

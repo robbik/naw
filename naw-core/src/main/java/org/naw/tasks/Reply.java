@@ -4,6 +4,7 @@ import org.naw.core.task.DataExchange;
 import org.naw.core.task.Task;
 import org.naw.core.task.TaskContext;
 import org.naw.exceptions.LinkException;
+import org.naw.links.Link;
 import org.naw.links.LinkExchange;
 import org.naw.links.Message;
 
@@ -12,6 +13,8 @@ import rk.commons.logging.LoggerFactory;
 
 public class Reply implements Task, ObjectQNameAware {
 
+	private Link to;
+
 	private String variable;
 
 	private boolean retriable;
@@ -19,6 +22,10 @@ public class Reply implements Task, ObjectQNameAware {
 	private String exchangeVariable;
 
 	private String objectQName;
+
+	public void setTo(Link to) {
+		this.to = to;
+	}
 
 	public void setVariable(String variable) {
 		this.variable = variable;
@@ -43,8 +50,14 @@ public class Reply implements Task, ObjectQNameAware {
 		LinkExchange lex = exchange.getpriv(exchangeVariable);
 		
 		if (lex != null) {
+			Link to = this.to;
+			
+			if (to == null) {
+				to = lex.getLink();
+			}
+			
 			try {
-				lex.getLink().sendReply(new Message(lex.getCorrelation(), exchange.get(variable)));
+				to.sendReply(new Message(lex.getCorrelation(), exchange.get(variable)));
 			} catch (LinkException e) {
 				errorCode = e.getErrorCode();
 				errorMsg = e.getMessage();

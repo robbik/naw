@@ -8,6 +8,8 @@ public interface AsyncResult<T> {
 	
 	boolean isCancelled();
 	
+	boolean isTimeout();
+	
 	boolean cancel();
 	
 	T getResult();
@@ -19,4 +21,6 @@ public interface AsyncResult<T> {
 	void setSuccess(T result);
 	
 	void setFailure(Throwable cause);
+	
+	boolean timeout();
 }

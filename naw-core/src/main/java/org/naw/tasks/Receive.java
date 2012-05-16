@@ -199,6 +199,9 @@ public class Receive implements Task, LifeCycleAware, AsyncCallback<Message> {
 			
 			// start receive tasks
 			receivePipeline.start(exchange);
+		} else if (asyncResult.isTimeout()) {
+			// start timeout tasks
+			timeoutPipeline.start(((AsyncAttachment) asyncResult.getAttachment()).exchange);
 		} else if (!asyncResult.isCancelled()) {
 			Throwable cause = asyncResult.getCause();
 			
@@ -215,11 +218,6 @@ public class Receive implements Task, LifeCycleAware, AsyncCallback<Message> {
 				}
 			}
 		}
-	}
-	
-	public void timeout(AsyncResult<Message> asyncResult) {
-		// start timeout tasks
-		timeoutPipeline.start(((AsyncAttachment) asyncResult.getAttachment()).exchange);
 	}
 	
 	class AsyncAttachment {

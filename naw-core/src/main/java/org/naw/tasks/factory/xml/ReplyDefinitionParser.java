@@ -23,10 +23,11 @@ public class ReplyDefinitionParser extends SingleObjectDefinitionParser {
 		builder.addPropertyValue("variable", element.getAttribute("variable"));
 		builder.addPropertyValue("retriable", element.getAttribute("retriable"));
 		
-		String stmp = element.getAttribute("exchangeVariable");
-
+		builder.addPropertyValue("exchangeVariable", element.getAttribute("exchangeVariable"));
+		
+		String stmp = element.getAttribute("to");
 		if (StringUtils.hasText(stmp)) {
-			builder.addPropertyValue("exchangeVariable", stmp);
+			builder.addPropertyValue("to", stmp);
 		}
 	}
 }

@@ -8,6 +8,8 @@ public class DefaultAsyncResult<T> implements AsyncResult<T> {
 	
 	protected volatile boolean cancelled;
 	
+	protected volatile boolean timeout;
+	
 	protected volatile Throwable cause;
 	
 	protected volatile T result;
@@ -18,6 +20,7 @@ public class DefaultAsyncResult<T> implements AsyncResult<T> {
 		failed = false;
 		success = false;
 		cancelled = false;
+		timeout = false;
 		
 		cause = null;
 		result = null;
@@ -35,6 +38,10 @@ public class DefaultAsyncResult<T> implements AsyncResult<T> {
 
 	public synchronized boolean isCancelled() {
 		return cancelled;
+	}
+
+	public synchronized boolean isTimeout() {
+		return timeout;
 	}
 
 	public synchronized boolean cancel() {
@@ -59,6 +66,12 @@ public class DefaultAsyncResult<T> implements AsyncResult<T> {
 	public synchronized void setFailure(Throwable cause) {
 		this.cause = cause;
 		failed = true;
+	}
+
+	public synchronized boolean timeout() {
+		timeout = docancel();
+		
+		return timeout;
 	}
 	
 	public synchronized Object getAttachment() {

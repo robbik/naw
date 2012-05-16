@@ -10,11 +10,11 @@ import org.naw.links.factory.LinkFactory;
 
 public class DirectLinkFactory implements LinkFactory {
 	
-	private final Map<String, Link> links;
+	protected final Map<String, Link> links;
 	
-	private Timer timer;
+	protected Timer timer;
 	
-	private long sendTimeout;
+	protected long sendTimeout;
 	
 	public DirectLinkFactory() {
 		links = Collections.synchronizedMap(new HashMap<String, Link>());
@@ -30,15 +30,15 @@ public class DirectLinkFactory implements LinkFactory {
 		this.sendTimeout = sendTimeout;
 	}
 	
-	public Link createLink(String key) throws Exception {
+	public Link createLink(String argument) throws Exception {
 		Link link;
 		
 		synchronized (links) {
-			if (links.containsKey(key)) {
-				link = links.get(key);
+			if (links.containsKey(argument)) {
+				link = links.get(argument);
 			} else {
-				link = new DirectLink(timer, sendTimeout);
-				links.put(key, link);
+				link = new DirectLink(timer, sendTimeout, argument);
+				links.put(argument, link);
 			}
 		}
 		

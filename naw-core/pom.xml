@@ -98,6 +98,8 @@
                             org.naw.tasks;version=${project.version}
                         </Export-Package>
                         <Private-Package>
+                            org.naw.core.impl,
+                            org.naw.core.task.impl,
                             org.naw.core.task.support,
                             org.naw.core.utils,
                             org.naw.core.xml,

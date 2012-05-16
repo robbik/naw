@@ -6,6 +6,8 @@ import org.naw.exceptions.LinkException;
  * Link with external entity
  */
 public interface Link {
+	
+	String getArgument();
 
 	/**
 	 * send data to external entity
@@ -33,7 +35,7 @@ public interface Link {
 	 * @throws Exception
 	 *             if an error occurred while receiving
 	 */
-	AsyncResult<Message> asyncReceive(Object correlation, Object attachment, long deadline, AsyncCallback<Message> callback) throws Exception;
+	LinkAsyncResult asyncReceive(Object correlation, Object attachment, long deadline, AsyncCallback<Message> callback) throws Exception;
 	
-	AsyncResult<Message> asyncReceiveReply(Object correlation, Object attachment, long deadline, AsyncCallback<Message> callback) throws Exception;
+	LinkAsyncResult asyncReceiveReply(Object correlation, Object attachment, long deadline, AsyncCallback<Message> callback) throws Exception;
 }
