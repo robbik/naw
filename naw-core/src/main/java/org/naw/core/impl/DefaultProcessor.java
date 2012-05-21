@@ -26,15 +26,31 @@ public class DefaultProcessor implements Processor {
 
 	public void run() throws InterruptedException {
 		Entry entry;
+		
+		if (log.isTraceEnabled()) {
+			log.trace("before processor running");
+		}
 
 		while ((entry = engine.getTaskQueue().remove()) != null) {
 			TaskContext ctx = entry.getTaskContext();
+			
+			if (log.isTraceEnabled()) {
+				log.trace("before executing task " + ctx.getTask());
+			}
 			
 			try {
 				ctx.getTask().run(ctx, entry.getExchange());
 			} catch (Throwable t) {
 				log.error("unable to execute task " + entry.getTaskContext(), t);
 			}
+			
+			if (log.isTraceEnabled()) {
+				log.trace("after executing task " + ctx.getTask());
+			}
+		}
+		
+		if (log.isTraceEnabled()) {
+			log.trace("after processor running");
 		}
 	}
 

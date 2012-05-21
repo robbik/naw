@@ -34,4 +34,9 @@ public class OgnlExpression extends Expression {
 		
 		return (T) Ognl.getValue(tree, (Object) root, returnType);
 	}
+	
+	@Override
+	public String toString() {
+		return super.toString() + " [ expression: " + tree + " ]";
+	}
 }

@@ -220,6 +220,11 @@ public class Receive implements Task, LifeCycleAware, AsyncCallback<Message> {
 		}
 	}
 	
+	@Override
+	public String toString() {
+		return super.toString() + " [ link: " + link + "; exchangeVariable: " + exchangeVariable + " ]";
+	}
+	
 	class AsyncAttachment {
 		TaskContext context;
 		

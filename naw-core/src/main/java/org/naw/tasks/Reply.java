@@ -84,4 +84,9 @@ public class Reply implements Task, ObjectQNameAware {
 
 		context.forward(exchange);
 	}
+	
+	@Override
+	public String toString() {
+		return super.toString() + " " + objectQName + " [ variable: " + variable + "; exchangeVariable: " + exchangeVariable + " ]";
+	}
 }

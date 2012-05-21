@@ -26,15 +26,33 @@ public class DefaultTaskQueue implements TaskQueue {
 	}
 
 	public void add(TaskContext context, DataExchange exchange) {
+		if (log.isTraceEnabled()) {
+			log.trace("adding task " + context.getTask() + " to execution queue");
+		}
+
 		boolean enqueued = queue.add(new EntryImpl(context, exchange));
 
-		if (!enqueued) {
+		if (enqueued) {
+			if (log.isTraceEnabled()) {
+				log.trace("task " + context.getTask() + " added to execution queue");
+			}
+		} else {
 			log.error("unable to enqueue task " + context.getTask());
 		}
 	}
 
 	public Entry remove() throws InterruptedException {
-		return (Entry) queue.take();
+		if (log.isTraceEnabled()) {
+			log.trace("taking task from execution queue");
+		}
+		
+		Entry e = (Entry) queue.take();
+		
+		if (log.isTraceEnabled()) {
+			log.trace("task " + e.getTaskContext().getTask() + " taken from execution queue");
+		}
+		
+		return e;
 	}
 
 	public Entry remove(long timeout, TimeUnit unit) throws InterruptedException {

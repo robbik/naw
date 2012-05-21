@@ -32,4 +32,9 @@ public class Mvel2Expression extends Expression {
 		
 		return (T) MVEL.executeExpression(compiled, root, returnType);
 	}
+	
+	@Override
+	public String toString() {
+		return super.toString() + " [ expression: " + compiled + " ]";
+	}
 }
