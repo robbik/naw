@@ -33,15 +33,29 @@ public class DefaultTaskPipeline implements TaskPipeline {
 	public Executable getExecutable() {
 		return executable;
 	}
+	
+	public void fireBeforeAddEvent() {
+		TaskContext current = head;
+		
+		while (current != null) {
+			Task task = current.getTask();
+			
+			if (task instanceof LifeCycleAware) {
+				((LifeCycleAware) task).beforeAdd(current);
+			}
+			
+			current = current.getNext();
+		}
+	}
 
-	public TaskPipeline addLast(Task task) {
+	public TaskPipeline addLast(Task task, boolean fireEvent) {
 		if (task == null) {
 			return this;
 		}
 
 		DefaultTaskContext ctx = new DefaultTaskContext(this, task);
 		
-		if (task instanceof LifeCycleAware) {
+		if (fireEvent && (task instanceof LifeCycleAware)) {
 			((LifeCycleAware) task).beforeAdd(ctx);
 		}
 		
@@ -54,6 +68,10 @@ public class DefaultTaskPipeline implements TaskPipeline {
 		tail = ctx;
 		
 		return this;
+	}
+
+	public TaskPipeline addLast(Task task) {
+		return addLast(task, true);
 	}
 
 	public void start(DataExchange exchange) {

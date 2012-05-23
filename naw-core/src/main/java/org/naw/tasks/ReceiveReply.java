@@ -107,14 +107,15 @@ public class ReceiveReply implements Task, LifeCycleAware, AsyncCallback<Message
 		// use correlation
 		LinkExchange lex = exchange.getpriv(exchangeVariable);
 		
+		// error handling
 		if (lex == null) {
-			// start timeout tasks
-			
-			if (timeoutPipeline == null) {
-				return; // DEAD END
+			if (errorPipeline == null) {
+				context.forward(exchange);
 			} else {
-				timeoutPipeline.start(exchange);
+				errorPipeline.start(exchange);
 			}
+			
+			return;
 		}
 		
 		// begin receive data

@@ -216,7 +216,7 @@ public class HashedWheelTimer implements Timer {
 		roundDuration = tickDuration * wheel.length;
 
 		workerThread = threadFactory.newThread(worker);
-		workerThread.setName("Hashed wheel timer #" + id.incrementAndGet());
+		workerThread.setName("NAW Hashed wheel timer #" + id.incrementAndGet());
 	}
 
 	@SuppressWarnings("unchecked")

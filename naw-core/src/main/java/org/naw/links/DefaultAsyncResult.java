@@ -69,7 +69,7 @@ public class DefaultAsyncResult<T> implements AsyncResult<T> {
 	}
 
 	public synchronized boolean timeout() {
-		timeout = docancel();
+		timeout = dotimeout();
 		
 		return timeout;
 	}
@@ -79,6 +79,10 @@ public class DefaultAsyncResult<T> implements AsyncResult<T> {
 	}
 	
 	protected boolean docancel() {
+		return true;
+	}
+	
+	protected boolean dotimeout() {
 		return true;
 	}
 }

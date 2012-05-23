@@ -24,10 +24,14 @@ public abstract class Tasks {
 	public static TaskPipeline pipeline(Engine engine, Executable executable, List<Task> tasks) {
 		DefaultTaskPipeline pipeline = new DefaultTaskPipeline(engine, executable);
 		
-		for (int i = 0; i < tasks.size(); ++i) {
-			pipeline.addLast(tasks.get(i));
+		int n = tasks.size();
+		
+		for (int i = 0; i < n; ++i) {
+			pipeline.addLast(tasks.get(i), false);
 		}
 		
+		pipeline.fireBeforeAddEvent();
+
 		return pipeline;
 	}
 	
