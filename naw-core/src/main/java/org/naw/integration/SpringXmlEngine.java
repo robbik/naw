@@ -3,9 +3,9 @@ package org.naw.integration;
 import org.naw.core.impl.AbstractEngine;
 import org.springframework.context.ApplicationContext;
 
-import rk.commons.inject.context.XmlIocContext;
-import rk.commons.inject.factory.SingletonIocObjectFactory;
-import rk.commons.ioc.integration.SpringIocObjectFactory;
+import rk.commons.inject.context.XmlContext;
+import rk.commons.inject.factory.AbstractObjectFactory;
+import rk.commons.inject.integration.SpringObjectFactory;
 
 public class SpringXmlEngine extends AbstractEngine {
 
@@ -17,14 +17,14 @@ public class SpringXmlEngine extends AbstractEngine {
     
     protected final ApplicationContext spring;
 	
-	protected final XmlIocContext context;
+	protected final XmlContext context;
 
 	public SpringXmlEngine(ApplicationContext spring, String... locations) {
 		this.spring = spring;
 		
 		initialize();
 		
-		context = new XmlIocContext();
+		context = new XmlContext();
 		
 		context.setResourceLoader(resourceLoader);
 		
@@ -33,15 +33,15 @@ public class SpringXmlEngine extends AbstractEngine {
 		context.setNamespaceHandlerPath(NAMESPACE_HANDLER);
 		context.setNamespaceSchemaPath(NAMESPACE_SCHEMA);
 		
-		context.setIocObjectFactory(iocFactory);
-		context.setObjectDefinitionRegistry(iocFactory);
+		context.setObjectFactory(objectFactory);
+		context.setObjectDefinitionRegistry(objectFactory);
 		
 		context.setLocations(addDefaultImport(locations));
 
 		context.refresh(false);
 	}
 	
-	protected SingletonIocObjectFactory createIocObjectFactory() {
-		return new SpringIocObjectFactory(resourceLoader, spring);
+	protected AbstractObjectFactory createObjectFactory() {
+		return new SpringObjectFactory(resourceLoader, spring);
 	}
 }

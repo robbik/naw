@@ -1,14 +1,14 @@
 package org.naw.links.factory;
 
-import rk.commons.inject.factory.IocObjectFactory;
+import rk.commons.inject.factory.ObjectFactory;
 import rk.commons.inject.factory.ObjectInstantiationException;
 import rk.commons.inject.factory.type.converter.TypeConverter;
 
 public class StringToLinkConverter implements TypeConverter {
 
-	private final IocObjectFactory factory;
+	private final ObjectFactory factory;
 
-	public StringToLinkConverter(IocObjectFactory factory) {
+	public StringToLinkConverter(ObjectFactory factory) {
 		this.factory = factory;
 	}
 

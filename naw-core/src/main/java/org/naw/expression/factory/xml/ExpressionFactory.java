@@ -3,11 +3,11 @@ package org.naw.expression.factory.xml;
 import org.naw.expression.Expression;
 import org.naw.expression.ExpressionHandlerResolver;
 
-import rk.commons.inject.factory.IocObjectFactory;
-import rk.commons.inject.factory.support.IocObjectFactoryAware;
-import rk.commons.inject.factory.support.ObjectFactory;
+import rk.commons.inject.factory.ObjectFactory;
+import rk.commons.inject.factory.support.FactoryObject;
+import rk.commons.inject.factory.support.ObjectFactoryAware;
 
-public class ExpressionFactory extends ObjectFactory<Expression> implements IocObjectFactoryAware {
+public class ExpressionFactory extends FactoryObject<Expression> implements ObjectFactoryAware {
 
 	private ExpressionHandlerResolver resolver;
 
@@ -15,7 +15,7 @@ public class ExpressionFactory extends ObjectFactory<Expression> implements IocO
 
 	private String expression;
 	
-	private IocObjectFactory iocObjectFactory;
+	private ObjectFactory factory;
 
 	public void setResolver(ExpressionHandlerResolver resolver) {
 		this.resolver = resolver;
@@ -29,8 +29,8 @@ public class ExpressionFactory extends ObjectFactory<Expression> implements IocO
 		this.expression = expression;
 	}
 	
-	public void setIocObjectFactory(IocObjectFactory iocObjectFactory) {
-		this.iocObjectFactory = iocObjectFactory;
+	public void setObjectFactory(ObjectFactory factory) {
+		this.factory = factory;
 	}
 
 	protected Expression createInstance() {
@@ -43,7 +43,7 @@ public class ExpressionFactory extends ObjectFactory<Expression> implements IocO
 					+ expression + "' for language " + language, e);
 		}
 		
-		compiled.setIocObjectFactory(iocObjectFactory);
+		compiled.setObjectFactory(factory);
 		
 		return compiled;
 	}

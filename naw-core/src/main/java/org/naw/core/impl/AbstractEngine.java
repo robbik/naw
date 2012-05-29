@@ -19,7 +19,8 @@ import org.naw.links.factory.StringToLinkConverter;
 import org.naw.tasks.support.StringToDateTimeConverter;
 import org.naw.tasks.support.StringToDurationConverter;
 
-import rk.commons.inject.factory.SingletonIocObjectFactory;
+import rk.commons.inject.factory.AbstractObjectFactory;
+import rk.commons.inject.factory.SingletonObjectFactory;
 import rk.commons.inject.factory.type.converter.TypeConverterResolver;
 import rk.commons.loader.ResourceLoader;
 
@@ -43,7 +44,7 @@ public abstract class AbstractEngine implements Engine {
 	
 	protected ResourceLoader resourceLoader;
 
-	protected SingletonIocObjectFactory iocFactory;
+	protected AbstractObjectFactory objectFactory;
 
 	protected Thread shutdownHook;
 
@@ -59,26 +60,26 @@ public abstract class AbstractEngine implements Engine {
 		
 		resourceLoader = new ResourceLoader();
 
-		iocFactory = createIocObjectFactory();
+		objectFactory = createObjectFactory();
 		
-		TypeConverterResolver typeResolver = iocFactory.getTypeConverterResolver();
+		TypeConverterResolver typeResolver = objectFactory.getTypeConverterResolver();
 		typeResolver.register(String.class, DateTime.class, new StringToDateTimeConverter());
 		typeResolver.register(String.class, Duration.class, new StringToDurationConverter());
-		typeResolver.register(String.class, Link.class, new StringToLinkConverter(iocFactory));
+		typeResolver.register(String.class, Link.class, new StringToLinkConverter(objectFactory));
 
 		shutdownHook = new Thread() {
 
 			@Override
 			public void run() {
-				iocFactory.destroy();
+				objectFactory.destroy();
 			}
 		};
 
 		Runtime.getRuntime().addShutdownHook(shutdownHook);
 	}
 	
-	protected SingletonIocObjectFactory createIocObjectFactory() {
-		return new SingletonIocObjectFactory(resourceLoader);
+	protected AbstractObjectFactory createObjectFactory() {
+		return new SingletonObjectFactory(resourceLoader);
 	}
 	
 	protected String[] addDefaultImport(String[] locations) {
@@ -120,7 +121,7 @@ public abstract class AbstractEngine implements Engine {
 	}
 	
 	public Set<String> getObjectQNames() {
-		return iocFactory.getObjectQNames();
+		return objectFactory.getObjectQNames();
 	}
 
 	public Processor createProcessor() {
@@ -133,7 +134,7 @@ public abstract class AbstractEngine implements Engine {
 				return;
 			}
 
-			Collection<Executable> executables = iocFactory.getObjectsOfType(Executable.class).values();
+			Collection<Executable> executables = objectFactory.getObjectsOfType(Executable.class).values();
 
 			for (Executable e : executables) {
 				e.start(this);
@@ -159,13 +160,13 @@ public abstract class AbstractEngine implements Engine {
 		synchronized (statusLock) {
 			switch (status) {
 			case STATUS_NONE:
-				iocFactory.destroy();
+				objectFactory.destroy();
 				break;
 			case STATUS_STARTED:
-				iocFactory.destroy();
+				objectFactory.destroy();
 				break;
 			case STATUS_STOPPED:
-				iocFactory.destroy();
+				objectFactory.destroy();
 				break;
 			}
 			

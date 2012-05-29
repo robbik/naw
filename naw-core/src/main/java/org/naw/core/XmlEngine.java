@@ -2,7 +2,7 @@ package org.naw.core;
 
 import org.naw.core.impl.AbstractEngine;
 
-import rk.commons.inject.context.XmlIocContext;
+import rk.commons.inject.context.XmlContext;
 
 public class XmlEngine extends AbstractEngine {
 
@@ -12,12 +12,12 @@ public class XmlEngine extends AbstractEngine {
 
     private static final String NAMESPACE_SCHEMA = "classpath:META-INF/naw/naw.schemas";
 	
-	protected final XmlIocContext context;
+	protected final XmlContext context;
 
 	public XmlEngine(String... locations) {
 		initialize();
 		
-		context = new XmlIocContext();
+		context = new XmlContext();
 		
 		context.setResourceLoader(resourceLoader);
 		
@@ -26,8 +26,8 @@ public class XmlEngine extends AbstractEngine {
 		context.setNamespaceHandlerPath(NAMESPACE_HANDLER);
 		context.setNamespaceSchemaPath(NAMESPACE_SCHEMA);
 		
-		context.setIocObjectFactory(iocFactory);
-		context.setObjectDefinitionRegistry(iocFactory);
+		context.setObjectFactory(objectFactory);
+		context.setObjectDefinitionRegistry(objectFactory);
 		
 		context.setLocations(addDefaultImport(locations));
 

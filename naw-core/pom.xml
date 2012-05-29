@@ -170,8 +170,20 @@
 
     <dependencies>
         <dependency>
-            <groupId>rk</groupId>
-            <artifactId>rk-commons</artifactId>
+            <groupId>rk-commons</groupId>
+            <artifactId>inject</artifactId>
+            <version>1.0.0</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>rk-commons</groupId>
+            <artifactId>util</artifactId>
+            <version>1.0.0</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>rk-commons</groupId>
+            <artifactId>logging</artifactId>
             <version>1.0.0</version>
             <scope>provided</scope>
         </dependency>
