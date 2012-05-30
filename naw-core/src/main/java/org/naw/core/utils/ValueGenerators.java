@@ -4,7 +4,7 @@ import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
-import rk.commons.util.StringUtils;
+import rk.commons.util.StringHelper;
 
 public abstract class ValueGenerators {
 	
@@ -42,7 +42,7 @@ public abstract class ValueGenerators {
 	private static void reload() {
 		for (;;) {
 			int oldv = CORRELATION_COUNTER.get();
-			CORRELATION_PREFIX.set(StringUtils.valueOf(UUID.randomUUID()));
+			CORRELATION_PREFIX.set(StringHelper.valueOf(UUID.randomUUID()));
 			
 			if (CORRELATION_COUNTER.compareAndSet(oldv, 0)) {
 				break;

@@ -6,7 +6,7 @@ import org.w3c.dom.Element;
 import rk.commons.inject.factory.support.ObjectDefinitionBuilder;
 import rk.commons.inject.factory.xml.ObjectDefinitionParserDelegate;
 import rk.commons.inject.factory.xml.SingleObjectDefinitionParser;
-import rk.commons.util.StringUtils;
+import rk.commons.util.StringHelper;
 
 public class WaitDefinitionParser extends SingleObjectDefinitionParser {
 
@@ -23,14 +23,14 @@ public class WaitDefinitionParser extends SingleObjectDefinitionParser {
 		builder.setObjectQName(element.getAttribute("name"));
 
 		String tstr = element.getAttribute("until");
-		if (StringUtils.hasText(tstr)) {
+		if (StringHelper.hasText(tstr)) {
 			builder.addPropertyValue("deadline", tstr.trim());
 			
 			++forUntil;
 		}
 
 		tstr = element.getAttribute("for");
-		if (StringUtils.hasText(tstr)) {
+		if (StringHelper.hasText(tstr)) {
 			builder.addPropertyValue("duration", tstr.trim());
 			
 			++forUntil;

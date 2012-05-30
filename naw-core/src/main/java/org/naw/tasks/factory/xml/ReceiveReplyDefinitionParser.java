@@ -8,7 +8,7 @@ import org.w3c.dom.NodeList;
 import rk.commons.inject.factory.support.ObjectDefinitionBuilder;
 import rk.commons.inject.factory.xml.ObjectDefinitionParserDelegate;
 import rk.commons.inject.factory.xml.SingleObjectDefinitionParser;
-import rk.commons.util.StringUtils;
+import rk.commons.util.StringHelper;
 
 public class ReceiveReplyDefinitionParser extends SingleObjectDefinitionParser {
 
@@ -27,12 +27,12 @@ public class ReceiveReplyDefinitionParser extends SingleObjectDefinitionParser {
 	private void parseTimeout(Element element, ObjectDefinitionParserDelegate delegate, ObjectDefinitionBuilder builder) {
 		int deadlineDuration = 0;
 		
-		if (StringUtils.hasText(element.getAttribute("deadline"))) {
+		if (StringHelper.hasText(element.getAttribute("deadline"))) {
 			builder.addPropertyValue("deadline", element.getAttribute("deadline"));
 			++deadlineDuration;
 		}
 		
-		if (StringUtils.hasText(element.getAttribute("duration"))) {
+		if (StringHelper.hasText(element.getAttribute("duration"))) {
 			builder.addPropertyValue("duration", element.getAttribute("duration"));
 			++deadlineDuration;
 		}

@@ -6,7 +6,7 @@ import org.w3c.dom.Element;
 import rk.commons.inject.factory.support.ObjectDefinitionBuilder;
 import rk.commons.inject.factory.xml.ObjectDefinitionParserDelegate;
 import rk.commons.inject.factory.xml.SingleObjectDefinitionParser;
-import rk.commons.util.StringUtils;
+import rk.commons.util.StringHelper;
 
 public class JndiRefDefinitionParser extends SingleObjectDefinitionParser {
 	
@@ -23,7 +23,7 @@ public class JndiRefDefinitionParser extends SingleObjectDefinitionParser {
 		builder.setObjectQName(element.getAttribute("name"));
 		
 		String jndiContextRef = element.getAttribute("jndiContext-ref");
-		if (StringUtils.hasText(jndiContextRef)) {
+		if (StringHelper.hasText(jndiContextRef)) {
 			builder.addPropertyReference("jndiContext", jndiContextRef);
 		}
 		

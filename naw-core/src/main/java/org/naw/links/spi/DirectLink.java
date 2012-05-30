@@ -14,7 +14,7 @@ import org.naw.links.Link;
 import org.naw.links.LinkAsyncResult;
 import org.naw.links.Message;
 
-import rk.commons.util.ObjectUtils;
+import rk.commons.util.ObjectHelper;
 
 public class DirectLink implements Link {
 	
@@ -94,7 +94,7 @@ public class DirectLink implements Link {
 			if (receiver == null) {
 				receiver = new DirectLinkReceiver();
 				
-				receiver.ar = new DirectLinkAsyncResult(correlation, attachment);
+				receiver.ar = new DirectLinkAsyncResult(map, correlation, attachment);
 				receiver.callback = callback;
 				
 				if (deadline > 0) {
@@ -107,7 +107,7 @@ public class DirectLink implements Link {
 				
 				map.put(correlation, receiver);
 			} else {
-				if (!ObjectUtils.equals(receiver.callback, callback)) {
+				if (!ObjectHelper.equals(receiver.callback, callback)) {
 					throw new IllegalArgumentException("async-receive already performed for link " + this + " with correlation " + correlation);
 				}
 			}
@@ -146,18 +146,26 @@ public class DirectLink implements Link {
 	
 	class DirectLinkAsyncResult extends LinkAsyncResult {
 		
+		final Map<Object, DirectLinkReceiver> map;
+		
 		final Object correlation;
 		
-		DirectLinkAsyncResult(Object correlation, Object attachment) {
+		DirectLinkAsyncResult(Map<Object, DirectLinkReceiver> map, Object correlation, Object attachment) {
 			super(DirectLink.this, attachment);
 			
+			this.map = map;
 			this.correlation = correlation;
+		}
+		
+		@Override
+		public boolean dotimeout() {
+			return docancel();
 		}
 		
 		@Override
 		public boolean docancel() {
 			synchronized (DirectLink.this.requests) {
-				DirectLinkReceiver receiver = DirectLink.this.requests.remove(correlation);
+				DirectLinkReceiver receiver = map.remove(correlation);
 				
 				if (receiver == null) {
 					return false;

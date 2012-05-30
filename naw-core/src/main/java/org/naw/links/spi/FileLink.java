@@ -14,7 +14,7 @@ import org.naw.links.Link;
 import org.naw.links.LinkAsyncResult;
 import org.naw.links.Message;
 
-import rk.commons.util.ObjectUtils;
+import rk.commons.util.ObjectHelper;
 
 public class FileLink implements Link {
 	
@@ -32,7 +32,7 @@ public class FileLink implements Link {
 		ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream(file));
 		
 		try {
-			ObjectUtils.writeObject(msg.getBody(), out);
+			ObjectHelper.writeObject(msg.getBody(), out);
 			
 			out.flush();
 		} finally {
@@ -70,7 +70,7 @@ public class FileLink implements Link {
 				
 				if (!error) {
 					try {
-						result.setSuccess(new Message(correlation, ObjectUtils.readObject(in)));
+						result.setSuccess(new Message(correlation, ObjectHelper.readObject(in)));
 					} catch (IOException e) {
 						result.setFailure(new LinkException(FileLink.this, -500, e.getMessage(), e));
 					} catch (Exception e) {

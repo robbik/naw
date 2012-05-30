@@ -6,7 +6,7 @@ import org.w3c.dom.Element;
 import rk.commons.inject.factory.support.ObjectDefinitionBuilder;
 import rk.commons.inject.factory.xml.ObjectDefinitionParserDelegate;
 import rk.commons.inject.factory.xml.SingleObjectDefinitionParser;
-import rk.commons.util.StringUtils;
+import rk.commons.util.StringHelper;
 
 public class ReplyDefinitionParser extends SingleObjectDefinitionParser {
 
@@ -26,7 +26,7 @@ public class ReplyDefinitionParser extends SingleObjectDefinitionParser {
 		builder.addPropertyValue("exchangeVariable", element.getAttribute("exchangeVariable"));
 		
 		String stmp = element.getAttribute("to");
-		if (StringUtils.hasText(stmp)) {
+		if (StringHelper.hasText(stmp)) {
 			builder.addPropertyValue("to", stmp);
 		}
 	}
