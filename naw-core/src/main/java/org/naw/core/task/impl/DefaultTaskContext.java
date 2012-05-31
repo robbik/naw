@@ -1,7 +1,8 @@
 package org.naw.core.task.impl;
 
 import org.naw.core.Engine;
-import org.naw.core.task.DataExchange;
+import org.naw.core.Storage;
+import org.naw.core.exchange.MessageExchange;
 import org.naw.core.task.Task;
 import org.naw.core.task.TaskContext;
 import org.naw.core.task.TaskPipeline;
@@ -40,18 +41,26 @@ public class DefaultTaskContext implements TaskContext {
 		return pipeline.getEngine();
 	}
 	
+	public Storage getStorage() {
+		return pipeline.getEngine().getStorage();
+	}
+	
 	public Executable getExecutable() {
 		return pipeline.getExecutable();
 	}
 
-	public void forward(DataExchange exchange) {
+	public void send(MessageExchange exchange) {
 		if (next != null) {
-			pipeline.getEngine().getTaskQueue().add(next, exchange);
+			pipeline.getEngine().getTaskQueue().add(next, exchange, false);
 		}
 	}
 
-	public void start(DataExchange exchange) {
-		pipeline.getEngine().getTaskQueue().add(this, exchange);
+	public void run(MessageExchange exchange) {
+		pipeline.getEngine().getTaskQueue().add(this, exchange, false);
+	}
+	
+	public void recover(MessageExchange exchange) {
+		pipeline.getEngine().getTaskQueue().add(this, exchange, true);
 	}
 	
 	@Override

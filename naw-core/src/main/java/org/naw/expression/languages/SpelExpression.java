@@ -3,17 +3,19 @@ package org.naw.expression.languages;
 import java.util.HashMap;
 import java.util.Map;
 
-import ognl.Ognl;
-
 import org.naw.core.exchange.MessageExchange;
 import org.naw.expression.Expression;
+import org.springframework.expression.EvaluationContext;
 
-public class OgnlExpression extends Expression {
+public class SpelExpression extends Expression {
 	
-	private final Object tree;
+	private final org.springframework.expression.Expression exp;
 	
-	public OgnlExpression(Object tree) {
-		this.tree = tree;
+	private final EvaluationContext evalctx;
+	
+	public SpelExpression(org.springframework.expression.Expression exp, EvaluationContext evalctx) {
+		this.exp = exp;
+		this.evalctx = evalctx;
 	}
 
 	public Object eval(MessageExchange exchange) throws Exception {
@@ -22,21 +24,20 @@ public class OgnlExpression extends Expression {
 		root.put("exchange", exchange);
 		root.put("objects", objects);
 		
-		return Ognl.getValue(tree, root);
+		return exp.getValue(evalctx, root);
 	}
 
-	@SuppressWarnings("unchecked")
 	public <T> T eval(MessageExchange exchange, Class<? extends T> returnType) throws Exception {
 		Map<String, Object> root = new HashMap<String, Object>();
 		
 		root.put("exchange", exchange);
 		root.put("objects", objects);
 		
-		return (T) Ognl.getValue(tree, (Object) root, returnType);
+		return exp.getValue(evalctx, root, returnType);
 	}
 	
 	@Override
 	public String toString() {
-		return OgnlExpression.class + " [ expression: " + tree + " ]";
+		return SpelExpression.class + " [ expression: " + exp.getExpressionString() + " ]";
 	}
 }

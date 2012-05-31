@@ -4,7 +4,10 @@ import java.util.concurrent.TimeUnit;
 
 import org.naw.core.Engine;
 import org.naw.core.Processor;
+import org.naw.core.exchange.MessageExchange;
+import org.naw.core.task.Task;
 import org.naw.core.task.TaskContext;
+import org.naw.core.task.TaskFuture;
 import org.naw.core.task.TaskQueue.Entry;
 
 import rk.commons.logging.Logger;
@@ -23,6 +26,42 @@ public class DefaultProcessor implements Processor {
 	public Engine getEngine() {
 		return engine;
 	}
+	
+	private void run(Entry entry) {
+		TaskContext ctx = entry.getTaskContext();
+		MessageExchange mex = entry.getMessageExchange();
+		TaskFuture future = entry.getFuture();
+		
+		Task task = ctx.getTask();
+		
+		if ((mex != null) && mex.isDestroyed()) {
+			future.cancel();
+			
+			log.warning("skipping pending task " + task + " due to process termination");
+			
+			return;
+		}
+		
+		future.beforeRun();
+		
+		if (log.isTraceEnabled()) {
+			log.trace("before executing task " + task);
+		}
+		
+		try {
+			task.run(ctx, mex);
+			
+			future.setSuccess();
+		} catch (Throwable t) {
+			future.setFailure(t);
+			
+			log.error("an error occured while executing task " + task + ", process terminated.", t);
+		}
+		
+		if (log.isTraceEnabled()) {
+			log.trace("after executing task " + task);
+		}
+	}
 
 	public void run() throws InterruptedException {
 		Entry entry;
@@ -32,21 +71,7 @@ public class DefaultProcessor implements Processor {
 		}
 
 		while ((entry = engine.getTaskQueue().remove()) != null) {
-			TaskContext ctx = entry.getTaskContext();
-			
-			if (log.isTraceEnabled()) {
-				log.trace("before executing task " + ctx.getTask());
-			}
-			
-			try {
-				ctx.getTask().run(ctx, entry.getExchange());
-			} catch (Throwable t) {
-				log.error("unable to execute task " + entry.getTaskContext(), t);
-			}
-			
-			if (log.isTraceEnabled()) {
-				log.trace("after executing task " + ctx.getTask());
-			}
+			run(entry);
 		}
 		
 		if (log.isTraceEnabled()) {
@@ -58,13 +83,7 @@ public class DefaultProcessor implements Processor {
 		Entry entry = engine.getTaskQueue().remove();
 
 		if (entry != null) {
-			TaskContext ctx = entry.getTaskContext();
-			
-			try {
-				ctx.getTask().run(ctx, entry.getExchange());
-			} catch (Throwable t) {
-				log.error("unable to execute task " + entry.getTaskContext(), t);
-			}
+			run(entry);
 		}
 	}
 
@@ -72,13 +91,7 @@ public class DefaultProcessor implements Processor {
 		Entry entry = engine.getTaskQueue().remove(timeout, unit);
 
 		if (entry != null) {
-			TaskContext ctx = entry.getTaskContext();
-			
-			try {
-				ctx.getTask().run(ctx, entry.getExchange());
-			} catch (Throwable t) {
-				log.error("unable to execute task " + entry.getTaskContext(), t);
-			}
+			run(entry);
 		}
 	}
 }

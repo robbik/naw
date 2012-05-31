@@ -80,12 +80,18 @@
                             ognl;resolution:=optional,
                             org.springframework.beans.factory;resolution:=optional,
                             org.springframework.context;resolution:=optional,
+                            org.springframework.context.expression;resolution:=optional,
+                            org.springframework.expression;resolution:=optional,
+                            org.springframework.expression.spel.standard;resolution:=optional,
+                            org.springframework.expression.spel.support;resolution:=optional,
                             javax.xml.parsers,
                             org.w3c.dom,
                             org.xml.sax
                         </Import-Package>
                         <Export-Package>
                             org.naw.core;version=${project.version},
+                            org.naw.core.exchange;version=${project.version},
+                            org.naw.core.storage;version=${project.version},
                             org.naw.core.task;version=${project.version},
                             org.naw.exceptions;version=${project.version},
                             org.naw.executables;version=${project.version},
@@ -230,6 +236,12 @@
         <dependency>
             <groupId>org.springframework</groupId>
             <artifactId>spring-context</artifactId>
+            <version>3.1.1.RELEASE</version>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-expression</artifactId>
             <version>3.1.1.RELEASE</version>
             <optional>true</optional>
         </dependency>

@@ -1,13 +1,12 @@
 package org.naw.tasks;
 
-import org.naw.core.task.DataExchange;
-import org.naw.core.task.Task;
+import org.naw.core.exchange.MessageExchange;
 import org.naw.core.task.TaskContext;
 
 import rk.commons.logging.Logger;
 import rk.commons.logging.LoggerFactory;
 
-public class Log implements Task {
+public class Log extends AbstractTask {
 	
 	private Logger log;
 	
@@ -21,13 +20,13 @@ public class Log implements Task {
 		this.text = text;
 	}
 
-	public void run(TaskContext context, DataExchange exchange) throws Exception {
+	public void run(TaskContext context, MessageExchange exchange) throws Exception {
 		log.info(text);
 		
-		context.forward(exchange);
+		context.send(exchange);
 	}
 
-	public void recover(TaskContext context, DataExchange exchange) throws Exception {
+	public void recover(TaskContext context, MessageExchange exchange) throws Exception {
 		run(context, exchange);
 	}
 }

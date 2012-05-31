@@ -9,9 +9,11 @@ public interface Engine {
 
 	TaskQueue getTaskQueue();
 	
+	Storage getStorage();
+	
 	Processor createProcessor();
-
-	void start();
+		
+	void start() throws Exception;
 	
 	void stop();
 	

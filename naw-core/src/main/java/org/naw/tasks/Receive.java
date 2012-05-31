@@ -6,7 +6,7 @@ import java.util.List;
 import org.apache.axis.types.DateTime;
 import org.apache.axis.types.Duration;
 import org.naw.core.Engine;
-import org.naw.core.task.DataExchange;
+import org.naw.core.exchange.MessageExchange;
 import org.naw.core.task.LifeCycleAware;
 import org.naw.core.task.Task;
 import org.naw.core.task.TaskContext;
@@ -21,7 +21,7 @@ import org.naw.links.Link;
 import org.naw.links.LinkExchange;
 import org.naw.links.Message;
 
-public class Receive implements Task, LifeCycleAware, AsyncCallback<Message> {
+public class Receive extends AbstractTask implements LifeCycleAware, AsyncCallback<Message> {
 	
 	private Link link;
 
@@ -104,7 +104,7 @@ public class Receive implements Task, LifeCycleAware, AsyncCallback<Message> {
 		timeoutTasks = null;
 	}
 
-	public void run(TaskContext context, DataExchange exchange) throws Exception {
+	public void run(TaskContext context, MessageExchange exchange) throws Exception {
 		// calculate timeout deadline
 		long deadline;
 		
@@ -156,11 +156,11 @@ public class Receive implements Task, LifeCycleAware, AsyncCallback<Message> {
 		// error handling
 		if (error && (errorPipeline != null)) {
 			// start error tasks
-			errorPipeline.start(exchange);
+			Tasks.send(errorPipeline, exchange);
 		} 
 	}
 	
-	public void recover(TaskContext context, DataExchange exchange) throws Exception {
+	public void recover(TaskContext context, MessageExchange exchange) throws Exception {
 		run(context, exchange);
 	}
 
@@ -169,16 +169,16 @@ public class Receive implements Task, LifeCycleAware, AsyncCallback<Message> {
 		
 		if (asyncResult.isSuccess()) {
 			// received
-			DataExchange exchange;
+			MessageExchange exchange;
 			
 			if (createInstance) {
 				TaskContext context = attachment.context;
 				
 				// this is an entry point task, so we need to re-run this task for another receive
-				context.start(null);
+				context.run(null);
 				
 				// create new data exchange
-				exchange = context.getExecutable().createDataExchange();
+				exchange = context.getExecutable().createMessageExchange();
 			} else {
 				exchange = attachment.exchange;
 			}
@@ -198,10 +198,10 @@ public class Receive implements Task, LifeCycleAware, AsyncCallback<Message> {
 			}
 			
 			// start receive tasks
-			receivePipeline.start(exchange);
+			Tasks.send(receivePipeline, exchange);
 		} else if (asyncResult.isTimeout()) {
 			// start timeout tasks
-			timeoutPipeline.start(((AsyncAttachment) asyncResult.getAttachment()).exchange);
+			Tasks.send(timeoutPipeline, ((AsyncAttachment) asyncResult.getAttachment()).exchange);
 		} else if (!asyncResult.isCancelled()) {
 			Throwable cause = asyncResult.getCause();
 			
@@ -214,7 +214,7 @@ public class Receive implements Task, LifeCycleAware, AsyncCallback<Message> {
 				
 				// start error tasks
 				if ((errorCode != 0) && (errorPipeline != null)) {
-					errorPipeline.start(attachment.exchange);
+					Tasks.send(errorPipeline, attachment.exchange);
 				}
 			}
 		}
@@ -222,12 +222,12 @@ public class Receive implements Task, LifeCycleAware, AsyncCallback<Message> {
 	
 	@Override
 	public String toString() {
-		return super.toString() + " [ link: " + link + "; exchangeVariable: " + exchangeVariable + " ]";
+		return Receive.class + " [ id: " + id + "; link: " + link + "; exchangeVariable: " + exchangeVariable + " ]";
 	}
 	
 	class AsyncAttachment {
 		TaskContext context;
 		
-		DataExchange exchange;
+		MessageExchange exchange;
 	}
 }

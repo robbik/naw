@@ -3,8 +3,9 @@ package org.naw.core.task.support;
 import java.util.List;
 
 import org.naw.core.Engine;
+import org.naw.core.exchange.MessageExchange;
 import org.naw.core.task.Task;
-import org.naw.core.task.TaskContextFuture;
+import org.naw.core.task.TaskContext;
 import org.naw.core.task.TaskPipeline;
 import org.naw.core.task.impl.DefaultTaskPipeline;
 import org.naw.executables.Executable;
@@ -35,21 +36,16 @@ public abstract class Tasks {
 		return pipeline;
 	}
 	
-	public static TaskContextFuture createFuture(final Timeout timeout) {
-		return new TaskContextFuture() {
-			
-			public void cancel() {
-				timeout.cancel();
-			}
-		};
-	}
-	
-	public static TaskContextFuture createFinishedFuture() {
-		return new TaskContextFuture() {
-			
-			public void cancel() {
-				// do nothing
-			}
-		};
+	public static void send(TaskPipeline pipeline, MessageExchange mex) {
+		if (pipeline == null) {
+			return;
+		}
+		
+		TaskContext first = pipeline.getFirst();
+		if (first == null) {
+			return;
+		}
+		
+		pipeline.getEngine().getTaskQueue().add(first, mex, false);
 	}
 }

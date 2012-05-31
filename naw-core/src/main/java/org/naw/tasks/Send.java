@@ -1,7 +1,6 @@
 package org.naw.tasks;
 
-import org.naw.core.task.DataExchange;
-import org.naw.core.task.Task;
+import org.naw.core.exchange.MessageExchange;
 import org.naw.core.task.TaskContext;
 import org.naw.core.utils.ValueGenerators;
 import org.naw.exceptions.LinkException;
@@ -9,10 +8,9 @@ import org.naw.links.Link;
 import org.naw.links.LinkExchange;
 import org.naw.links.Message;
 
-import rk.commons.inject.factory.support.ObjectQNameAware;
 import rk.commons.logging.LoggerFactory;
 
-public class Send implements Task, ObjectQNameAware {
+public class Send extends AbstractTask {
 
 	private Link link;
 
@@ -21,8 +19,6 @@ public class Send implements Task, ObjectQNameAware {
 	private boolean retriable;
 	
 	private String exchangeVariable;
-
-	private String objectQName;
 
 	public void setLink(Link link) {
 		this.link = link;
@@ -39,12 +35,8 @@ public class Send implements Task, ObjectQNameAware {
 	public void setExchangeVariable(String exchangeVariable) {
 		this.exchangeVariable = exchangeVariable;
 	}
-
-	public void setObjectQName(String objectQName) {
-		this.objectQName = objectQName;
-	}
 	
-	private void dosend(DataExchange exchange) throws Exception {
+	private void dosend(MessageExchange exchange) throws Exception {
 		int errorCode = 0;
 		String errorMsg = "No error";
 		
@@ -81,21 +73,21 @@ public class Send implements Task, ObjectQNameAware {
 		exchange.setLastError(errorCode, errorMsg);
 	}
 
-	public void run(TaskContext context, DataExchange exchange) throws Exception {
+	public void run(TaskContext context, MessageExchange exchange) throws Exception {
 		dosend(exchange);
 		
-		context.forward(exchange);
+		context.send(exchange);
 	}
 
-	public void recover(TaskContext context, DataExchange exchange) throws Exception {
+	public void recover(TaskContext context, MessageExchange exchange) throws Exception {
 		if (retriable) {
 			dosend(exchange);
 		} else {
-			LoggerFactory.getLogger(objectQName).warning("activity is recovered but retriable is false");
+			LoggerFactory.getLogger(id).warning("activity is recovered but retriable is false");
 			
 			exchange.setLastError(0, "No error");
 		}
 
-		context.forward(exchange);
+		context.send(exchange);
 	}
 }

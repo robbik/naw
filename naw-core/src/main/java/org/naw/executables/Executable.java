@@ -1,21 +1,31 @@
 package org.naw.executables;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.naw.core.Engine;
-import org.naw.core.task.DataExchange;
+import org.naw.core.Storage;
+import org.naw.core.exchange.MessageExchange;
 import org.naw.core.task.Task;
+import org.naw.core.task.TaskPipeline;
 import org.naw.core.task.support.Tasks;
+import org.naw.tasks.EndOfExecutable;
 
-import rk.commons.inject.factory.support.InitializingObject;
-
-public class Executable implements InitializingObject {
+public class Executable {
 	
 	private String name;
 
 	private List<Object> tasks;
+	
+	private boolean inMemory;
+	
+	private TaskPipeline pipeline;
+	
+	private Engine engine;
+	
+	private Storage storage;
 
-	public String getExecutableName() {
+	public String getName() {
 		return name;
 	}
 
@@ -26,36 +36,60 @@ public class Executable implements InitializingObject {
 	public void setTasks(List<Object> tasks) {
 		this.tasks = tasks;
 	}
+	
+	public void setInMemory(boolean inMemory) {
+		this.inMemory = inMemory;
+	}
+	
+	public boolean isInMemory() {
+		return inMemory;
+	}
+	
+	public TaskPipeline getPipeline() {
+		return pipeline;
+	}
 
-	public void initialize() throws Exception {
+	@SuppressWarnings({ "unchecked", "rawtypes" })
+	public void initialize(Engine engine) throws Exception {
+		this.engine = engine;
+		
+		storage = engine.getStorage();
+		
 		if ((tasks == null) || tasks.isEmpty()) {
 			throw new IllegalArgumentException("tasks cannot be empty");
 		}
 
-		for (int i = 0, n = this.tasks.size(); i < n; ++i) {
-			Object o = this.tasks.get(i);
+		for (int i = 0, n = tasks.size(); i < n; ++i) {
+			Object o = tasks.get(i);
 
 			if (!(o instanceof Task)) {
 				throw new IllegalArgumentException("task " + o.getClass() + " must derived from " + Task.class + " class");
 			}
 		}
+		
+		EndOfExecutable task = new EndOfExecutable();
+		task.setObjectQName(name + "#end");
+		
+		tasks = new ArrayList<Object>(this.tasks);
+		tasks.add(task);
+
+		pipeline = Tasks.pipeline(engine, this, (List) tasks);
 	}
 	
-	public void start(Engine engine) {
-		start(engine, null);
+	public void start() {
+		start(null);
 	}
 
-	@SuppressWarnings({ "unchecked", "rawtypes" })
-	public void start(Engine engine, DataExchange exchange) {
-		Tasks.pipeline(engine, this, (List) tasks).start(exchange);
+	public void start(MessageExchange exchange) {
+		Tasks.send(pipeline, exchange);
 	}
-
-	public DataExchange createDataExchange() {
-		return new DataExchange();
+	
+	public MessageExchange createMessageExchange() {
+		return storage.createMessageExchange(engine, this);
 	}
 	
 	@Override
 	public String toString() {
-		return name;
+		return Executable.class + " [ name: " + name + "; transient: " + inMemory + " ]";
 	}
 }

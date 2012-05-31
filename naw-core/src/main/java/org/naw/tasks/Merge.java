@@ -2,11 +2,10 @@ package org.naw.tasks;
 
 import java.util.Map;
 
-import org.naw.core.task.DataExchange;
-import org.naw.core.task.Task;
+import org.naw.core.exchange.MessageExchange;
 import org.naw.core.task.TaskContext;
 
-public class Merge implements Task {
+public class Merge extends AbstractTask {
 
 	private String from;
 
@@ -21,7 +20,7 @@ public class Merge implements Task {
 	}
 
 	@SuppressWarnings({ "rawtypes", "unchecked" })
-	public void run(TaskContext context, DataExchange exchange) throws Exception {
+	public void run(TaskContext context, MessageExchange exchange) throws Exception {
 		Object vfrom = exchange.get(from);
 		Object vto = exchange.get(to);
 
@@ -35,10 +34,10 @@ public class Merge implements Task {
 			exchange.set(to, vfrom);
 		}
 
-		context.forward(exchange);
+		context.send(exchange);
 	}
 
-	public void recover(TaskContext context, DataExchange exchange) throws Exception {
+	public void recover(TaskContext context, MessageExchange exchange) throws Exception {
 		run(context, exchange);
 	}
 }

@@ -30,16 +30,12 @@ public class DirectLinkTest {
 	private static AsyncResult<Message> asyncReceive(Link link, Object correlation, long deadline, final CountDownLatch latch) throws Exception {
 		return link.asyncReceive(correlation, null, deadline, new AsyncCallback<Message>() {
 			
-			public void timeout(AsyncResult<Message> ar) {
-				System.out.println("timeout");
-				
-				if (latch != null) {
-					latch.countDown();
-				}
-			}
-			
 			public void completed(AsyncResult<Message> ar) {
-				System.out.println("completed: " + ar.isSuccess() + ", " + ar.getResult());
+				if (ar.isTimeout()) {
+					System.out.println("timeout");
+				} else {
+					System.out.println("completed: " + ar.isSuccess() + ", " + ar.getResult());
+				}
 				
 				if (latch != null) {
 					latch.countDown();
@@ -51,16 +47,12 @@ public class DirectLinkTest {
 	private static AsyncResult<Message> asyncReceiveReply(Link link, Object correlation, long deadline, final CountDownLatch latch) throws Exception {
 		return link.asyncReceiveReply(correlation, null, deadline, new AsyncCallback<Message>() {
 			
-			public void timeout(AsyncResult<Message> ar) {
-				System.out.println("timeout");
-				
-				if (latch != null) {
-					latch.countDown();
-				}
-			}
-			
 			public void completed(AsyncResult<Message> ar) {
-				System.out.println("completed: " + ar.isSuccess() + ", " + ar.getResult());
+				if (ar.isTimeout()) {
+					System.out.println("timeout");
+				} else {
+					System.out.println("completed: " + ar.isSuccess() + ", " + ar.getResult());
+				}
 				
 				if (latch != null) {
 					latch.countDown();

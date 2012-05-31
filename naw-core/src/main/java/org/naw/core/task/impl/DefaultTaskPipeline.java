@@ -1,7 +1,6 @@
 package org.naw.core.task.impl;
 
 import org.naw.core.Engine;
-import org.naw.core.task.DataExchange;
 import org.naw.core.task.LifeCycleAware;
 import org.naw.core.task.Task;
 import org.naw.core.task.TaskContext;
@@ -74,10 +73,8 @@ public class DefaultTaskPipeline implements TaskPipeline {
 		return addLast(task, true);
 	}
 
-	public void start(DataExchange exchange) {
-		if (head != null) {
-			engine.getTaskQueue().add(head, exchange);
-		}
+	public TaskContext getFirst() {
+		return head;
 	}
 
 	public TaskPipeline addLast(TaskContext ctx) {
@@ -102,5 +99,33 @@ public class DefaultTaskPipeline implements TaskPipeline {
 		tail = (DefaultTaskContext) ctx;
 
 		return this;
+	}
+	
+	public TaskContext getTaskContext(Task task) {
+		TaskContext current = head;
+		
+		while (current != null) {
+			if (current.getTask().equals(task)) {
+				break;
+			}
+			
+			current = current.getNext();
+		}
+		
+		return current;
+	}
+	
+	public TaskContext getTaskContext(String taskId) {
+		TaskContext current = head;
+		
+		while (current != null) {
+			if (current.getTask().getId().equals(taskId)) {
+				break;
+			}
+			
+			current = current.getNext();
+		}
+		
+		return current;
 	}
 }

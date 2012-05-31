@@ -4,8 +4,10 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
 
-import org.naw.core.task.DataExchange;
+import org.naw.core.Storage;
+import org.naw.core.exchange.MessageExchange;
 import org.naw.core.task.TaskContext;
+import org.naw.core.task.TaskFuture;
 import org.naw.core.task.TaskQueue;
 
 import rk.commons.logging.Logger;
@@ -25,18 +27,37 @@ public class DefaultTaskQueue implements TaskQueue {
 		this.queue = queue;
 	}
 
-	public void add(TaskContext context, DataExchange exchange) {
+	public void add(TaskContext context, MessageExchange mex, boolean recoveryMode) {
 		if (log.isTraceEnabled()) {
 			log.trace("adding task " + context.getTask() + " to execution queue");
 		}
-
-		boolean enqueued = queue.add(new EntryImpl(context, exchange));
-
+		
+		String mexId;
+		String taskId;
+		
+		if (mex == null) {
+			mexId = null;
+			taskId = null;
+		} else {
+			mexId = mex.getId();
+			taskId = context.getTask().getId();
+		}
+		
+		Storage storage = context.getStorage();
+		
+		DefaultTaskFuture future = new DefaultTaskFuture(storage, mexId, taskId);
+		
+		future.beforeAdd();
+		
+		boolean enqueued = queue.add(new DefaultEntry(context, mex, future, recoveryMode));
+		
 		if (enqueued) {
 			if (log.isTraceEnabled()) {
 				log.trace("task " + context.getTask() + " added to execution queue");
 			}
 		} else {
+			future.cancel();
+
 			log.error("unable to enqueue task " + context.getTask());
 		}
 	}
@@ -62,23 +83,40 @@ public class DefaultTaskQueue implements TaskQueue {
 	public Entry poll() {
 		return(Entry) queue.poll();
 	}
-
-	private static class EntryImpl implements Entry {
+	
+	public static class DefaultEntry implements Entry {
 		final TaskContext taskContext;
 
-		final DataExchange exchange;
+		final MessageExchange exchange;
+		
+		final TaskFuture future;
+		
+		final boolean recoveryMode;
 
-		EntryImpl(TaskContext taskContext, DataExchange exchange) {
+		public DefaultEntry(TaskContext taskContext, MessageExchange exchange,
+				TaskFuture future, boolean recoveryMode) {
+			
 			this.taskContext = taskContext;
 			this.exchange = exchange;
+			
+			this.future = future;
+			this.recoveryMode = recoveryMode;
 		}
 
 		public TaskContext getTaskContext() {
 			return taskContext;
 		}
 
-		public DataExchange getExchange() {
+		public MessageExchange getMessageExchange() {
 			return exchange;
+		}
+		
+		public TaskFuture getFuture() {
+			return future;
+		}
+		
+		public boolean isRecoveryMode() {
+			return recoveryMode;
 		}
 	}
 }

@@ -2,7 +2,7 @@ package org.naw.tasks;
 
 import java.util.List;
 
-import org.naw.core.task.DataExchange;
+import org.naw.core.exchange.MessageExchange;
 import org.naw.core.task.LifeCycleAware;
 import org.naw.core.task.Task;
 import org.naw.core.task.TaskContext;
@@ -10,7 +10,7 @@ import org.naw.core.task.TaskPipeline;
 import org.naw.core.task.support.Tasks;
 import org.naw.expression.Expression;
 
-public class While implements Task, LifeCycleAware {
+public class While extends AbstractTask implements LifeCycleAware {
 
 	private Expression predicate;
 
@@ -32,15 +32,15 @@ public class While implements Task, LifeCycleAware {
 		tasks = null;
 	}
 
-	public void run(TaskContext context, DataExchange exchange) throws Exception {
+	public void run(TaskContext context, MessageExchange exchange) throws Exception {
 		if (predicate.eval(exchange, boolean.class)) {
-			pipeline.start(exchange);
+			Tasks.send(pipeline, exchange);
 		} else {
-			context.forward(exchange);
+			context.send(exchange);
 		}
 	}
 
-	public void recover(TaskContext context, DataExchange exchange) throws Exception {
+	public void recover(TaskContext context, MessageExchange exchange) throws Exception {
 		run(context, exchange);
 	}
 }

@@ -1,12 +1,11 @@
 package org.naw.tasks;
 
-import org.naw.core.task.DataExchange;
-import org.naw.core.task.Task;
+import org.naw.core.exchange.MessageExchange;
 import org.naw.core.task.TaskContext;
 import org.naw.expression.Expression;
 import org.naw.links.LinkExchange;
 
-public class Correlation implements Task {
+public class Correlation extends AbstractTask {
 
 	private String exchangeVariable;
 	
@@ -20,13 +19,13 @@ public class Correlation implements Task {
 		this.value = value;
 	}
 
-	public void run(TaskContext context, DataExchange exchange) throws Exception {
+	public void run(TaskContext context, MessageExchange exchange) throws Exception {
 		exchange.setpriv(exchangeVariable, new LinkExchange(value.eval(exchange), null));
 		
-		context.forward(exchange);
+		context.send(exchange);
 	}
 
-	public void recover(TaskContext context, DataExchange exchange) throws Exception {
+	public void recover(TaskContext context, MessageExchange exchange) throws Exception {
 		run(context, exchange);
 	}
 }

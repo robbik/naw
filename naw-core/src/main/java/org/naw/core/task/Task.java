@@ -1,8 +1,12 @@
 package org.naw.core.task;
 
-public interface Task {
+import org.naw.core.exchange.MessageExchange;
 
-	void run(TaskContext context, DataExchange exchange) throws Exception;
+public interface Task {
 	
-	void recover(TaskContext context, DataExchange exchange) throws Exception;
+	String getId();
+
+	void run(TaskContext context, MessageExchange exchange) throws Exception;
+	
+	void recover(TaskContext context, MessageExchange exchange) throws Exception;
 }

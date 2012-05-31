@@ -24,7 +24,8 @@
             <xsd:group ref="tasks" />
         </xsd:choice>
 
-        <xsd:attribute name="name" use="required" />
+        <xsd:attribute name="name" type="xsd:string" use="required" />
+        <xsd:attribute name="transient" type="xsd:boolean" use="optional" default="true" />
     </xsd:complexType>
 
     <xsd:complexType name="import">

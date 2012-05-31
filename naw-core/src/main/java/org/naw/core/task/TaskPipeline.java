@@ -9,9 +9,13 @@ public interface TaskPipeline {
 
 	Executable getExecutable();
 
-	void start(DataExchange exchange);
+	TaskContext getFirst();
 	
 	TaskPipeline addLast(Task task);
 	
 	TaskPipeline addLast(TaskContext ctx);
+	
+	TaskContext getTaskContext(Task task);
+	
+	TaskContext getTaskContext(String taskId);
 }
