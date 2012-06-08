@@ -11,7 +11,6 @@ import org.w3c.dom.NodeList;
 import rk.commons.inject.factory.support.ObjectDefinitionBuilder;
 import rk.commons.inject.factory.xml.ObjectDefinitionParserDelegate;
 import rk.commons.inject.factory.xml.SingleObjectDefinitionParser;
-import rk.commons.util.StringHelper;
 
 public class ExecutableDefinitionParser extends SingleObjectDefinitionParser {
 	
@@ -48,12 +47,5 @@ public class ExecutableDefinitionParser extends SingleObjectDefinitionParser {
 		
 		builder.addPropertyValue("executableName", name);
 		builder.addPropertyValue("tasks", tasks);
-		
-		String vtransient = element.getAttribute("transient");
-		if (StringHelper.hasText(vtransient)) {
-			builder.addPropertyValue("inMemory", "true".equalsIgnoreCase(vtransient));
-		} else {
-			builder.addPropertyValue("inMemory", false);
-		}
 	}
 }

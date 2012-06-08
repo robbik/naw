@@ -46,6 +46,6 @@ public abstract class Tasks {
 			return;
 		}
 		
-		pipeline.getEngine().getTaskQueue().add(first, mex, false);
+		pipeline.getEngine().getTaskQueue().add(first, mex);
 	}
 }

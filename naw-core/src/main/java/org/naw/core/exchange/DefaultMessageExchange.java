@@ -26,8 +26,6 @@ public class DefaultMessageExchange implements MessageExchange {
 	
 	protected volatile String errorMsg;
 	
-	protected volatile boolean destroyed;
-	
 	public DefaultMessageExchange(String id, String executableName) {
 		this.id = id;
 		this.executableName = executableName;
@@ -37,8 +35,6 @@ public class DefaultMessageExchange implements MessageExchange {
 		
 		errorCode = 0;
 		errorMsg = "No error";
-		
-		destroyed = false;
 	}
 	
 	/* (non-Javadoc)
@@ -233,13 +229,5 @@ public class DefaultMessageExchange implements MessageExchange {
 	public String toString() {
 		return super.toString() + " [ errorCode = " + errorCode + " ; public "
 				+ vars + "; private " + varspriv + " ]";
-	}
-
-	public void destroy() {
-		destroyed = true;
-	}
-
-	public boolean isDestroyed() {
-		return destroyed;
 	}
 }

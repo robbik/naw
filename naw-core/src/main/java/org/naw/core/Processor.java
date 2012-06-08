@@ -8,7 +8,7 @@ public interface Processor {
 
 	void run() throws InterruptedException;
 
-	void runOnce() throws InterruptedException;
+	boolean next() throws InterruptedException;
 
-	void runOnce(long timeout, TimeUnit unit) throws InterruptedException;
+	boolean next(long timeout, TimeUnit unit) throws InterruptedException;
 }

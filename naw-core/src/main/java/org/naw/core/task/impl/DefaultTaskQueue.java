@@ -4,10 +4,10 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
 
-import org.naw.core.Storage;
+import org.naw.core.Engine;
 import org.naw.core.exchange.MessageExchange;
+import org.naw.core.task.Task;
 import org.naw.core.task.TaskContext;
-import org.naw.core.task.TaskFuture;
 import org.naw.core.task.TaskQueue;
 
 import rk.commons.logging.Logger;
@@ -27,96 +27,77 @@ public class DefaultTaskQueue implements TaskQueue {
 		this.queue = queue;
 	}
 
-	public void add(TaskContext context, MessageExchange mex, boolean recoveryMode) {
+	public void attach(Engine engine) {
+		// do nothing
+	}
+	
+	public void detach(Engine engine) {
+		// do nothing
+	}
+	
+	public void add(TaskContext context, MessageExchange mex) {
 		if (log.isTraceEnabled()) {
 			log.trace("adding task " + context.getTask() + " to execution queue");
 		}
 		
-		String mexId;
-		String taskId;
-		
-		if (mex == null) {
-			mexId = null;
-			taskId = null;
-		} else {
-			mexId = mex.getId();
-			taskId = context.getTask().getId();
-		}
-		
-		Storage storage = context.getStorage();
-		
-		DefaultTaskFuture future = new DefaultTaskFuture(storage, mexId, taskId);
-		
-		future.beforeAdd();
-		
-		boolean enqueued = queue.add(new DefaultEntry(context, mex, future, recoveryMode));
+		boolean enqueued = queue.add(new Entry(context, mex));
 		
 		if (enqueued) {
 			if (log.isTraceEnabled()) {
 				log.trace("task " + context.getTask() + " added to execution queue");
 			}
 		} else {
-			future.cancel();
-
 			log.error("unable to enqueue task " + context.getTask());
 		}
 	}
 
-	public Entry remove() throws InterruptedException {
-		if (log.isTraceEnabled()) {
-			log.trace("taking task from execution queue");
-		}
-		
+	public boolean next() throws InterruptedException {
 		Entry e = (Entry) queue.take();
+		run(e);
 		
-		if (log.isTraceEnabled()) {
-			log.trace("task " + e.getTaskContext().getTask() + " taken from execution queue");
+		return true;
+	}
+
+	public boolean next(long timeout, TimeUnit unit) throws InterruptedException {
+		Entry e = (Entry) queue.poll(timeout, unit);
+		if (e == null) {
+			return false;
 		}
 		
-		return e;
-	}
-
-	public Entry remove(long timeout, TimeUnit unit) throws InterruptedException {
-		return (Entry) queue.poll(timeout, unit);
-	}
-
-	public Entry poll() {
-		return(Entry) queue.poll();
+		run(e);
+		
+		return true;
 	}
 	
-	public static class DefaultEntry implements Entry {
+	private void run(Entry entry) {
+		TaskContext ctx = entry.taskContext;
+		MessageExchange mex = entry.messageExchange;
+		
+		Task task = ctx.getTask();
+		
+		if (log.isTraceEnabled()) {
+			log.trace("before executing task " + task);
+		}
+		
+		try {
+			task.run(ctx, mex);
+		} catch (Throwable t) {
+			log.error("an error occured while executing task " + task + ", process terminated.", t);
+		}
+		
+		if (log.isTraceEnabled()) {
+			log.trace("after executing task " + task);
+		}
+	}
+	
+	private static class Entry {
 		final TaskContext taskContext;
 
-		final MessageExchange exchange;
-		
-		final TaskFuture future;
-		
-		final boolean recoveryMode;
+		final MessageExchange messageExchange;
 
-		public DefaultEntry(TaskContext taskContext, MessageExchange exchange,
-				TaskFuture future, boolean recoveryMode) {
-			
+		Entry(TaskContext taskContext, MessageExchange exchange) {
 			this.taskContext = taskContext;
-			this.exchange = exchange;
-			
-			this.future = future;
-			this.recoveryMode = recoveryMode;
-		}
-
-		public TaskContext getTaskContext() {
-			return taskContext;
-		}
-
-		public MessageExchange getMessageExchange() {
-			return exchange;
-		}
-		
-		public TaskFuture getFuture() {
-			return future;
-		}
-		
-		public boolean isRecoveryMode() {
-			return recoveryMode;
+			this.messageExchange = exchange;
 		}
 	}
 }

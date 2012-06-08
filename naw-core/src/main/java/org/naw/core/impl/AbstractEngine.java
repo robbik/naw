@@ -9,10 +9,6 @@ import org.apache.axis.types.DateTime;
 import org.apache.axis.types.Duration;
 import org.naw.core.Engine;
 import org.naw.core.Processor;
-import org.naw.core.Storage;
-import org.naw.core.exchange.MessageExchange;
-import org.naw.core.storage.InMemory;
-import org.naw.core.task.TaskContext;
 import org.naw.core.task.TaskQueue;
 import org.naw.core.task.impl.DefaultTaskQueue;
 import org.naw.core.task.support.HashedWheelTimer;
@@ -27,12 +23,8 @@ import rk.commons.inject.factory.AbstractObjectFactory;
 import rk.commons.inject.factory.SingletonObjectFactory;
 import rk.commons.inject.factory.type.converter.TypeConverterResolver;
 import rk.commons.loader.ResourceLoader;
-import rk.commons.logging.Logger;
-import rk.commons.logging.LoggerFactory;
 
 public abstract class AbstractEngine implements Engine {
-	
-	private static final Logger log = LoggerFactory.getLogger(AbstractEngine.class);
 
 	protected static final int STATUS_NONE = 0;
 
@@ -50,8 +42,6 @@ public abstract class AbstractEngine implements Engine {
 
 	protected TaskQueue taskQueue;
 	
-	protected Storage storage;
-	
 	protected ResourceLoader resourceLoader;
 
 	protected AbstractObjectFactory objectFactory;
@@ -67,8 +57,6 @@ public abstract class AbstractEngine implements Engine {
 		timer = new HashedWheelTimer();
 		
 		taskQueue = new DefaultTaskQueue();
-		
-		storage = new InMemory();
 		
 		resourceLoader = new ResourceLoader();
 
@@ -132,20 +120,26 @@ public abstract class AbstractEngine implements Engine {
 		this.taskQueue = taskQueue;
 	}
 	
-	public Storage getStorage() {
-		return storage;
-	}
-	
-	public void setStorage(Storage storage) {
-		this.storage = storage;
-	}
-	
 	public Set<String> getObjectQNames() {
 		return objectFactory.getObjectQNames();
 	}
 
 	public Processor createProcessor() {
 		return new DefaultProcessor(this);
+	}
+	
+	public Executable getExecutable(String name) {
+		Object obj = objectFactory.getObject(name);
+		
+		if (obj instanceof Executable) {
+			return (Executable) obj;
+		}
+		
+		return null;
+	}
+	
+	public Collection<Executable> getExecutables() {
+		return objectFactory.getObjectsOfType(Executable.class).values();
 	}
 	
 	public void start() throws Exception {
@@ -164,62 +158,18 @@ public abstract class AbstractEngine implements Engine {
 				e.start();
 			}
 			
-			for (MessageExchange mex : storage.getMessageExchanges()) {
-				String mexId = mex.getId();
-				String executableName = mex.getExecutableName();
-				
-				if (!objectFactory.containsObjectDefinition(executableName)) {
-					log.warning("unable to recover tasks on process '" + executableName +
-							"', process not found");
-					
-					continue;
-				}
-				
-				Executable executable = (Executable) objectFactory.getObject(executableName);
+			taskQueue.attach(this);
 			
-				List<String> tasks = new ArrayList<String>(storage.getTasks(mexId));
-				
-				Collection<String> onGoingTasks = storage.getOnGoingTasks(mexId);
-				
-				for (String taskId : onGoingTasks) {
-					tasks.remove(taskId);
-				}
-				
-				for (String taskId : onGoingTasks) {
-					TaskContext ctx = executable.getPipeline().getTaskContext(taskId);
-					if (ctx == null) {
-						log.warning("unable to recover task '" + taskId +
-								"' on process '" + executableName + "', task not found");
-						
-						continue;
-					}
-					
-					ctx.recover(mex);
-					
-					log.info("task '" + taskId + "' on process '" + executableName + "' has been recovered");
-				}
-				
-				for (String taskId : tasks) {
-					TaskContext ctx = executable.getPipeline().getTaskContext(taskId);
-					if (ctx == null) {
-						log.warning("unable to recover task '" + taskId +
-								"' on process '" + executableName + "', task not found");
-						
-						continue;
-					}
-					
-					ctx.run(mex);
-					
-					log.info("task '" + taskId + "' on process '" + executableName + "' has been recovered");
-				}
-			}
-
 			status = STATUS_STARTED;
 		}
 	}
 
 	public void stop() {
 		synchronized (statusLock) {
+			if (status == STATUS_STARTED) {
+				taskQueue.detach(this);
+			}
+			
 			status = STATUS_STOPPED;
 		}
 	}
@@ -237,6 +187,8 @@ public abstract class AbstractEngine implements Engine {
 				objectFactory.destroy();
 				break;
 			case STATUS_STARTED:
+				stop();
+				
 				objectFactory.destroy();
 				break;
 			case STATUS_STOPPED:

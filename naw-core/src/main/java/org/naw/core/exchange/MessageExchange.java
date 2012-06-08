@@ -58,8 +58,4 @@ public interface MessageExchange extends Serializable, Map<String, Object> {
 	void setLastError(int code, String msg);
 
 	String toString();
-	
-	void destroy();
-	
-	boolean isDestroyed();
 }

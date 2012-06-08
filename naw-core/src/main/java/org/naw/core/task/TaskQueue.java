@@ -2,23 +2,18 @@ package org.naw.core.task;
 
 import java.util.concurrent.TimeUnit;
 
+import org.naw.core.Engine;
 import org.naw.core.exchange.MessageExchange;
 
 public interface TaskQueue {
+	
+	void attach(Engine engine) throws Exception;
+	
+	void detach(Engine engine);
 
-	void add(TaskContext context, MessageExchange exchange, boolean recoveryMode);
+	void add(TaskContext context, MessageExchange exchange);
 
-	Entry remove() throws InterruptedException;
+	boolean next() throws InterruptedException;
 
-	Entry remove(long timeout, TimeUnit unit) throws InterruptedException;
-
-	public static interface Entry {
-		TaskContext getTaskContext();
-
-		MessageExchange getMessageExchange();
-		
-		TaskFuture getFuture();
-		
-		boolean isRecoveryMode();
-	}
+	boolean next(long timeout, TimeUnit unit) throws InterruptedException;
 }

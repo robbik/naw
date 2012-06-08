@@ -4,12 +4,13 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.naw.core.Engine;
-import org.naw.core.Storage;
+import org.naw.core.exchange.DefaultMessageExchange;
 import org.naw.core.exchange.MessageExchange;
 import org.naw.core.task.Task;
 import org.naw.core.task.TaskPipeline;
 import org.naw.core.task.support.Tasks;
-import org.naw.tasks.EndOfExecutable;
+import org.naw.core.utils.ValueGenerators;
+import org.naw.tasks.End;
 
 public class Executable {
 	
@@ -17,13 +18,7 @@ public class Executable {
 
 	private List<Object> tasks;
 	
-	private boolean inMemory;
-	
 	private TaskPipeline pipeline;
-	
-	private Engine engine;
-	
-	private Storage storage;
 
 	public String getName() {
 		return name;
@@ -37,24 +32,12 @@ public class Executable {
 		this.tasks = tasks;
 	}
 	
-	public void setInMemory(boolean inMemory) {
-		this.inMemory = inMemory;
-	}
-	
-	public boolean isInMemory() {
-		return inMemory;
-	}
-	
 	public TaskPipeline getPipeline() {
 		return pipeline;
 	}
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public void initialize(Engine engine) throws Exception {
-		this.engine = engine;
-		
-		storage = engine.getStorage();
-		
 		if ((tasks == null) || tasks.isEmpty()) {
 			throw new IllegalArgumentException("tasks cannot be empty");
 		}
@@ -67,12 +50,12 @@ public class Executable {
 			}
 		}
 		
-		EndOfExecutable task = new EndOfExecutable();
+		End task = new End();
 		task.setObjectQName(name + "#end");
 		
 		tasks = new ArrayList<Object>(this.tasks);
 		tasks.add(task);
-
+		
 		pipeline = Tasks.pipeline(engine, this, (List) tasks);
 	}
 	
@@ -85,11 +68,11 @@ public class Executable {
 	}
 	
 	public MessageExchange createMessageExchange() {
-		return storage.createMessageExchange(engine, this);
+		return new DefaultMessageExchange(ValueGenerators.messageExchangeId(), name);
 	}
 	
 	@Override
 	public String toString() {
-		return Executable.class + " [ name: " + name + "; transient: " + inMemory + " ]";
+		return Executable.class + " [ name: " + name + " ]";
 	}
 }

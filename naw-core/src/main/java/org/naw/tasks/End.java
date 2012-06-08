@@ -3,18 +3,18 @@ package org.naw.tasks;
 import org.naw.core.exchange.MessageExchange;
 import org.naw.core.task.TaskContext;
 
-public class EndOfExecutable extends AbstractTask {
+public class End extends AbstractTask {
 	
 	public void run(TaskContext context, MessageExchange exchange) throws Exception {
-		exchange.destroy();
+		// do nothing
 	}
 
 	public void recover(TaskContext context, MessageExchange exchange) throws Exception {
-		run(context, exchange);
+		// do nothing
 	}
 	
 	@Override
 	public String toString() {
-		return EndOfExecutable.class + " [ executable: " + id.substring(0, id.length() - 4) + " ]";
+		return End.class + " [ executable: " + id.substring(0, id.length() - 4) + " ]";
 	}
 }
