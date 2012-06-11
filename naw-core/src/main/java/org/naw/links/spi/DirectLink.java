@@ -1,5 +1,6 @@
 package org.naw.links.spi;
 
+import java.net.URI;
 import java.util.Map;
 import java.util.concurrent.locks.LockSupport;
 
@@ -28,12 +29,13 @@ public class DirectLink implements Link {
 	
 	protected final Map<Object, DirectLinkReceiver> replies;
 	
-	protected final String argument;
+	protected final URI uri;
 	
-	public DirectLink(Timer timer, long sendTimeout, String argument) {
+	public DirectLink(Timer timer, long sendTimeout, URI uri) {
 		this.timer = timer;
 		this.sendTimeout = sendTimeout;
-		this.argument = argument;
+		
+		this.uri = uri;
 		
 		requests = new SynchronizedHashMap<Object, DirectLinkReceiver>();
 		replies = new SynchronizedHashMap<Object, DirectLinkReceiver>();
@@ -116,8 +118,8 @@ public class DirectLink implements Link {
 		return receiver.ar;
 	}
 	
-	public String getArgument() {
-		return argument;
+	public URI getURI() {
+		return uri;
 	}
 	
 	public void send(Message message) throws LinkException, Exception {
@@ -134,6 +136,11 @@ public class DirectLink implements Link {
 	
 	public LinkAsyncResult asyncReceiveReply(Object correlation, Object attachment, long deadline, AsyncCallback<Message> callback) throws Exception {
 		return doasyncReceive(replies, correlation, attachment, deadline, callback);
+	}
+	
+	@Override
+	public String toString() {
+		return DirectLink.class + " (" + uri + ")";
 	}
 	
 	class DirectLinkReceiver {

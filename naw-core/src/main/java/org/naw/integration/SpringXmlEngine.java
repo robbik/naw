@@ -18,14 +18,17 @@ public class SpringXmlEngine extends AbstractEngine {
     protected final ApplicationContext spring;
 	
 	protected final XmlContext context;
+	
+	protected final String[] locations;
 
 	public SpringXmlEngine(ApplicationContext spring, String... locations) {
 		this.spring = spring;
-		
-		initialize();
+		this.locations = locations;
 		
 		context = new XmlContext();
-		
+	}
+	
+	protected void beforeStart() throws Exception {
 		context.setResourceLoader(resourceLoader);
 		
 		context.setXmlDefaultNamespace(NAMESPACE_URI);

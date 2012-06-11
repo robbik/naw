@@ -1,8 +1,12 @@
 package org.naw.core.storage;
 
+import java.io.Serializable;
+
 import org.naw.core.exchange.MessageExchange;
 
-public class DefaultStoredTask implements StoredTask {
+public class DefaultStoredTask implements StoredTask, Serializable {
+
+	private static final long serialVersionUID = -3468563508796149649L;
 
 	private final String taskId;
 

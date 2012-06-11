@@ -26,11 +26,20 @@ public class PersistentTaskQueue implements TaskQueue {
 	private Storage storage;
 
 	public PersistentTaskQueue() {
-		this(new ArrayBlockingQueue<Object>(5000, true));
+		this(new ArrayBlockingQueue<Object>(5000, true), null);
 	}
 
 	public PersistentTaskQueue(BlockingQueue<Object> queue) {
+		this(queue, null);
+	}
+	
+	public PersistentTaskQueue(Storage storage) {
+		this(new ArrayBlockingQueue<Object>(5000, true), storage);
+	}
+	
+	public PersistentTaskQueue(BlockingQueue<Object> queue, Storage storage) {
 		this.queue = queue;
+		this.storage = storage;
 	}
 	
 	public void setStorage(Storage storage) {
@@ -133,8 +142,7 @@ public class PersistentTaskQueue implements TaskQueue {
 	}
 
 	public boolean next() throws InterruptedException {
-		Entry e = (Entry) queue.take();
-		run(e);
+		run((Entry) queue.take());
 		
 		return true;
 	}

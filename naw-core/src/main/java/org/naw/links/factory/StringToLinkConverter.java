@@ -1,8 +1,12 @@
 package org.naw.links.factory;
 
+import java.net.URI;
+
+import org.naw.links.Links;
+
 import rk.commons.inject.factory.ObjectFactory;
-import rk.commons.inject.factory.ObjectInstantiationException;
 import rk.commons.inject.factory.type.converter.TypeConverter;
+import rk.commons.util.UriHelper;
 
 public class StringToLinkConverter implements TypeConverter {
 
@@ -13,26 +17,11 @@ public class StringToLinkConverter implements TypeConverter {
 	}
 
 	public Object convert(Object source) {
-		String scheme;
-		String arg;
-		
-		String str = (String) source;
-		
-		int ddidx = str.indexOf(':');
-		if (ddidx >= 0) {
-			scheme = str.substring(0, ddidx).trim();
-			arg = str.substring(ddidx + 1).trim();
-		} else {
-			scheme = str.trim();
-			arg = "";
+		URI uri = UriHelper.tryNewURI((String) source);
+		if (uri == null) {
+			throw new IllegalArgumentException("invalid URI '" + source + "'");
 		}
-
-		Object linkFactory = factory.getObject(scheme);
-
-		try {
-			return ((LinkFactory) linkFactory).createLink(arg);
-		} catch (Exception e) {
-			throw new ObjectInstantiationException(scheme, e);
-		}
+		
+		return Links.lookup(factory, uri);
 	}
 }

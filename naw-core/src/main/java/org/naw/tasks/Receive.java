@@ -134,7 +134,11 @@ public class Receive extends AbstractTask implements LifeCycleAware, AsyncCallba
 		}
 		
 		// begin receive data
-		if (!createInstance) {
+		if (createInstance) {
+			if (context.getExecutable().isSuspended()) {
+				return;
+			}
+		} else {
 			exchange.setLastError(0, "No error");
 		}
 		
@@ -174,11 +178,17 @@ public class Receive extends AbstractTask implements LifeCycleAware, AsyncCallba
 			if (createInstance) {
 				TaskContext context = attachment.context;
 				
-				// this is an entry point task, so we need to re-run this task for another receive
-				context.run(null);
+				Executable executable = context.getExecutable();
 				
-				// create new data exchange
-				exchange = context.getExecutable().createMessageExchange();
+				if (executable.isSuspended()) {
+					return;
+				} else {
+					// this is an entry point task, so we need to re-run this task for another receive
+					context.run(null);
+					
+					// create new data exchange
+					exchange = executable.createMessageExchange();
+				}
 			} else {
 				exchange = attachment.exchange;
 			}

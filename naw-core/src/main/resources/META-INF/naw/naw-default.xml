@@ -2,8 +2,6 @@
      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
      xsi:schemaLocation="http://www.naw.org/schema/naw
                          http://www.naw.org/schema/naw.xsd">
-
-    <link name="file" class="org.naw.links.spi.FileLinkFactory" />
     
     <link name="direct" class="org.naw.links.spi.DirectLinkFactory" />
 </naw>

@@ -29,6 +29,18 @@ public class FileBasedStorage implements Storage {
 		// do nothing
 	}
 	
+	public FileBasedStorage(String path) {
+		this(new File(path));
+	}
+	
+	public FileBasedStorage(File path) {
+		if (!path.isDirectory() && !path.mkdirs()) {
+			throw new IllegalArgumentException("unable to create path '" + path + "'");
+		}
+		
+		this.path = path;
+	}
+	
 	public void setPath(File path) {
 		this.path = path;
 	}
@@ -85,7 +97,8 @@ public class FileBasedStorage implements Storage {
 	}
 
 	public void persist(String taskId, MessageExchange mex, int status) {
-		String fname = taskId.concat("__").concat(mex.getId()).concat(".task");
+		// String fname = taskId.concat("__").concat(mex.getId()).concat(".task");
+		String fname = taskId + "__" + mex.getId() + ".task";
 		
 		File f = new File(path, fname);
 		

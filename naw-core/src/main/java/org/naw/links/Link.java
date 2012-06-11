@@ -1,5 +1,7 @@
 package org.naw.links;
 
+import java.net.URI;
+
 import org.naw.exceptions.LinkException;
 
 /**
@@ -7,7 +9,7 @@ import org.naw.exceptions.LinkException;
  */
 public interface Link {
 	
-	String getArgument();
+	URI getURI();
 
 	/**
 	 * send data to external entity

@@ -19,7 +19,10 @@ import org.naw.links.AsyncResult;
 import org.naw.links.LinkExchange;
 import org.naw.links.Message;
 
-public class ReceiveReply extends AbstractTask implements LifeCycleAware, AsyncCallback<Message> {
+import rk.commons.inject.factory.ObjectFactory;
+import rk.commons.inject.factory.support.ObjectFactoryAware;
+
+public class ReceiveReply extends AbstractTask implements LifeCycleAware, AsyncCallback<Message>, ObjectFactoryAware {
 
 	private String variable;
 
@@ -40,6 +43,8 @@ public class ReceiveReply extends AbstractTask implements LifeCycleAware, AsyncC
 	private TaskPipeline errorPipeline;
 	
 	private TaskPipeline timeoutPipeline;
+	
+	private ObjectFactory factory;
 
 	public void setVariable(String variable) {
 		this.variable = variable;
@@ -67,6 +72,10 @@ public class ReceiveReply extends AbstractTask implements LifeCycleAware, AsyncC
 
 	public void setTimeoutTasks(List<Task> timeoutTasks) {
 		this.timeoutTasks = timeoutTasks;
+	}
+
+	public void setObjectFactory(ObjectFactory factory) {
+		this.factory = factory;
 	}
 
 	public void beforeAdd(TaskContext ctx) {
@@ -126,7 +135,7 @@ public class ReceiveReply extends AbstractTask implements LifeCycleAware, AsyncC
 		attachment.context = context;
 		
 		try {
-			lex.getLink().asyncReceiveReply(lex.getCorrelation(), attachment, deadline, this);
+			lex.getLink(factory).asyncReceiveReply(lex.getCorrelation(), attachment, deadline, this);
 		} catch (LinkException e) {
 			// set last error
 			exchange.setLastError(e.getErrorCode(), e.getMessage());

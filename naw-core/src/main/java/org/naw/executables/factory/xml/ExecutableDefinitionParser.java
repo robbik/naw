@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.naw.executables.Executable;
+import org.osgi.framework.Version;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -11,6 +12,7 @@ import org.w3c.dom.NodeList;
 import rk.commons.inject.factory.support.ObjectDefinitionBuilder;
 import rk.commons.inject.factory.xml.ObjectDefinitionParserDelegate;
 import rk.commons.inject.factory.xml.SingleObjectDefinitionParser;
+import rk.commons.util.StringHelper;
 
 public class ExecutableDefinitionParser extends SingleObjectDefinitionParser {
 	
@@ -25,9 +27,20 @@ public class ExecutableDefinitionParser extends SingleObjectDefinitionParser {
 			ObjectDefinitionParserDelegate delegate, ObjectDefinitionBuilder builder) {
 		
 		String name = element.getAttribute("name");
+		
+		Version version;
+		
+		if (StringHelper.hasText(element.getAttribute("version"))) {
+			version = Version.parseVersion(element.getAttribute("version"));
+		} else {
+			version = Version.emptyVersion;
+		}
+		
+		String qualifiedName = name + ":" + version.toString();
+		
 		String oldPackageName = delegate.getPackageName();
 		
-		delegate.setPackageName(name);
+		delegate.setPackageName(qualifiedName);
 		
 		List<Object> tasks = new ArrayList<Object>();
 		
@@ -43,9 +56,11 @@ public class ExecutableDefinitionParser extends SingleObjectDefinitionParser {
 		
 		delegate.setPackageName(oldPackageName);
 		
-		builder.setObjectQName(name);
+		builder.setObjectQName(qualifiedName);
 		
-		builder.addPropertyValue("executableName", name);
+		builder.addPropertyValue("name", name);
+		builder.addPropertyValue("version", version);
+		
 		builder.addPropertyValue("tasks", tasks);
 	}
 }

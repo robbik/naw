@@ -6,8 +6,9 @@ import org.naw.expression.ExpressionHandlerResolver;
 import rk.commons.inject.factory.ObjectFactory;
 import rk.commons.inject.factory.support.FactoryObject;
 import rk.commons.inject.factory.support.ObjectFactoryAware;
+import rk.commons.inject.factory.support.ObjectQNameAware;
 
-public class ExpressionFactory extends FactoryObject<Expression> implements ObjectFactoryAware {
+public class ExpressionFactory extends FactoryObject<Expression> implements ObjectFactoryAware, ObjectQNameAware {
 
 	private ExpressionHandlerResolver resolver;
 
@@ -16,6 +17,8 @@ public class ExpressionFactory extends FactoryObject<Expression> implements Obje
 	private String expression;
 	
 	private ObjectFactory factory;
+	
+	private String objectQName;
 
 	public void setResolver(ExpressionHandlerResolver resolver) {
 		this.resolver = resolver;
@@ -33,6 +36,10 @@ public class ExpressionFactory extends FactoryObject<Expression> implements Obje
 		this.factory = factory;
 	}
 
+	public void setObjectQName(String objectQName) {
+		this.objectQName = objectQName;
+	}
+
 	protected Expression createInstance() {
 		Expression compiled;
 		
@@ -43,6 +50,7 @@ public class ExpressionFactory extends FactoryObject<Expression> implements Obje
 					+ expression + "' for language " + language, e);
 		}
 		
+		compiled.setObjectQName(objectQName);
 		compiled.setObjectFactory(factory);
 		
 		return compiled;

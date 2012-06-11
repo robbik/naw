@@ -10,6 +10,8 @@ import java.util.concurrent.TimeUnit;
 
 import org.junit.Before;
 import org.junit.Test;
+import org.naw.core.storage.spi.FileBasedStorage;
+import org.naw.core.task.impl.PersistentTaskQueue;
 import org.naw.exceptions.LinkException;
 import org.naw.integration.SpringXmlEngine;
 import org.naw.links.AsyncCallback;
@@ -20,7 +22,7 @@ import org.naw.links.factory.LinkFactory;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.GenericXmlApplicationContext;
 
-public class DirectLinkTest {
+public class FilePersistentTest {
 	
 	private ApplicationContext spring;
 	
@@ -69,6 +71,7 @@ public class DirectLinkTest {
 		directLink = spring.getBean("direct-test", LinkFactory.class);
 		
 		engine = new SpringXmlEngine(spring, "classpath:direct-link.xml");
+		engine.setTaskQueue(new PersistentTaskQueue(new FileBasedStorage("temp")));
 		
 		engine.start();
 		

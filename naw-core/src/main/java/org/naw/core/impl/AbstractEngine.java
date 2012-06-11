@@ -2,7 +2,9 @@ package org.naw.core.impl;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.apache.axis.types.DateTime;
@@ -51,27 +53,14 @@ public abstract class AbstractEngine implements Engine {
 	protected AbstractEngine() {
 		statusLock = new Object();
 		status = STATUS_NONE;
-	}
-	
-	protected void initialize() {
-		timer = new HashedWheelTimer();
-		
-		taskQueue = new DefaultTaskQueue();
-		
-		resourceLoader = new ResourceLoader();
-
-		objectFactory = createObjectFactory();
-		
-		TypeConverterResolver typeResolver = objectFactory.getTypeConverterResolver();
-		typeResolver.register(String.class, DateTime.class, new StringToDateTimeConverter());
-		typeResolver.register(String.class, Duration.class, new StringToDurationConverter());
-		typeResolver.register(String.class, Link.class, new StringToLinkConverter(objectFactory));
 
 		shutdownHook = new Thread() {
 
 			@Override
 			public void run() {
-				objectFactory.destroy();
+				if (objectFactory != null) {
+					objectFactory.destroy();
+				}
 			}
 		};
 
@@ -148,22 +137,72 @@ public abstract class AbstractEngine implements Engine {
 				return;
 			}
 
+			if (timer == null) {
+				timer = new HashedWheelTimer();
+			}
+			
+			if (taskQueue == null) {
+				taskQueue = new DefaultTaskQueue();
+			}
+			
+			if (resourceLoader == null) {
+				resourceLoader = new ResourceLoader();
+			}
+
+			if (objectFactory == null) {
+				objectFactory = createObjectFactory();
+				
+				TypeConverterResolver typeResolver = objectFactory.getTypeConverterResolver();
+				typeResolver.register(String.class, DateTime.class, new StringToDateTimeConverter());
+				typeResolver.register(String.class, Duration.class, new StringToDurationConverter());
+				typeResolver.register(String.class, Link.class, new StringToLinkConverter(objectFactory));
+			}
+			
+			beforeStart();
+
 			Collection<Executable> executables = objectFactory.getObjectsOfType(Executable.class).values();
+			Map<String, Executable> latestMap = new HashMap<String, Executable>();
 
 			for (Executable e : executables) {
 				e.initialize(this);
+				
+				String ename = e.getName();
+				
+				Executable latest = latestMap.get(ename);
+				if (latest == null) {
+					latestMap.put(ename, e);
+				} else {
+					if (e.getVersion().compareTo(latest.getVersion()) > 0) {
+						latestMap.put(ename, e);
+					}
+				}
 			}
 			
+			// suspend unless the latest version
 			for (Executable e : executables) {
-				e.start();
+				if (!latestMap.containsValue(e)) {
+					e.suspend();
+				}
 			}
-			
+
+			// attach task queue to this engine
 			taskQueue.attach(this);
+			
+			// only start the latest version
+			for (Executable e : executables) {
+				if (latestMap.containsValue(e)) {
+					e.start();
+				}
+			}
 			
 			status = STATUS_STARTED;
 		}
 	}
-
+	
+	protected void beforeStart() throws Exception {
+		//
+	}
+	
 	public void stop() {
 		synchronized (statusLock) {
 			if (status == STATUS_STARTED) {

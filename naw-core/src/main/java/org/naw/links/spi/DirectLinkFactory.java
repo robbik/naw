@@ -1,5 +1,6 @@
 package org.naw.links.spi;
 
+import java.net.URI;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -10,14 +11,14 @@ import org.naw.links.factory.LinkFactory;
 
 public class DirectLinkFactory implements LinkFactory {
 	
-	protected final Map<String, Link> links;
+	protected final Map<URI, Link> links;
 	
 	protected Timer timer;
 	
 	protected long sendTimeout;
 	
 	public DirectLinkFactory() {
-		links = Collections.synchronizedMap(new HashMap<String, Link>());
+		links = Collections.synchronizedMap(new HashMap<URI, Link>());
 		
 		sendTimeout = 10000;
 	}
@@ -30,15 +31,15 @@ public class DirectLinkFactory implements LinkFactory {
 		this.sendTimeout = sendTimeout;
 	}
 	
-	public Link createLink(String argument) throws Exception {
+	public Link createLink(URI uri) throws Exception {
 		Link link;
 		
 		synchronized (links) {
-			if (links.containsKey(argument)) {
-				link = links.get(argument);
+			if (links.containsKey(uri)) {
+				link = links.get(uri);
 			} else {
-				link = new DirectLink(timer, sendTimeout, argument);
-				links.put(argument, link);
+				link = new DirectLink(timer, sendTimeout, uri);
+				links.put(uri, link);
 			}
 		}
 		

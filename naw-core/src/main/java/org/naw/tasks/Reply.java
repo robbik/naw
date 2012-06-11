@@ -7,9 +7,11 @@ import org.naw.links.Link;
 import org.naw.links.LinkExchange;
 import org.naw.links.Message;
 
+import rk.commons.inject.factory.ObjectFactory;
+import rk.commons.inject.factory.support.ObjectFactoryAware;
 import rk.commons.logging.LoggerFactory;
 
-public class Reply extends AbstractTask {
+public class Reply extends AbstractTask implements ObjectFactoryAware {
 
 	private Link to;
 
@@ -18,6 +20,8 @@ public class Reply extends AbstractTask {
 	private boolean retriable;
 	
 	private String exchangeVariable;
+	
+	private ObjectFactory factory;
 
 	public void setTo(Link to) {
 		this.to = to;
@@ -34,6 +38,10 @@ public class Reply extends AbstractTask {
 	public void setExchangeVariable(String exchangeVariable) {
 		this.exchangeVariable = exchangeVariable;
 	}
+
+	public void setObjectFactory(ObjectFactory factory) {
+		this.factory = factory;
+	}
 	
 	private void dosend(MessageExchange exchange) throws Exception {
 		int errorCode = 0;
@@ -45,7 +53,7 @@ public class Reply extends AbstractTask {
 			Link to = this.to;
 			
 			if (to == null) {
-				to = lex.getLink();
+				to = lex.getLink(factory);
 			}
 			
 			try {

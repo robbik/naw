@@ -13,12 +13,16 @@ public class XmlEngine extends AbstractEngine {
     private static final String NAMESPACE_SCHEMA = "classpath:META-INF/naw/naw.schemas";
 	
 	protected final XmlContext context;
+	
+	protected final String[] locations;
 
 	public XmlEngine(String... locations) {
-		initialize();
+		this.locations = locations;
 		
 		context = new XmlContext();
-		
+	}
+	
+	protected void beforeStart() {
 		context.setResourceLoader(resourceLoader);
 		
 		context.setXmlDefaultNamespace(NAMESPACE_URI);
