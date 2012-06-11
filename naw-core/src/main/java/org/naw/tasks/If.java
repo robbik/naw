@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.naw.core.Engine;
 import org.naw.core.exchange.MessageExchange;
+import org.naw.core.task.Container;
 import org.naw.core.task.LifeCycleAware;
 import org.naw.core.task.Task;
 import org.naw.core.task.TaskContext;
@@ -12,7 +13,7 @@ import org.naw.core.task.support.Tasks;
 import org.naw.executables.Executable;
 import org.naw.expression.Expression;
 
-public class If extends AbstractTask implements LifeCycleAware {
+public class If extends AbstractTask implements LifeCycleAware, Container {
 
 	private Expression predicate;
 	
@@ -45,6 +46,18 @@ public class If extends AbstractTask implements LifeCycleAware {
 		
 		thenTasks = null;
 		elseTasks = null;
+	}
+
+	public TaskContext getTaskContext(String taskId) {
+		TaskContext tctx = null;
+		
+		tctx = pthen.getTaskContext(taskId);
+		
+		if ((tctx != null) && (pelse != null)) {
+			tctx = pelse.getTaskContext(taskId);
+		}
+		
+		return tctx;
 	}
 
 	public void run(TaskContext context, MessageExchange exchange) throws Exception {

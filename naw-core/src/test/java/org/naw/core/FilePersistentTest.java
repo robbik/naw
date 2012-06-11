@@ -179,7 +179,7 @@ public class FilePersistentTest {
 		
 		AsyncResult<Message> ar = asyncReceiveReply(link, "12345678", -1, latch);
 		
-		assertTrue(latch.await(5, TimeUnit.SECONDS));
+		assertTrue(latch.await(30, TimeUnit.SECONDS));
 		
 		assertTrue(ar.isSuccess());
 		assertEquals("12345678", ar.getResult().getCorrelation());

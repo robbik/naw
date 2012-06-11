@@ -10,6 +10,7 @@ import org.naw.core.task.Task;
 import org.naw.core.task.TaskContext;
 import org.naw.core.task.TaskQueue;
 
+import rk.commons.inject.factory.ObjectFactory;
 import rk.commons.logging.Logger;
 import rk.commons.logging.LoggerFactory;
 
@@ -27,27 +28,27 @@ public class DefaultTaskQueue implements TaskQueue {
 		this.queue = queue;
 	}
 
-	public void attach(Engine engine) {
+	public void attach(Engine engine, ObjectFactory factory) {
 		// do nothing
 	}
 	
-	public void detach(Engine engine) {
+	public void detach() {
 		// do nothing
 	}
 	
 	public void add(TaskContext context, MessageExchange mex) {
 		if (log.isTraceEnabled()) {
-			log.trace("adding task " + context.getTask() + " to execution queue");
+			log.trace("adding task " + context.getTask() + " mex " + mex.getId() + " to execution queue");
 		}
 		
 		boolean enqueued = queue.add(new Entry(context, mex));
 		
 		if (enqueued) {
 			if (log.isTraceEnabled()) {
-				log.trace("task " + context.getTask() + " added to execution queue");
+				log.trace("task " + context.getTask() + " mex " + mex.getId() + " added to execution queue");
 			}
 		} else {
-			log.error("unable to enqueue task " + context.getTask());
+			log.error("unable to enqueue task " + context.getTask() + " mex " + mex.getId());
 		}
 	}
 
@@ -76,17 +77,19 @@ public class DefaultTaskQueue implements TaskQueue {
 		Task task = ctx.getTask();
 		
 		if (log.isTraceEnabled()) {
-			log.trace("before executing task " + task);
+			log.trace("before executing task " + task + " mex " + mex.getId());
 		}
 		
 		try {
 			task.run(ctx, mex);
 		} catch (Throwable t) {
-			log.error("an error occured while executing task " + task + ", process terminated.", t);
+			log.error("an error occured while executing task " + task + " mex " + mex.getId() + ".", t);
+			
+			return;
 		}
 		
 		if (log.isTraceEnabled()) {
-			log.trace("after executing task " + task);
+			log.trace("after executing task " + task + " mex " + mex.getId());
 		}
 	}
 	

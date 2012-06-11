@@ -32,6 +32,10 @@ public class While extends AbstractTask implements LifeCycleAware {
 		tasks = null;
 	}
 
+	public TaskContext getTaskContext(String taskId) {
+		return pipeline.getTaskContext(taskId);
+	}
+
 	public void run(TaskContext context, MessageExchange exchange) throws Exception {
 		if (predicate.eval(exchange, boolean.class)) {
 			Tasks.send(pipeline, exchange);

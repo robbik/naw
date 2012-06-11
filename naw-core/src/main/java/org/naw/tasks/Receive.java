@@ -7,6 +7,7 @@ import org.apache.axis.types.DateTime;
 import org.apache.axis.types.Duration;
 import org.naw.core.Engine;
 import org.naw.core.exchange.MessageExchange;
+import org.naw.core.task.Container;
 import org.naw.core.task.LifeCycleAware;
 import org.naw.core.task.Task;
 import org.naw.core.task.TaskContext;
@@ -21,7 +22,7 @@ import org.naw.links.Link;
 import org.naw.links.LinkExchange;
 import org.naw.links.Message;
 
-public class Receive extends AbstractTask implements LifeCycleAware, AsyncCallback<Message> {
+public class Receive extends AbstractTask implements LifeCycleAware, AsyncCallback<Message>, Container {
 	
 	private Link link;
 
@@ -102,6 +103,22 @@ public class Receive extends AbstractTask implements LifeCycleAware, AsyncCallba
 		receiveTasks = null;
 		errorTasks = null;
 		timeoutTasks = null;
+	}
+
+	public TaskContext getTaskContext(String taskId) {
+		TaskContext tctx = null;
+		
+		tctx = receivePipeline.getTaskContext(taskId);
+		
+		if ((tctx != null) && (errorPipeline != null)) {
+			tctx = errorPipeline.getTaskContext(taskId);
+		}
+		
+		if ((tctx != null) && (timeoutPipeline != null)) {
+			tctx = timeoutPipeline.getTaskContext(taskId);
+		}
+		
+		return tctx;
 	}
 
 	public void run(TaskContext context, MessageExchange exchange) throws Exception {

@@ -41,6 +41,20 @@ public class Fork extends AbstractTask implements LifeCycleAware {
 		tasks = null;
 	}
 
+	public TaskContext getTaskContext(String taskId) {
+		TaskContext tctx = null;
+		
+		for (int i = 0; i < pipelines.length; ++i) {
+			tctx = pipelines[i].getTaskContext(taskId);
+			
+			if (tctx != null) {
+				break;
+			}
+		}
+		
+		return tctx;
+	}
+
 	public void run(TaskContext context, MessageExchange exchange) throws Exception {
 		AtomicInteger join = exchange.getpriv(joinVariable);
 		

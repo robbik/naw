@@ -186,7 +186,7 @@ public abstract class AbstractEngine implements Engine {
 			}
 
 			// attach task queue to this engine
-			taskQueue.attach(this);
+			taskQueue.attach(this, objectFactory);
 			
 			// only start the latest version
 			for (Executable e : executables) {
@@ -206,7 +206,7 @@ public abstract class AbstractEngine implements Engine {
 	public void stop() {
 		synchronized (statusLock) {
 			if (status == STATUS_STARTED) {
-				taskQueue.detach(this);
+				taskQueue.detach();
 			}
 			
 			status = STATUS_STOPPED;

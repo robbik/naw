@@ -1,6 +1,7 @@
 package org.naw.core.task.impl;
 
 import org.naw.core.Engine;
+import org.naw.core.task.Container;
 import org.naw.core.task.LifeCycleAware;
 import org.naw.core.task.Task;
 import org.naw.core.task.TaskContext;
@@ -119,8 +120,19 @@ public class DefaultTaskPipeline implements TaskPipeline {
 		TaskContext current = head;
 		
 		while (current != null) {
-			if (current.getTask().getId().equals(taskId)) {
+			Task task = current.getTask();
+			
+			if (task.getId().equals(taskId)) {
 				break;
+			}
+			
+			if (task instanceof Container) {
+				TaskContext child = ((Container) task).getTaskContext(taskId);
+				
+				if (child != null) {
+					current = child;
+					break;
+				}
 			}
 			
 			current = current.getNext();
