@@ -38,17 +38,29 @@ public class DefaultTaskQueue implements TaskQueue {
 	
 	public void add(TaskContext context, MessageExchange mex) {
 		if (log.isTraceEnabled()) {
-			log.trace("adding task " + context.getTask() + " mex " + mex.getId() + " to execution queue");
+			if (mex == null) {
+				log.trace("adding task " + context.getTask().getId() + " with no mex to execution queue");
+			} else {
+				log.trace("adding task " + context.getTask().getId() + " with mex #" + mex.getId() + " to execution queue");
+			}
 		}
 		
 		boolean enqueued = queue.add(new Entry(context, mex));
 		
 		if (enqueued) {
 			if (log.isTraceEnabled()) {
-				log.trace("task " + context.getTask() + " mex " + mex.getId() + " added to execution queue");
+				if (mex == null) {
+					log.trace("task " + context.getTask().getId() + " with no mex added to execution queue");
+				} else {
+					log.trace("task " + context.getTask().getId() + " with mex #" + mex.getId() + " added to execution queue");
+				}
 			}
 		} else {
-			log.error("unable to enqueue task " + context.getTask() + " mex " + mex.getId());
+			if (mex == null) {
+				log.error("unable to enqueue task " + context.getTask().getId() + " with no mex");
+			} else {
+				log.error("unable to enqueue task " + context.getTask().getId() + " with mex #" + mex.getId());
+			}
 		}
 	}
 
@@ -77,19 +89,31 @@ public class DefaultTaskQueue implements TaskQueue {
 		Task task = ctx.getTask();
 		
 		if (log.isTraceEnabled()) {
-			log.trace("before executing task " + task + " mex " + mex.getId());
+			if (mex == null) {
+				log.trace("before executing task " + task.getId() + " with no mex");
+			} else {
+				log.trace("before executing task " + task.getId() + " with mex #" + mex.getId());
+			}
 		}
 		
 		try {
 			task.run(ctx, mex);
 		} catch (Throwable t) {
-			log.error("an error occured while executing task " + task + " mex " + mex.getId() + ".", t);
+			if (mex == null) {
+				log.error("an error occured while executing task " + task.getId() + " with no mex.", t);
+			} else {
+				log.error("an error occured while executing task " + task.getId() + " mex #" + mex.getId() + ".", t);
+			}
 			
 			return;
 		}
 		
 		if (log.isTraceEnabled()) {
-			log.trace("after executing task " + task + " mex " + mex.getId());
+			if (mex == null) {
+				log.trace("after executing task " + task.getId() + " with no mex");
+			} else {
+				log.trace("after executing task " + task.getId() + " with mex " + mex.getId());
+			}
 		}
 	}
 	

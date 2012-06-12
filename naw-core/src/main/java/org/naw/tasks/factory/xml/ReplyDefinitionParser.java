@@ -18,7 +18,7 @@ public class ReplyDefinitionParser extends SingleObjectDefinitionParser {
 	}
 
 	protected void doParse(Element element, ObjectDefinitionParserDelegate delegate, ObjectDefinitionBuilder builder) {
-		builder.setObjectQName(element.getAttribute("name"));
+		builder.setObjectName(element.getAttribute("name"));
 		
 		builder.addPropertyValue("variable", element.getAttribute("variable"));
 		builder.addPropertyValue("retriable", element.getAttribute("retriable"));

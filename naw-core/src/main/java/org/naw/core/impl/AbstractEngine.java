@@ -110,7 +110,7 @@ public abstract class AbstractEngine implements Engine {
 	}
 	
 	public Set<String> getObjectQNames() {
-		return objectFactory.getObjectQNames();
+		return objectFactory.getObjectNames();
 	}
 
 	public Processor createProcessor() {

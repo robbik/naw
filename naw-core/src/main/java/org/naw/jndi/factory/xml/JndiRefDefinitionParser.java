@@ -20,7 +20,7 @@ public class JndiRefDefinitionParser extends SingleObjectDefinitionParser {
 	protected void doParse(Element element,
 			ObjectDefinitionParserDelegate delegate, ObjectDefinitionBuilder builder) {
 		
-		builder.setObjectQName(element.getAttribute("name"));
+		builder.setObjectName(element.getAttribute("name"));
 		
 		String jndiContextRef = element.getAttribute("jndiContext-ref");
 		if (StringHelper.hasText(jndiContextRef)) {

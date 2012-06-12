@@ -19,6 +19,6 @@ public class EmptyDefinitionParser extends SingleObjectDefinitionParser {
 	protected void doParse(Element element,
 			ObjectDefinitionParserDelegate delegate, ObjectDefinitionBuilder builder) {
 
-		builder.setObjectQName(element.getAttribute("name"));
+		builder.setObjectName(element.getAttribute("name"));
 	}
 }

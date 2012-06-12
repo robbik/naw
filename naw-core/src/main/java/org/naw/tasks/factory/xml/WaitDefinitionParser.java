@@ -20,7 +20,7 @@ public class WaitDefinitionParser extends SingleObjectDefinitionParser {
 	protected void doParse(Element element, ObjectDefinitionParserDelegate delegate, ObjectDefinitionBuilder builder) {
 		int forUntil = 0;
 		
-		builder.setObjectQName(element.getAttribute("name"));
+		builder.setObjectName(element.getAttribute("name"));
 
 		String tstr = element.getAttribute("until");
 		if (StringHelper.hasText(tstr)) {

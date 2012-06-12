@@ -19,7 +19,7 @@ public class MergeDefinitionParser extends SingleObjectDefinitionParser {
 	protected void doParse(Element element,
 			ObjectDefinitionParserDelegate delegate, ObjectDefinitionBuilder builder) {
 
-		builder.setObjectQName(element.getAttribute("name"));
+		builder.setObjectName(element.getAttribute("name"));
 
 		builder.addPropertyValue("from", element.getAttribute("from"));
 		builder.addPropertyValue("to", element.getAttribute("to"));

@@ -67,7 +67,7 @@ public class ReceiveDefinitionParser extends SingleObjectDefinitionParser {
 		
 		boolean createInstance = false;
 		
-		builder.setObjectQName(element.getAttribute("name"));
+		builder.setObjectName(element.getAttribute("name"));
 		
 		builder.addPropertyValue("link", element.getAttribute("from"));
 

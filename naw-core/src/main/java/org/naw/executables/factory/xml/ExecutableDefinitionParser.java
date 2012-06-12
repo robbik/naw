@@ -36,11 +36,11 @@ public class ExecutableDefinitionParser extends SingleObjectDefinitionParser {
 			version = Version.emptyVersion;
 		}
 		
-		String qualifiedName = name + ":" + version.toString();
+		String oldPrefix = delegate.getObjectNamePrefix();
+		String oldSuffix = delegate.getObjectNameSuffix();
 		
-		String oldPackageName = delegate.getPackageName();
-		
-		delegate.setPackageName(qualifiedName);
+		delegate.setObjectNamePrefix(name + ":");
+		delegate.setObjectNameSuffix(":" + version.toString());
 		
 		List<Object> tasks = new ArrayList<Object>();
 		
@@ -54,9 +54,10 @@ public class ExecutableDefinitionParser extends SingleObjectDefinitionParser {
 			}
 		}
 		
-		delegate.setPackageName(oldPackageName);
+		delegate.setObjectNamePrefix(oldPrefix);
+		delegate.setObjectNameSuffix(oldSuffix);
 		
-		builder.setObjectQName(qualifiedName);
+		builder.setObjectName(name + ":" + version.toString());
 		
 		builder.addPropertyValue("name", name);
 		builder.addPropertyValue("version", version);

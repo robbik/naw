@@ -65,7 +65,7 @@ public class ReceiveReplyDefinitionParser extends SingleObjectDefinitionParser {
 			}
 		}
 		
-		builder.setObjectQName(element.getAttribute("name"));
+		builder.setObjectName(element.getAttribute("name"));
 		
 		builder.addPropertyValue("exchangeVariable", element.getAttribute("exchangeVariable"));
 		

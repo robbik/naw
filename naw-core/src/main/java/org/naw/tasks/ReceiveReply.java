@@ -20,10 +20,10 @@ import org.naw.links.AsyncResult;
 import org.naw.links.LinkExchange;
 import org.naw.links.Message;
 
+import rk.commons.inject.annotation.Inject;
 import rk.commons.inject.factory.ObjectFactory;
-import rk.commons.inject.factory.support.ObjectFactoryAware;
 
-public class ReceiveReply extends AbstractTask implements LifeCycleAware, AsyncCallback<Message>, ObjectFactoryAware, Container {
+public class ReceiveReply extends AbstractTask implements LifeCycleAware, AsyncCallback<Message>, Container {
 
 	private String variable;
 
@@ -45,6 +45,7 @@ public class ReceiveReply extends AbstractTask implements LifeCycleAware, AsyncC
 	
 	private TaskPipeline timeoutPipeline;
 	
+	@Inject
 	private ObjectFactory factory;
 
 	public void setVariable(String variable) {
@@ -73,10 +74,6 @@ public class ReceiveReply extends AbstractTask implements LifeCycleAware, AsyncC
 
 	public void setTimeoutTasks(List<Task> timeoutTasks) {
 		this.timeoutTasks = timeoutTasks;
-	}
-
-	public void setObjectFactory(ObjectFactory factory) {
-		this.factory = factory;
 	}
 
 	public void beforeAdd(TaskContext ctx) {

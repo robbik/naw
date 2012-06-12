@@ -74,7 +74,7 @@ public class Executable {
 		qualifiedName = name + ":" + version.toString();
 		
 		End task = new End();
-		task.setObjectQName(qualifiedName + "#end");
+		task.setId(qualifiedName + "#end");
 		
 		tasks = new ArrayList<Object>(this.tasks);
 		tasks.add(task);

@@ -3,12 +3,11 @@ package org.naw.expression.factory.xml;
 import org.naw.expression.Expression;
 import org.naw.expression.ExpressionHandlerResolver;
 
+import rk.commons.inject.annotation.Inject;
 import rk.commons.inject.factory.ObjectFactory;
 import rk.commons.inject.factory.support.FactoryObject;
-import rk.commons.inject.factory.support.ObjectFactoryAware;
-import rk.commons.inject.factory.support.ObjectQNameAware;
 
-public class ExpressionFactory extends FactoryObject<Expression> implements ObjectFactoryAware, ObjectQNameAware {
+public class ExpressionFactory extends FactoryObject<Expression> {
 
 	private ExpressionHandlerResolver resolver;
 
@@ -16,9 +15,11 @@ public class ExpressionFactory extends FactoryObject<Expression> implements Obje
 
 	private String expression;
 	
+	@Inject
 	private ObjectFactory factory;
 	
-	private String objectQName;
+	@Inject
+	private String objectName;
 
 	public void setResolver(ExpressionHandlerResolver resolver) {
 		this.resolver = resolver;
@@ -31,14 +32,6 @@ public class ExpressionFactory extends FactoryObject<Expression> implements Obje
 	public void setExpression(String expression) {
 		this.expression = expression;
 	}
-	
-	public void setObjectFactory(ObjectFactory factory) {
-		this.factory = factory;
-	}
-
-	public void setObjectQName(String objectQName) {
-		this.objectQName = objectQName;
-	}
 
 	protected Expression createInstance() {
 		Expression compiled;
@@ -50,7 +43,7 @@ public class ExpressionFactory extends FactoryObject<Expression> implements Obje
 					+ expression + "' for language " + language, e);
 		}
 		
-		compiled.setObjectQName(objectQName);
+		compiled.setId(objectName);
 		compiled.setObjectFactory(factory);
 		
 		return compiled;

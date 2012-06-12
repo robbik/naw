@@ -31,7 +31,7 @@ public class ExpressionDefinitionParser extends SingleObjectDefinitionParser {
 			throw new IllegalArgumentException("expression body must be set");
 		}
 
-		builder.setObjectQName(element.getAttribute("name"));
+		builder.setObjectName(element.getAttribute("name"));
 		
 		builder.addPropertyValue("resolver", resolver);
 		

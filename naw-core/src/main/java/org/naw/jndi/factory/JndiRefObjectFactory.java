@@ -2,10 +2,10 @@ package org.naw.jndi.factory;
 
 import javax.naming.NamingException;
 
+import rk.commons.inject.annotation.Init;
 import rk.commons.inject.factory.support.FactoryObject;
-import rk.commons.inject.factory.support.InitializingObject;
 
-public class JndiRefObjectFactory extends FactoryObject<Object> implements InitializingObject {
+public class JndiRefObjectFactory extends FactoryObject<Object> {
 
 	private JndiContext jndiContext;
 
@@ -19,6 +19,7 @@ public class JndiRefObjectFactory extends FactoryObject<Object> implements Initi
 		this.jndiName = jndiName;
 	}
 
+	@Init
 	public void initialize() throws Exception {
 		if (jndiContext == null) {
 			jndiContext = new JndiContext();

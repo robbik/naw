@@ -38,7 +38,7 @@ public class ForkDefinitionParser extends SingleObjectDefinitionParser {
 			}
 		}
 		
-		builder.setObjectQName(element.getAttribute("name"));
+		builder.setObjectName(element.getAttribute("name"));
 		builder.addPropertyValue("flowTasks", flowTasks.toArray());
 		
 		flowTasks.clear();

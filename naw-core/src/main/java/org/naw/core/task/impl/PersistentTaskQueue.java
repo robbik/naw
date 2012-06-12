@@ -111,7 +111,11 @@ public class PersistentTaskQueue implements TaskQueue {
 	
 	public void add(TaskContext context, MessageExchange mex) {
 		if (log.isTraceEnabled()) {
-			log.trace("adding task " + context.getTask() + " mex " + mex.getId() + " to execution queue");
+			if (mex == null) {
+				log.trace("adding task " + context.getTask().getId() + " with no mex to execution queue");
+			} else {
+				log.trace("adding task " + context.getTask().getId() + " with mex #" + mex.getId() + " to execution queue");
+			}
 		}
 		
 		Task task = context.getTask();
@@ -131,14 +135,22 @@ public class PersistentTaskQueue implements TaskQueue {
 		
 		if (enqueued) {
 			if (log.isTraceEnabled()) {
-				log.trace("task " + context.getTask() + " mex " + mex.getId() + " added to execution queue");
+				if (mex == null) {
+					log.trace("task " + task.getId() + " with no mex added to execution queue");
+				} else {
+					log.trace("task " + task.getId() + " with mex #" + mexId + " added to execution queue");
+				}
 			}
 		} else {
 			if (mexId != null) {
 				storage.remove(task.getId(), mexId);
 			}
 			
-			log.error("unable to enqueue task " + context.getTask() + " mex " + mex.getId());
+			if (mexId == null) {
+				log.error("unable to enqueue task " + task.getId() + " with no mex");
+			} else {
+				log.error("unable to enqueue task " + task.getId() + " with mex #" + mexId);
+			}
 		}
 	}
 
@@ -166,7 +178,11 @@ public class PersistentTaskQueue implements TaskQueue {
 		Task task = ctx.getTask();
 		
 		if (log.isTraceEnabled()) {
-			log.trace("before executing task " + task + " mex " + mex.getId());
+			if (mex == null) {
+				log.trace("before executing task " + task.getId() + " with no mex");
+			} else {
+				log.trace("before executing task " + task.getId() + " with mex #" + mex.getId());
+			}
 		}
 		
 		String mexId;
@@ -188,12 +204,20 @@ public class PersistentTaskQueue implements TaskQueue {
 				task.run(ctx, mex);
 			}
 		} catch (Throwable t) {
+			String what;
+			
 			if (entry.recovery) {
-				log.error("an error occured while recovering task " + task + " mex " + mex.getId() + ".", t);
+				what = "recovering";
 			} else {
-				log.error("an error occured while executing task " + task + " mex " + mex.getId() + ".", t);
+				what = "executing";
 			}
 			
+			if (mex == null) {
+				log.error("an error occured while " + what + " task " + task.getId() + " with no mex.", t);
+			} else {
+				log.error("an error occured while " + what + " task " + task.getId() + " mex #" + mex.getId() + ".", t);
+			}
+
 			return;
 		}
 		
@@ -202,7 +226,11 @@ public class PersistentTaskQueue implements TaskQueue {
 		}
 		
 		if (log.isTraceEnabled()) {
-			log.trace("after executing task " + task + " mex " + mex.getId());
+			if (mex == null) {
+				log.trace("after executing task " + task.getId() + " with no mex");
+			} else {
+				log.trace("after executing task " + task.getId() + " with mex " + mex.getId());
+			}
 		}
 	}
 	
