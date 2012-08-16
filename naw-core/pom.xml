@@ -101,7 +101,8 @@
                             org.naw.links;version=${project.version},
                             org.naw.links.factory;version=${project.version},
                             org.naw.links.spi;version=${project.version},
-                            org.naw.tasks;version=${project.version}
+                            org.naw.tasks;version=${project.version},
+                            org.jboss.netty.util
                         </Export-Package>
                         <Private-Package>
                             org.naw.core.impl,
@@ -117,7 +118,9 @@
                             org.naw.tasks.factory.xml,
                             org.naw.tasks.support,
                             org.apache.axis.types,
-                            rk.commons.*
+                            rk.commons.*,
+                            naw.*,
+                            org.jboss.netty.util.internal
                         </Private-Package>
                     </instructions>
                 </configuration>

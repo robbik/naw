@@ -5,7 +5,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.naw.core.task.support.Timer;
+import org.jboss.netty.util.Timer;
 import org.naw.links.Link;
 import org.naw.links.factory.LinkFactory;
 

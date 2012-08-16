@@ -13,7 +13,7 @@
  * License for the specific language governing permissions and limitations
  * under the License.
  */
-package org.naw.core.task.support;
+package org.jboss.netty.util;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -27,6 +27,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+
+import org.jboss.netty.util.internal.ConcurrentIdentityHashMap;
+import org.jboss.netty.util.internal.ReusableIterator;
 
 import rk.commons.logging.Logger;
 import rk.commons.logging.LoggerFactory;

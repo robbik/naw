@@ -14,7 +14,7 @@ public class DateTime {
 
 	private int hour;
 
-	private int minite;
+	private int minute;
 
 	private int second;
 
@@ -23,6 +23,24 @@ public class DateTime {
 	private int timeZoneOffSet;
 
 	private int era;
+	
+	public DateTime(Calendar cal) {
+		if (cal == null) {
+			throw new NullPointerException("calendar");
+		}
+		
+		era = cal.get(Calendar.ERA);
+		timeZoneOffSet = cal.get(Calendar.ZONE_OFFSET);
+		
+		year = cal.get(Calendar.YEAR);
+		month = cal.get(Calendar.MONTH) + 1;
+		day = cal.get(Calendar.DAY_OF_MONTH);
+		
+		hour = cal.get(Calendar.HOUR_OF_DAY);
+		minute = cal.get(Calendar.MINUTE);
+		second = cal.get(Calendar.SECOND);
+		ms = cal.get(Calendar.MILLISECOND);
+	}
 
 	public DateTime(String source) {
 		if (source == null) {
@@ -55,7 +73,7 @@ public class DateTime {
 		month = Integer.parseInt(source.substring(5, 7));
 		day = Integer.parseInt(source.substring(8, 10));
 		hour = Integer.parseInt(source.substring(11, 13));
-		minite = Integer.parseInt(source.substring(14, 16));
+		minute = Integer.parseInt(source.substring(14, 16));
 		second = Integer.parseInt(source.substring(17, 19));
 		ms = 0;
 
@@ -154,7 +172,7 @@ public class DateTime {
 
 		calendar.set(Calendar.DAY_OF_MONTH, day);
 		calendar.set(Calendar.HOUR_OF_DAY, hour);
-		calendar.set(Calendar.MINUTE, minite);
+		calendar.set(Calendar.MINUTE, minute);
 		calendar.set(Calendar.SECOND, second);
 
 		calendar.set(Calendar.MILLISECOND, ms);

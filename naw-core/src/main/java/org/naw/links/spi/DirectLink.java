@@ -3,10 +3,11 @@ package org.naw.links.spi;
 import java.net.URI;
 import java.util.Map;
 import java.util.concurrent.locks.LockSupport;
+import java.util.concurrent.TimeUnit;
 
-import org.naw.core.task.support.Timeout;
-import org.naw.core.task.support.Timer;
-import org.naw.core.task.support.TimerTask;
+import org.jboss.netty.util.Timeout;
+import org.jboss.netty.util.Timer;
+import org.jboss.netty.util.TimerTask;
 import org.naw.core.utils.SynchronizedHashMap;
 import org.naw.exceptions.ErrorCodes;
 import org.naw.exceptions.LinkException;
@@ -104,7 +105,8 @@ public class DirectLink implements Link {
 						throw new IllegalArgumentException("timeout not supported, no timer defined");
 					}
 					
-					receiver.timeout = timer.newTimeout(new DirectLinkTimerTask(receiver.ar, callback), deadline);
+					receiver.timeout = timer.newTimeout(new DirectLinkTimerTask(receiver.ar, callback),
+							deadline - System.currentTimeMillis(), TimeUnit.MILLISECONDS);
 				}
 				
 				map.put(correlation, receiver);

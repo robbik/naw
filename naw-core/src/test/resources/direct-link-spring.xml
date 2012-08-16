@@ -5,7 +5,7 @@
        xsi:schemaLocation="http://www.springframework.org/schema/beans 
                            http://www.springframework.org/schema/beans/spring-beans.xsd">
 
-    <bean id="shared-timer" class="org.naw.core.task.support.HashedWheelTimer" />
+    <bean id="shared-timer" class="org.jboss.netty.util.HashedWheelTimer" />
 
     <bean id="direct-test" class="org.naw.links.spi.DirectLinkFactory"
           p:timer-ref="shared-timer"

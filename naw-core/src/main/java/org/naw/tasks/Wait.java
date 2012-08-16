@@ -4,12 +4,12 @@ import java.util.Calendar;
 
 import org.apache.axis.types.DateTime;
 import org.apache.axis.types.Duration;
+import org.jboss.netty.util.Timeout;
+import org.jboss.netty.util.Timer;
+import org.jboss.netty.util.TimerTask;
 import org.naw.core.exchange.MessageExchange;
 import org.naw.core.task.LifeCycleAware;
 import org.naw.core.task.TaskContext;
-import org.naw.core.task.support.Timeout;
-import org.naw.core.task.support.Timer;
-import org.naw.core.task.support.TimerTask;
 
 public class Wait extends AbstractTask implements LifeCycleAware {
 	

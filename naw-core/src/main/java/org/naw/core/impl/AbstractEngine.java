@@ -9,12 +9,12 @@ import java.util.Set;
 
 import org.apache.axis.types.DateTime;
 import org.apache.axis.types.Duration;
+import org.jboss.netty.util.HashedWheelTimer;
+import org.jboss.netty.util.Timer;
 import org.naw.core.Engine;
 import org.naw.core.Processor;
 import org.naw.core.task.TaskQueue;
 import org.naw.core.task.impl.DefaultTaskQueue;
-import org.naw.core.task.support.HashedWheelTimer;
-import org.naw.core.task.support.Timer;
 import org.naw.executables.Executable;
 import org.naw.links.Link;
 import org.naw.links.factory.StringToLinkConverter;

@@ -18,7 +18,7 @@
  * Expert Group and released to the public domain, as explained at
  * http://creativecommons.org/licenses/publicdomain
  */
-package org.naw.core.task.support;
+package org.jboss.netty.util.internal;
 
 import java.util.AbstractCollection;
 import java.util.AbstractMap;

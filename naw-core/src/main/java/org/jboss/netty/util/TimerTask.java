@@ -13,7 +13,7 @@
  * License for the specific language governing permissions and limitations
  * under the License.
  */
-package org.naw.core.task.support;
+package org.jboss.netty.util;
 
 import java.util.concurrent.TimeUnit;
 
