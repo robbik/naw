@@ -74,6 +74,7 @@
                             org.apache.commons.logging;resolution:=optional,
                             java.util.logging;resolution:=optional,
                             java.sql;resolution:=optional,
+                            javax.servlet;resolution:=optional,
                             javax.sql;resolution:=optional,
                             javax.naming;resolution:=optional,
                             org.mvel2;resolution:=optional,
